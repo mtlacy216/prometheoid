@@ -97,13 +97,13 @@
     const imageSlider = document.getElementById("imageSlider");
     const contentName = document.getElementById("contentName");
     const contentTexts = [
-        "Content for Image 1",
-        "Content for Image 2",
-        "Content for Image 3",
-        "Content for Image 4",
-        "Content for Image 5",
-        "Content for Image 6",
-        "Content for Image 7"
+        "Base",
+        "Formal",
+        "Dynamics",
+        "Systems",
+        "Abstract",
+        "Network",
+        "Integration"
     ];
 
     function updateContent(index) {
