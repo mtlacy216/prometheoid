@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Image Row with Sleek Slider</title>
+    <style>
+        /* Styling for the entire page */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Styling for the image slider container */
+        .image-slider-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            height: auto;
+            overflow: hidden;
+        }
+
+        /* Styling for individual slider images */
+        .slider-image {
+            width: 14.28%;
+            cursor: pointer;
+        }
+
+        /* Styling for images */
+        img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Styling for the sleek slider */
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 2px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.7;
+            margin: 10px 0;
+            transition: opacity .2s;
+        }
+
+        /* Hover effect for the slider */
+        .slider:hover {
+            opacity: 1;
+        }
+
+        /* Styling for the slider thumb (draggable circle) */
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 1px solid #333;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 1px solid #333;
+        }
+
+        /* Focus style for the slider thumb */
+        .slider::-webkit-slider-thumb:focus {
+            box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2);
+        }
+
+        .slider::-moz-range-thumb:focus {
+            box-shadow: 0 0 0 5px rgba(76, 175, 80, 0.2);
+        }
+
+        /* Active state style for the slider thumb (when dragging) */
+        .slider::-webkit-slider-thumb:active {
+            background: #666;
+        }
+
+        .slider::-moz-range-thumb:active {
+            background: #666;
+        }
+
+        /* Styling for the content name */
+        .content-name {
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="image-slider-container">
+    <!-- Adding onclick events to each image -->
+    <div class="slider-image" onclick="updateContent(0)"><img src="https://i.imgur.com/v09Hinz.jpg" alt="Image 1"></div>
+    <div class="slider-image" onclick="updateContent(1)"><img src="https://i.imgur.com/JpY4PI0.jpg" alt="Image 2"></div>
+    <div class="slider-image" onclick="updateContent(2)"><img src="https://i.imgur.com/eFzqjjC.jpg" alt="Image 3"></div>
+    <div class="slider-image" onclick="updateContent(3)"><img src="https://i.imgur.com/STQuhPK.jpg" alt="Image 4"></div>
+    <div class="slider-image" onclick="updateContent(4)"><img src="https://i.imgur.com/31cwGf7.jpg" alt="Image 5"></div>
+    <div class="slider-image" onclick="updateContent(5)"><img src="https://i.imgur.com/rzNmEDg.jpg" alt="Image 6"></div>
+    <div class="slider-image" onclick="updateContent(6)"><img src="https://i.imgur.com/msXMXxN.jpg" alt="Image 7"></div>
+</div>
+
+<input type="range" min="0" max="6" value="0" class="slider" id="imageSlider">
+<div class="content-name" id="contentName">Content for Image 1</div>
+
+<script>
+    const imageSlider = document.getElementById("imageSlider");
+    const contentName = document.getElementById("contentName");
+    const contentTexts = [
+        "Content for Image 1",
+        "Content for Image 2",
+        "Content for Image 3",
+        "Content for Image 4",
+        "Content for Image 5",
+        "Content for Image 6",
+        "Content for Image 7"
+    ];
+
+    function updateContent(index) {
+        imageSlider.value = index;
+        contentName.textContent = contentTexts[index];
+    }
+
+    imageSlider.addEventListener("input", function() {
+        updateContent(parseInt(this.value, 10));
+    });
+
+    // Initialize with the first image and content
+    updateContent(0);
+</script>
+
+</body>
+</html>
