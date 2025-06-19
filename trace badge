@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRACE Badge Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --badge: 360px;
+    --edge: 10px;
+  }
+
+  body {
+    font-family: system-ui, sans-serif;
+    margin: 1rem;
+    line-height: 1.4;
+    background: #f8fafc;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  h2 { 
+    font-size: 1.8rem; 
+    margin: 0; 
+    color: #1e293b; 
+  }
+
+  .main-content {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+  }
+
+  /* ---------- Badge and Citation Wrapper ---------- */
+  .badge-and-citation {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    order: 2;
+  }
+
+  /* ---------- Badge ---------- */
+  .badge-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  /* ---------- Controls ---------- */
+  .controls-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 400px;
+    max-width: 500px;
+    overflow: hidden;
+    word-wrap: break-word;
+    order: 1;
+  }
+
+  .badge {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    width: var(--badge);
+    height: var(--badge);
+    border-radius: calc(var(--badge) * 0.12);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 var(--edge) #cbd5e0 inset, 0 4px 12px rgba(0,0,0,0.1);
+    background: #cbd5e0;
+  }
+
+  .cell {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: calc(var(--edge) * 1.8) calc(var(--edge) * 1.4);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Remove individual cell borders and use gap approach */
+  .cell:nth-child(1) { 
+    border-top-left-radius: calc(var(--badge) * 0.12 - var(--edge));
+    margin-right: calc(var(--edge) / 2);
+    margin-bottom: calc(var(--edge) / 2);
+  }
+  .cell:nth-child(2) { 
+    border-top-right-radius: calc(var(--badge) * 0.12 - var(--edge));
+    margin-left: calc(var(--edge) / 2);
+    margin-bottom: calc(var(--edge) / 2);
+  }
+  .cell:nth-child(3) { 
+    border-bottom-left-radius: calc(var(--badge) * 0.12 - var(--edge));
+    margin-right: calc(var(--edge) / 2);
+    margin-top: calc(var(--edge) / 2);
+  }
+  .cell:nth-child(4) { 
+    border-bottom-right-radius: calc(var(--badge) * 0.12 - var(--edge));
+    margin-left: calc(var(--edge) / 2);
+    margin-top: calc(var(--edge) / 2);
+  }
+
+  .code  { 
+    font-weight: 600; 
+    line-height: 1.1;
+    white-space: normal;
+    max-width: 100%;
+    margin-bottom: calc(var(--edge) * 0.8);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    text-align: center;
+  }
+
+  .label {
+    line-height: 1.0;
+    white-space: normal;
+    word-break: break-word;
+    line-break: anywhere;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  #cell-role { background: #06b6d4; }
+  #cell-data { background: #22c55e; }
+  #cell-method { background: #f97316; }
+  #cell-review { background: #8b5cf6; }
+
+  /* Grayscale mode */
+  .badge.grayscale #cell-role { background: #374151; }
+  .badge.grayscale #cell-data { background: #6b7280; }
+  .badge.grayscale #cell-method { background: #9ca3af; }
+  .badge.grayscale #cell-review { background: #d1d5db; }
+
+  .badge.grayscale {
+    box-shadow: 0 0 0 var(--edge) #9ca3af inset, 0 4px 12px rgba(0,0,0,0.1);
+    background: #9ca3af;
+  }
+
+  .badge-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .badge-models {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .badge-models-title {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .badge-models-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .badge-model-item {
+    font-size: 0.8rem;
+    color: #6b7280;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .badge-model-provider {
+    font-weight: 500;
+    color: #374151;
+  }
+
+  /* ---------- Controls ---------- */
+  .controls-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    min-width: 400px;
+    max-width: 500px;
+    overflow: hidden;
+    word-wrap: break-word;
+  }
+
+  .ai-model-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .ai-model-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .ai-model-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .refresh-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .model-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .model-dropdowns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    max-width: 100%;
+  }
+
+  .dropdown-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .dropdown-group label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    margin: 0;
+  }
+
+  .make-select,
+  .model-select {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .model-select:disabled {
+    background: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .model-select option,
+  .make-select option {
+    white-space: normal;
+    word-wrap: break-word;
+    padding: 0.25rem 0.5rem;
+    line-height: 1.4;
+  }
+
+  .selected-models {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .selected-models-header {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .selected-models-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .selected-model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .model-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+    min-width: 0;
+    margin-right: 0.5rem;
+  }
+
+  .model-item-name {
+    font-weight: 500;
+    color: #111827;
+    font-size: 0.85rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.2;
+  }
+
+  .model-item-provider {
+    color: #6b7280;
+    font-size: 0.75rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .remove-model-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+    padding: 0.25rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+  }
+
+  .remove-model-btn:hover {
+    background: #fecaca;
+  }
+
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #111827;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    color: #6b7280;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+
+  .wizard-intro p {
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.6;
+  }
+
+  .wizard-question {
+    text-align: center;
+  }
+
+  .question-progress {
+    background: #f3f4f6;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+  }
+
+  .question-tag {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #1e40af;
+  }
+
+  .question-text {
+    font-size: 1.1rem;
+    color: #374151;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .question-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .wizard-complete {
+    text-align: center;
+  }
+
+  .complete-icon {
+    width: 60px;
+    height: 60px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+  }
+
+  .wizard-complete h4 {
+    color: #10b981;
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+  }
+
+  .wizard-complete p {
+    color: #6b7280;
+    margin: 0 0 1.5rem;
+  }
+
+  .selected-tags {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .selected-tag {
+    display: inline-block;
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    margin: 0.25rem;
+    font-weight: 500;
+  }
+
+  .loading {
+    color: #6b7280;
+    font-style: italic;
+  }
+
+  .toggle-section {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  .controls { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem; 
+  }
+
+  fieldset { 
+    border: 1px solid #e2e8f0; 
+    padding: 1rem; 
+    border-radius: 8px; 
+    background: #f8fafc;
+    margin: 0;
+  }
+
+  legend { 
+    padding: 0 0.5rem; 
+    font-weight: 600; 
+    color: #1e293b;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .help-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+    padding: 0;
+  }
+
+  .help-btn:hover {
+    background: #e2e8f0;
+    color: #475569;
+    transform: scale(1.1);
+  }
+
+  label { 
+    display: flex;
+    align-items: center;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #475569;
+    cursor: pointer;
+  }
+
+  label input {
+    margin-right: 0.5rem;
+  }
+
+  /* Citation Section */
+  .citation-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 0;
+  }
+
+  .citation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .citation-title {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 1rem;
+  }
+
+  .citation-content {
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: ui-monospace, SFMono-Regular, 'Cascade Code', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    white-space: pre-line;
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+
+  .button:hover {
+    background: #2563eb;
+  }
+
+  .button.secondary {
+    background: #64748b;
+  }
+
+  .button.secondary:hover {
+    background: #475569;
+  }
+
+  .button:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .hidden-tags .label {
+    display: none;
+  }
+
+  .model-info {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+    line-height: 1.3;
+  }
+
+  .status-message {
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+  }
+
+  .status-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+
+  .status-error {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      flex-direction: column;
+    }
+    
+    .controls { 
+      grid-template-columns: 1fr;
+    }
+    
+    .model-dropdowns {
+      grid-template-columns: 1fr;
+    }
+    
+    .controls-section {
+      min-width: unset;
+      max-width: unset;
+      order: 2;
+    }
+    
+    .badge-and-citation {
+      order: 1;
+    }
+
+    .modal-content {
+      margin: 0.5rem;
+      max-width: calc(100vw - 1rem);
+    }
+
+    .question-actions {
+      flex-direction: column;
+    }
+
+    .modal-footer {
+      flex-direction: column-reverse;
+    }
+
+    .modal-footer .button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h2>TRACE Badge Generator</h2>
+  </div>
+
+  <div class="main-content">
+    <div class="controls-section">
+      <div class="ai-model-section">
+        <div class="ai-model-header">
+          <div class="ai-model-title">AI Models Used</div>
+          <button class="refresh-btn" onclick="loadAIModels()" title="Refresh model list">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23,4 23,10 17,10"></polyline>
+              <polyline points="1,20 1,14 7,14"></polyline>
+              <path d="M20.49,9A9,9 0 0 0 5.64,5.64L1,10m22,4L18.36,18.36A9,9 0 0 1 3.51,15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+        
+        <div class="model-selector">
+          <div class="model-dropdowns">
+            <div class="dropdown-group">
+              <label for="make-select">Make:</label>
+              <select class="make-select" id="make-select">
+                <option value="">Select provider...</option>
+              </select>
+            </div>
+            <div class="dropdown-group">
+              <label for="model-select">Model:</label>
+              <select class="model-select" id="model-select" disabled>
+                <option value="">Select model...</option>
+              </select>
+            </div>
+          </div>
+          
+          <button class="button" id="add-model-btn" onclick="addSelectedModel()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Model
+          </button>
+        </div>
+
+        <div class="selected-models" id="selected-models-container" style="display: none;">
+          <div class="selected-models-header">
+            <span>Selected Models:</span>
+          </div>
+          <div class="selected-models-list" id="selected-models-list"></div>
+        </div>
+        
+        <div id="model-status"></div>
+      </div>
+
+      <div class="toggle-section">
+        <div class="toggle">
+          <input type="checkbox" id="show-tags" checked>
+          <label for="show-tags">Show tags on badge</label>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="grayscale-mode">
+          <label for="grayscale-mode">Grayscale version</label>
+        </div>
+      </div>
+
+      <div class="controls">
+        <fieldset id="role-group">
+          <legend>
+            Role
+            <button class="help-btn" onclick="openWizard('role')" title="Get help selecting role">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9,9a3,3 0 1,1 6,0c0,2-3,3-3,3"/>
+                <point cx="12" cy="17" stroke-width="3"/>
+              </svg>
+            </button>
+          </legend>
+        </fieldset>
+        <fieldset id="data-group">
+          <legend>
+            Data
+            <button class="help-btn" onclick="openWizard('data')" title="Get help selecting data">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9,9a3,3 0 1,1 6,0c0,2-3,3-3,3"/>
+                <point cx="12" cy="17" stroke-width="3"/>
+              </svg>
+            </button>
+          </legend>
+        </fieldset>
+        <fieldset id="method-group">
+          <legend>
+            Method
+            <button class="help-btn" onclick="openWizard('method')" title="Get help selecting method">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9,9a3,3 0 1,1 6,0c0,2-3,3-3,3"/>
+                <point cx="12" cy="17" stroke-width="3"/>
+              </svg>
+            </button>
+          </legend>
+        </fieldset>
+        <fieldset id="review-group">
+          <legend>
+            Review
+            <button class="help-btn" onclick="openWizard('review')" title="Get help selecting review">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9,9a3,3 0 1,1 6,0c0,2-3,3-3,3"/>
+                <point cx="12" cy="17" stroke-width="3"/>
+              </svg>
+            </button>
+          </legend>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="badge-and-citation">
+      <div class="badge-section">
+        <div id="badge" class="badge">
+          <div id="cell-role"   class="cell"><span class="code"></span><span class="label"></span></div>
+          <div id="cell-data"   class="cell"><span class="code"></span><span class="label"></span></div>
+          <div id="cell-method" class="cell"><span class="code"></span><span class="label"></span></div>
+          <div id="cell-review" class="cell"><span class="code"></span><span class="label"></span></div>
+        </div>
+        
+        <div class="badge-models" id="badge-models" style="display: none;">
+          <div class="badge-models-title">Models Used:</div>
+          <div class="badge-models-list" id="badge-models-list"></div>
+        </div>
+        
+        <div class="badge-actions">
+          <button class="button" onclick="downloadBadge()" id="download-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7,10 12,15 17,10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download PNG
+          </button>
+        </div>
+      </div>
+
+      <div class="citation-section">
+        <div class="citation-header">
+          <div class="citation-title">AI Attribution Citation</div>
+          <button class="button secondary" onclick="copyCitation()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy
+          </button>
+        </div>
+        <div id="citation-content" class="citation-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACE Wizard Modal -->
+  <div id="wizard-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="wizard-title">TRACE Helper</h3>
+        <button class="modal-close" onclick="closeWizard()">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="wizard-intro" id="wizard-intro">
+          <p>I'll ask you some simple questions to help you pick the right tags. Just answer "yes" or "no" to each one.</p>
+        </div>
+        
+        <div class="wizard-question" id="wizard-question" style="display: none;">
+          <div class="question-progress">
+            <span id="question-number">1</span> of <span id="total-questions">6</span>
+          </div>
+          <div class="question-tag">
+            <strong><span id="current-tag"></span> – <span id="current-tag-name"></span></strong>
+          </div>
+          <div class="question-text" id="question-text"></div>
+          <div class="question-actions">
+            <button class="button secondary" onclick="answerQuestion(false)">No</button>
+            <button class="button" onclick="answerQuestion(true)">Yes</button>
+          </div>
+        </div>
+
+        <div class="wizard-complete" id="wizard-complete" style="display: none;">
+          <div class="complete-icon">✓</div>
+          <h4>All done!</h4>
+          <p>I've selected the tags that match your answers. You can always adjust them manually if needed.</p>
+          <div class="selected-tags" id="selected-tags"></div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="button secondary" onclick="closeWizard()">Cancel</button>
+        <button class="button" id="wizard-start" onclick="startWizard()">Start Questions</button>
+        <button class="button" id="wizard-finish" onclick="finishWizard()" style="display: none;">Finish</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TAGS = {
+      role:   [ 
+        {code:'E',label:'Editorial Assist'}, 
+        {code:'G',label:'Generated'}, 
+        {code:'S',label:'Synthesis'}, 
+        {code:'A',label:'Analytical'}, 
+        {code:'X',label:'Experimental'}, 
+        {code:'C',label:'Creative'} 
+      ],
+      data:   [ 
+        {code:'P',label:'Public Data', type:'checkbox'}, 
+        {code:'I',label:'Internal Data', type:'checkbox'}, 
+        {code:'T',label:'Training‑only', type:'radio'}, 
+        {code:'U',label:'Unknown', type:'radio'} 
+      ],
+      method: [ 
+        {code:'T',label:'Tools'}, 
+        {code:'C',label:'Cited'}, 
+        {code:'F',label:'Reformat'}, 
+        {code:'S',label:'Staged'}, 
+        {code:'E',label:'Self‑Check'}, 
+        {code:'D',label:'1‑Shot'} 
+      ],
+      review: [ 
+        {code:'U',label:'Unverified'}, 
+        {code:'H',label:'Light Review'}, 
+        {code:'A',label:'Amateur Review'}, 
+        {code:'V',label:'Expert Review'} 
+      ]
+    };
+
+    let aiModels = [];
+    let selectedModels = [];
+    let currentWizardSection = '';
+    let wizardQuestions = [];
+    let currentQuestionIndex = 0;
+    let wizardAnswers = [];
+
+    // TRACE Wizard Questions
+    const WIZARD_DATA = {
+      role: [
+        { code: 'E', name: 'Editorial Assist', question: 'Did I use the AI to proof-read, fix grammar, or clean up style?' },
+        { code: 'G', name: 'Generated', question: 'Did the AI draft most or all of the passage, and I left it largely as-is?' },
+        { code: 'S', name: 'Synthesis', question: 'Did I feed the AI several sources and have it combine them into one coherent piece?' },
+        { code: 'A', name: 'Analytical', question: 'Did I ask the AI to crunch numbers, spot patterns, or explain "why" something happens?' },
+        { code: 'X', name: 'Experimental', question: 'Was I exploring or testing what the model can do, with no set goal or format?' },
+        { code: 'C', name: 'Creative', question: 'Did the AI help invent original story lines, characters, jokes, or poetic language?' }
+      ],
+      data: [
+        { code: 'P', name: 'Public Data', question: 'While generating, did I only give it publicly available info (URLs, public docs, my own prompt)?' },
+        { code: 'I', name: 'Internal Data', question: 'Did I paste in anything private or paywalled (draft subscriber email, company sheet, paid database)?' },
+        { code: 'T', name: 'Training-only', question: 'Did I NOT add extra context—just relied on whatever was already baked into the model?', exclusive: true },
+        { code: 'U', name: 'Unknown', question: 'Am I unsure what sources the AI saw for this answer?', exclusive: true }
+      ],
+      method: [
+        { code: 'T', name: 'Tools', question: 'Did the run also tap a plug-in, code interpreter, browser, or other helper?' },
+        { code: 'C', name: 'Cited', question: 'Did I paste or upload citations the AI had to quote or summarize verbatim?' },
+        { code: 'F', name: 'Reformat', question: 'Was the main job turning existing text into a new shape (outline → essay, bullet list → prose)?' },
+        { code: 'S', name: 'Staged', question: 'Did I break the task into several deliberate steps or chain calls together?' },
+        { code: 'E', name: 'Self-Check', question: 'Did I prompt the AI to critique, grade, or correct its own draft?' },
+        { code: 'D', name: '1-Shot', question: 'Did I fire a single prompt and publish the first complete answer?' }
+      ],
+      review: [
+        { code: 'U', name: 'Unverified', question: 'Did no human (including me) read the output carefully before publishing?', exclusive: true },
+        { code: 'H', name: 'Light Review', question: 'Did someone skim for obvious errors or tone issues but not verify every fact?', exclusive: true },
+        { code: 'A', name: 'Amateur Review', question: 'Did a knowledgeable non-expert give it a detailed read-through?', exclusive: true },
+        { code: 'V', name: 'Expert Review', question: 'Did a subject-matter expert (lawyer, PhD, editor, etc.) fact-check or line-edit?', exclusive: true }
+      ]
+    };
+
+    // Build inputs
+    Object.entries(TAGS).forEach(([g,arr])=>{
+      const fs=document.getElementById(`${g}-group`);
+      arr.forEach(t=>{
+        const inputType = g === 'data' ? (t.type || 'checkbox') : (g === 'review' ? 'radio' : 'checkbox');
+        const nameAttr = g === 'data' && t.type === 'radio' ? 'data-exclusive' : g;
+        fs.insertAdjacentHTML('beforeend',`<label><input id="${g}-${t.code}" type="${inputType}" name="${nameAttr}" value="${t.code}">${t.code} ${t.label}</label>`);
+      });
+    });
+
+    // Data section exclusivity handling
+    document.getElementById('data-group').addEventListener('change', (e) => {
+      if (e.target.name === 'data-exclusive') {
+        document.querySelectorAll('#data-group input[type="checkbox"]').forEach(cb => cb.checked = false);
+      } else if (e.target.type === 'checkbox' && e.target.checked) {
+        document.querySelectorAll('#data-group input[type="radio"]').forEach(rb => rb.checked = false);
+      }
+      paint();
+    });
+
+    document.querySelector('.controls').addEventListener('change', (e) => {
+      if (e.target.closest('#data-group')) return;
+      paint();
+    });
+
+    // Tag toggle
+    document.getElementById('show-tags').addEventListener('change', (e) => {
+      const badge = document.getElementById('badge');
+      if (e.target.checked) {
+        badge.classList.remove('hidden-tags');
+      } else {
+        badge.classList.add('hidden-tags');
+      }
+    });
+
+    // Grayscale toggle
+    document.getElementById('grayscale-mode').addEventListener('change', (e) => {
+      const badge = document.getElementById('badge');
+      if (e.target.checked) {
+        badge.classList.add('grayscale');
+      } else {
+        badge.classList.remove('grayscale');
+      }
+    });
+
+    // Make selection handling
+    document.getElementById('make-select').addEventListener('change', (e) => {
+      const modelSelect = document.getElementById('model-select');
+      const addBtn = document.getElementById('add-model-btn');
+      
+      modelSelect.innerHTML = '<option value="">Select model...</option>';
+      modelSelect.disabled = !e.target.value;
+      addBtn.disabled = true;
+      
+      if (e.target.value) {
+        const provider = e.target.value;
+        const providerModels = aiModels.filter(model => model.id.startsWith(provider + '/'));
+        
+        providerModels
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .forEach(model => {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.textContent = model.name; // Full name, no truncation
+            modelSelect.appendChild(option);
+          });
+      }
+    });
+
+    // Model selection handling
+    document.getElementById('model-select').addEventListener('change', (e) => {
+      const addBtn = document.getElementById('add-model-btn');
+      addBtn.disabled = !e.target.value;
+    });
+
+    // Add selected model
+    function addSelectedModel() {
+      const makeSelect = document.getElementById('make-select');
+      const modelSelect = document.getElementById('model-select');
+      
+      if (!makeSelect.value || !modelSelect.value) return;
+      
+      const selectedModel = aiModels.find(model => model.id === modelSelect.value);
+      if (!selectedModel) return;
+      
+      // Check if already selected
+      if (selectedModels.find(m => m.id === selectedModel.id)) {
+        alert('This model is already selected.');
+        return;
+      }
+      
+      selectedModels.push(selectedModel);
+      updateSelectedModelsDisplay();
+      updateCitation();
+      
+      // Reset selections
+      makeSelect.value = '';
+      modelSelect.innerHTML = '<option value="">Select model...</option>';
+      modelSelect.disabled = true;
+      document.getElementById('add-model-btn').disabled = true;
+    }
+
+    // Remove selected model
+    function removeSelectedModel(modelId) {
+      selectedModels = selectedModels.filter(m => m.id !== modelId);
+      updateSelectedModelsDisplay();
+      updateCitation();
+    }
+
+    // Make these functions global
+    window.addSelectedModel = addSelectedModel;
+    window.removeSelectedModel = removeSelectedModel;
+    window.downloadBadge = downloadBadge;
+    window.copyCitation = copyCitation;
+    window.loadAIModels = loadAIModels;
+    window.openWizard = openWizard;
+    window.closeWizard = closeWizard;
+    window.startWizard = startWizard;
+    window.answerQuestion = answerQuestion;
+    window.finishWizard = finishWizard;
+
+    // Wizard Functions
+    function openWizard(section) {
+      currentWizardSection = section;
+      wizardQuestions = WIZARD_DATA[section];
+      currentQuestionIndex = 0;
+      wizardAnswers = [];
+      
+      document.getElementById('wizard-modal').style.display = 'flex';
+      document.getElementById('wizard-title').textContent = `TRACE Helper: ${section.charAt(0).toUpperCase() + section.slice(1)}`;
+      
+      // Reset modal state
+      document.getElementById('wizard-intro').style.display = 'block';
+      document.getElementById('wizard-question').style.display = 'none';
+      document.getElementById('wizard-complete').style.display = 'none';
+      document.getElementById('wizard-start').style.display = 'inline-flex';
+      document.getElementById('wizard-finish').style.display = 'none';
+    }
+
+    function closeWizard() {
+      document.getElementById('wizard-modal').style.display = 'none';
+    }
+
+    function startWizard() {
+      document.getElementById('wizard-intro').style.display = 'none';
+      document.getElementById('wizard-start').style.display = 'none';
+      document.getElementById('wizard-question').style.display = 'block';
+      
+      showCurrentQuestion();
+    }
+
+    function showCurrentQuestion() {
+      const question = wizardQuestions[currentQuestionIndex];
+      document.getElementById('question-number').textContent = currentQuestionIndex + 1;
+      document.getElementById('total-questions').textContent = wizardQuestions.length;
+      document.getElementById('current-tag').textContent = question.code;
+      document.getElementById('current-tag-name').textContent = question.name;
+      document.getElementById('question-text').textContent = question.question;
+    }
+
+    function answerQuestion(answer) {
+      const question = wizardQuestions[currentQuestionIndex];
+      wizardAnswers.push({
+        code: question.code,
+        name: question.name,
+        answer: answer,
+        exclusive: question.exclusive || false
+      });
+      
+      currentQuestionIndex++;
+      
+      if (currentQuestionIndex < wizardQuestions.length) {
+        showCurrentQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('wizard-question').style.display = 'none';
+      document.getElementById('wizard-complete').style.display = 'block';
+      document.getElementById('wizard-finish').style.display = 'inline-flex';
+      
+      // Show selected tags
+      const selectedTags = wizardAnswers.filter(a => a.answer).map(a => `${a.code} - ${a.name}`);
+      const tagsContainer = document.getElementById('selected-tags');
+      tagsContainer.innerHTML = selectedTags.map(tag => `<span class="selected-tag">${tag}</span>`).join('');
+      
+      if (selectedTags.length === 0) {
+        tagsContainer.innerHTML = '<p style="color: #6b7280; margin: 0;">No tags selected based on your answers.</p>';
+      }
+    }
+
+    function finishWizard() {
+      // Apply the wizard results to the form
+      applyWizardResults();
+      closeWizard();
+    }
+
+    function applyWizardResults() {
+      const section = currentWizardSection;
+      const yesAnswers = wizardAnswers.filter(a => a.answer);
+      
+      // Clear existing selections for this section
+      document.querySelectorAll(`#${section}-group input`).forEach(input => {
+        input.checked = false;
+      });
+      
+      // Handle exclusive selections (data and review sections)
+      if (section === 'data') {
+        const exclusiveAnswers = yesAnswers.filter(a => a.exclusive);
+        const nonExclusiveAnswers = yesAnswers.filter(a => !a.exclusive);
+        
+        if (exclusiveAnswers.length > 0) {
+          // Use the first exclusive answer (T or U)
+          const selected = exclusiveAnswers[0];
+          const input = document.querySelector(`input[name="data-exclusive"][value="${selected.code}"]`);
+          if (input) input.checked = true;
+        } else {
+          // Use non-exclusive answers (P and/or I)
+          nonExclusiveAnswers.forEach(answer => {
+            const input = document.getElementById(`${section}-${answer.code}`);
+            if (input) input.checked = true;
+          });
+        }
+      } else if (section === 'review') {
+        // Review is single choice - use the first yes answer
+        if (yesAnswers.length > 0) {
+          const selected = yesAnswers[0];
+          const input = document.getElementById(`${section}-${selected.code}`);
+          if (input) input.checked = true;
+        }
+      } else {
+        // Role and method allow multiple selections
+        yesAnswers.forEach(answer => {
+          const input = document.getElementById(`${section}-${answer.code}`);
+          if (input) input.checked = true;
+        });
+      }
+      
+      // Update the badge
+      paint();
+    }
+
+    // Update selected models display
+    function updateSelectedModelsDisplay() {
+      const container = document.getElementById('selected-models-container');
+      const list = document.getElementById('selected-models-list');
+      
+      if (selectedModels.length === 0) {
+        container.style.display = 'none';
+      } else {
+        container.style.display = 'block';
+        list.innerHTML = '';
+        
+        selectedModels.forEach(model => {
+          const provider = model.id.split('/')[0];
+          const item = document.createElement('div');
+          item.className = 'selected-model-item';
+          item.innerHTML = `
+            <div class="model-item-info">
+              <div class="model-item-name">${model.name}</div>
+              <div class="model-item-provider">${provider}</div>
+            </div>
+            <button class="remove-model-btn" onclick="removeSelectedModel('${model.id}')" title="Remove model">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          `;
+          list.appendChild(item);
+        });
+      }
+      
+      // Update badge models display
+      updateBadgeModelsDisplay();
+    }
+
+    // Update badge models display
+    function updateBadgeModelsDisplay() {
+      const container = document.getElementById('badge-models');
+      const list = document.getElementById('badge-models-list');
+      
+      if (selectedModels.length === 0) {
+        container.style.display = 'none';
+      } else {
+        container.style.display = 'block';
+        list.innerHTML = '';
+        
+        selectedModels.forEach(model => {
+          const provider = model.id.split('/')[0];
+          const item = document.createElement('div');
+          item.className = 'badge-model-item';
+          item.innerHTML = `<span class="badge-model-provider">${provider}:</span> ${model.name}`;
+          list.appendChild(item);
+        });
+      }
+    }
+
+    // Load AI models from OpenRouter API
+    async function loadAIModels() {
+      const makeSelect = document.getElementById('make-select');
+      const modelSelect = document.getElementById('model-select');
+      const status = document.getElementById('model-status');
+      const refreshBtn = document.querySelector('.refresh-btn');
+      
+      try {
+        refreshBtn.disabled = true;
+        status.innerHTML = '<div class="status-message">Loading latest AI models...</div>';
+        
+        const response = await fetch('https://openrouter.ai/api/v1/models');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        aiModels = data.data || [];
+        
+        // Clear existing options
+        makeSelect.innerHTML = '<option value="">Select provider...</option>';
+        modelSelect.innerHTML = '<option value="">Select model...</option>';
+        modelSelect.disabled = true;
+        
+        // Get unique providers
+        const providers = [...new Set(aiModels.map(model => model.id.split('/')[0]))];
+        
+        // Sort providers, prioritize major ones
+        const priorityProviders = ['openai', 'anthropic', 'google', 'meta-llama', 'microsoft'];
+        const sortedProviders = providers.sort((a, b) => {
+          const aIndex = priorityProviders.indexOf(a);
+          const bIndex = priorityProviders.indexOf(b);
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+          if (aIndex !== -1) return -1;
+          if (bIndex !== -1) return 1;
+          return a.localeCompare(b);
+        });
+        
+        // Populate make dropdown
+        sortedProviders.forEach(provider => {
+          const option = document.createElement('option');
+          option.value = provider;
+          option.textContent = provider.charAt(0).toUpperCase() + provider.slice(1);
+          makeSelect.appendChild(option);
+        });
+        
+        status.innerHTML = `<div class="status-message status-success">✓ Loaded ${aiModels.length} AI models from ${providers.length} providers</div>`;
+        
+        setTimeout(() => {
+          status.innerHTML = '';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Failed to load AI models:', error);
+        status.innerHTML = `<div class="status-message status-error">⚠ Failed to load models: ${error.message}</div>`;
+        
+        // Add fallback providers
+        makeSelect.innerHTML = `
+          <option value="">Select provider...</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="google">Google</option>
+          <option value="meta-llama">Meta</option>
+        `;
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    // Consistent sizing that starts with same H1 size regardless of content
+    function smartFit(codeNode, labelNode) {
+      const box = codeNode.parentElement;
+      const edgeSize = 10;
+      const padding = edgeSize * 1.8;
+      
+      const maxWidth = box.clientWidth - (padding * 2) - 12;
+      const maxHeight = box.clientHeight - (padding * 2) - 12;
+      
+      // Enhanced word breaking for labels
+      if (labelNode.innerHTML.includes('‑') || labelNode.innerHTML.includes('-')) {
+        let content = labelNode.innerHTML;
+        content = content.replace(/(\w+)[\-‑](\w+)/g, '$1-<wbr>$2');
+        labelNode.innerHTML = content;
+      }
+      
+      // CONSISTENT starting sizes - same for all codes regardless of content length
+      // Start with larger size for single letters so they match multi-letter codes
+      const codeLength = codeNode.textContent.length;
+      let codeSize = codeLength <= 2 ? 0.45 : 0.32;  // Bigger start for single/double letters
+      let labelSize = 0.12; 
+      
+      // Try single-line first
+      codeNode.style.whiteSpace = 'nowrap';
+      
+      // Check if it fits with consistent sizing
+      for (let i = 0; i < 15; i++) {
+        codeNode.style.fontSize = `calc(var(--badge)*${codeSize})`;
+        labelNode.style.fontSize = `calc(var(--badge)*${labelSize})`;
+        
+        codeNode.offsetHeight;
+        labelNode.offsetHeight;
+        
+        const codeHeight = codeNode.scrollHeight;
+        const labelHeight = labelNode.scrollHeight;
+        const marginBetween = 8;
+        const totalHeight = codeHeight + marginBetween + labelHeight;
+        const maxWidthUsed = Math.max(codeNode.scrollWidth, labelNode.scrollWidth);
+        
+        if (totalHeight <= maxHeight && maxWidthUsed <= maxWidth) {
+          break; // Fits perfectly!
+        }
+        
+        // Only shrink if necessary
+        codeSize *= 0.94;
+        labelSize *= 0.94;
+        
+        if (codeSize < 0.16) {
+          break;
+        }
+      }
+      
+      // If still doesn't fit, try wrapping codes
+      if (codeSize < 0.18) {
+        codeNode.style.whiteSpace = 'normal';
+        
+        const codeText = codeNode.textContent;
+        if (codeText.length > 6) {
+          const codes = codeText.split(',');
+          if (codes.length > 4) {
+            const midpoint = Math.ceil(codes.length / 2);
+            codeNode.innerHTML = codes.slice(0, midpoint).join(',') + '<br>' + codes.slice(midpoint).join(',');
+          }
+        }
+        
+        // Reset to good sizes for wrapped version
+        codeSize = 0.26;
+        labelSize = 0.10;
+        
+        for (let i = 0; i < 20; i++) {
+          codeNode.style.fontSize = `calc(var(--badge)*${codeSize})`;
+          labelNode.style.fontSize = `calc(var(--badge)*${labelSize})`;
+          
+          codeNode.offsetHeight;
+          labelNode.offsetHeight;
+          
+          const codeHeight = codeNode.scrollHeight;
+          const labelHeight = labelNode.scrollHeight;
+          const marginBetween = 8;
+          const totalHeight = codeHeight + marginBetween + labelHeight;
+          const maxWidthUsed = Math.max(codeNode.scrollWidth, labelNode.scrollWidth);
+          
+          if (totalHeight <= maxHeight && maxWidthUsed <= maxWidth) {
+            break;
+          }
+          
+          codeSize *= 0.94;
+          labelSize *= 0.94;
+          
+          if (codeSize < 0.10) {
+            codeSize = 0.10;
+            labelSize = 0.04;
+            break;
+          }
+        }
+      }
+      
+      codeNode.style.fontSize = `calc(var(--badge)*${codeSize})`;
+      labelNode.style.fontSize = `calc(var(--badge)*${labelSize})`;
+    }
+
+    function paint(){
+      const getChecked = g => [...document.querySelectorAll(`#${g}-group input:checked`)].map(i=>i.value);
+      
+      const roles=getChecked('role');
+      const data=getChecked('data');
+      const methods=getChecked('method');
+      const review=(document.querySelector('#review-group input:checked')||{}).value||'';
+
+      fill('role',roles);
+      fill('data',data);
+      fill('method',methods);
+      fill('review',review?[review]:[]);
+
+      updateCitation();
+    }
+
+    function fill(slot, codes){
+      const cell=document.getElementById(`cell-${slot}`);
+      const c=cell.querySelector('.code');
+      const l=cell.querySelector('.label');
+
+      c.textContent=codes.join(',');
+      l.innerHTML=codes.map(x=>{
+        const tag = TAGS[slot].find(t=>t.code===x);
+        return tag ? tag.label : '';
+      }).join('<br>');
+      
+      setTimeout(() => {
+        smartFit(c, l);
+      }, 0);
+    }
+
+    function updateCitation() {
+      const citationDiv = document.getElementById('citation-content');
+      
+      const getChecked = g => [...document.querySelectorAll(`#${g}-group input:checked`)].map(i=>i.value);
+      const roles = getChecked('role');
+      const data = getChecked('data');
+      const methods = getChecked('method');
+      const review = (document.querySelector('#review-group input:checked')||{}).value||'';
+      
+      const roleText = roles.map(r => TAGS.role.find(t => t.code === r)?.label).filter(Boolean).join(', ');
+      const dataText = data.map(d => TAGS.data.find(t => t.code === d)?.label).filter(Boolean).join(', ');
+      const methodText = methods.map(m => TAGS.method.find(t => t.code === m)?.label).filter(Boolean).join(', ');
+      const reviewText = review ? TAGS.review.find(t => t.code === review)?.label || '' : '';
+      
+      let modelText;
+      if (selectedModels.length === 0) {
+        modelText = 'Not specified';
+      } else if (selectedModels.length === 1) {
+        const provider = selectedModels[0].id.split('/')[0];
+        modelText = `${provider}/${selectedModels[0].name}`;
+      } else {
+        modelText = selectedModels.map(m => {
+          const provider = m.id.split('/')[0];
+          return `${provider}/${m.name}`;
+        }).join(', ');
+      }
+      
+      const today = new Date().toISOString().split('T')[0];
+      const traceCode = `${roles.join('')}–${data.join('')}–${methods.join('')}–${review}`;
+      
+      const citation = `AI-usage disclosure. Generated on ${today}. Model${selectedModels.length > 1 ? 's' : ''}: ${modelText}. 
+TRACE code ROLE–DATA–METHOD–REVIEW = ${traceCode}. 
+Role: ${roleText || 'Not specified'}. Data: ${dataText || 'Not specified'}. Method: ${methodText || 'Not specified'}. Review: ${reviewText || 'Not specified'}.`;
+
+      citationDiv.textContent = citation;
+    }
+
+    function copyCitation() {
+      const citation = document.getElementById('citation-content').textContent;
+      navigator.clipboard.writeText(citation).then(() => {
+        const btn = event.target.closest('.button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>Copied!';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 2000);
+      });
+    }
+
+    async function downloadBadge() {
+      const downloadBtn = document.getElementById('download-btn');
+      const originalText = downloadBtn.innerHTML;
+      
+      try {
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8,12 12,16 16,12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>Generating...';
+        
+        const badge = document.getElementById('badge');
+        
+        // Create canvas with higher resolution for better quality
+        const canvas = await html2canvas(badge, {
+          scale: 3, // 3x resolution for crisp image
+          backgroundColor: null, // Transparent background
+          useCORS: true,
+          allowTaint: true,
+          width: badge.offsetWidth,
+          height: badge.offsetHeight
+        });
+        
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `trace-badge-${new Date().toISOString().split('T')[0]}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>Downloaded!';
+          
+          setTimeout(() => {
+            downloadBtn.innerHTML = originalText;
+            downloadBtn.disabled = false;
+          }, 2000);
+          
+        }, 'image/png', 0.95);
+        
+      } catch (error) {
+        console.error('Download failed:', error);
+        downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>Error';
+        
+        setTimeout(() => {
+          downloadBtn.innerHTML = originalText;
+          downloadBtn.disabled = false;
+        }, 2000);
+      }
+    }
+
+    // Initialize
+    paint();
+    loadAIModels();
+    updateBadgeModelsDisplay();
+  </script>
+</body>
+</html>
