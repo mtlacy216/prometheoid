@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Video Player with Enhanced Citation Controls</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #5856D6;
+            --success-color: #34C759;
+            --warning-color: #FF9500;
+            --danger-color: #FF3B30;
+            --background: #000000;
+            --surface: #1C1C1E;
+            --surface-secondary: #2C2C2E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --border-color: #38383A;
+            --highlight-color: #FFD60A;
+            --modal-shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 24px;
+            padding: 24px;
+            max-width: 1800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Video Shadowbox */
+        .video-shadowbox {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--modal-shadow);
+            backdrop-filter: blur(5px);
+            z-index: 500;
+            display: none;
+            pointer-events: none;
+        }
+
+        .video-shadowbox.active {
+            display: block;
+        }
+
+        /* Left Panel - Transcript/Topics */
+        .left-panel {
+            flex: 1;
+            background: var(--surface);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 100;
+        }
+
+        .panel-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--surface-secondary);
+        }
+
+        .toggle-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            background: var(--surface);
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .auto-scroll-toggle,
+        .pause-video-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            background: var(--surface);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .switch.active {
+            background: var(--success-color);
+        }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 12px;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .switch.active::after {
+            transform: translateX(20px);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 300px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 16px 8px 36px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            scroll-behavior: smooth;
+        }
+
+        /* Transcript Styles */
+        .transcript-content {
+            color: var(--text-primary);
+        }
+
+        .transcript-segment {
+            margin-bottom: 16px;
+            padding: 16px 20px;
+            background: var(--surface-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .transcript-segment:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(2px);
+        }
+
+        .transcript-segment.active {
+            background: rgba(0, 122, 255, 0.15);
+            border-color: var(--primary-color);
+        }
+
+        .timestamp {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: block;
+            font-family: 'SF Mono', 'Monaco', monospace;
+        }
+
+        .speaker {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        /* Topics Styles */
+        .topics-content {
+            display: none;
+        }
+
+        .topic-item {
+            padding: 20px;
+            margin-bottom: 12px;
+            background: var(--surface-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topic-item:hover {
+            background: rgba(88, 86, 214, 0.1);
+            transform: translateX(4px);
+        }
+
+        .topic-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .topic-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .topic-time {
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            white-space: nowrap;
+        }
+
+        /* Citation Styles */
+        .citation {
+            color: var(--primary-color);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--primary-color);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .citation:hover {
+            color: var(--secondary-color);
+            border-bottom-style: solid;
+        }
+
+        /* Right Panel - Video */
+        .right-panel {
+            flex: 1.2;
+            background: black;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 100;
+        }
+
+        .video-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container iframe,
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-controls {
+            background: var(--surface);
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--surface-secondary);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-bar:hover {
+            height: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .time-display {
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: 'SF Mono', 'Monaco', monospace;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 5%;
+            left: 5%;
+            width: 40%;
+            height: 90%;
+            background: var(--surface);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            flex-direction: column;
+            animation: slideIn 0.3s ease;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .modal.minimized {
+            width: 40%;
+            height: 90%;
+            top: 5%;
+            left: 5%;
+        }
+
+        .modal.maximized {
+            width: calc(100% - 48px);
+            height: calc(100% - 48px);
+            top: 24px;
+            left: 24px;
+            border-radius: 12px;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface-secondary);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal.maximized .modal-header {
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .modal-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .modal-control-btn {
+            width: 14px;
+            height: 14px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .modal-control-btn.close {
+            background: var(--danger-color);
+        }
+
+        .modal-control-btn.minimize {
+            background: var(--warning-color);
+        }
+
+        .modal-control-btn.maximize {
+            background: var(--success-color);
+        }
+
+        .modal-control-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+        }
+
+        .modal-control-btn span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-control-btn:hover span {
+            opacity: 1;
+        }
+
+        .new-tab-btn {
+            padding: 8px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            margin-left: 12px;
+        }
+
+        .new-tab-btn:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .modal-content-frame {
+            width: 100%;
+            height: 600px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .modal.maximized .modal-content-frame {
+            height: 100%;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 0;
+                gap: 0;
+            }
+
+            .right-panel {
+                height: 40vh;
+                border-radius: 0;
+            }
+
+            .left-panel {
+                height: 60vh;
+                border-radius: 0;
+            }
+
+            .modal {
+                width: 90%;
+                left: 5%;
+                height: 80%;
+                top: 10%;
+            }
+
+            .modal.maximized {
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                border-radius: 0;
+            }
+
+            .controls-row {
+                gap: 8px;
+            }
+
+            .toggle-group {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .search-box {
+                max-width: 100%;
+                width: 100%;
+                margin-top: 8px;
+            }
+
+            .new-tab-btn {
+                display: none;
+            }
+
+            .modal-control-btn.minimize,
+            .modal-control-btn.maximize {
+                display: none;
+            }
+        }
+
+        /* Loading and Animations */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--surface-secondary);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* Highlight for search results */
+        .highlight {
+            background: var(--highlight-color);
+            color: var(--background);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Video Shadowbox -->
+        <div class="video-shadowbox" id="videoShadowbox"></div>
+        
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <div class="toggle-buttons">
+                    <button class="toggle-btn active" onclick="showTranscript()">Transcript</button>
+                    <button class="toggle-btn" onclick="showTopics()">Topics</button>
+                </div>
+                <div class="controls-row">
+                    <div class="toggle-group">
+                        <div class="auto-scroll-toggle">
+                            <span>Auto-scroll</span>
+                            <div class="switch" id="autoScrollSwitch" onclick="toggleAutoScroll()"></div>
+                        </div>
+                        <div class="pause-video-toggle">
+                            <span>Pause when reading</span>
+                            <div class="switch" id="pauseVideoSwitch" onclick="togglePauseVideo()"></div>
+                        </div>
+                    </div>
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search transcript..." onkeyup="searchTranscript(this.value)">
+                    </div>
+                </div>
+            </div>
+            <div class="panel-content" id="panelContent">
+                <!-- Transcript Content -->
+                <div class="transcript-content" id="transcript">
+                    <!-- Sample transcript segments - replace with your actual data -->
+                    <div class="transcript-segment" data-start="0" data-end="15">
+                        <span class="timestamp">[00:00 - 00:15]</span>
+                        <span class="speaker">Dr. Sarah Chen:</span>
+                        Welcome to our comprehensive presentation on climate science. Today we'll be exploring the latest findings from 
+                        <span class="citation" data-url="https://www.nature.com/articles/d41586-023-00000-9" data-title="Nature Climate Study 2023">
+                            a groundbreaking Nature study
+                        </span> 
+                        that reveals unprecedented changes in global temperature patterns across multiple continents.
+                    </div>
+                    
+                    <div class="transcript-segment" data-start="16" data-end="45">
+                        <span class="timestamp">[00:16 - 00:45]</span>
+                        <span class="speaker">Dr. Sarah Chen:</span>
+                        Before we dive into the data, it's important to understand the methodology. The research team analyzed over 50,000 weather stations worldwide, using advanced machine learning algorithms to identify patterns that traditional analysis might have missed.
+                    </div>
+                    
+                    <div class="transcript-segment" data-start="46" data-end="90">
+                        <span class="timestamp">[00:46 - 01:30]</span>
+                        <span class="speaker">Dr. Sarah Chen:</span>
+                        According to 
+                        <span class="citation" data-url="https://www.ipcc.ch/report/ar6/wg1/" data-title="IPCC Sixth Assessment Report">
+                            the IPCC's comprehensive assessment
+                        </span>, 
+                        we're witnessing rates of change that exceed even our most pessimistic projections from a decade ago. The data definitively shows that global temperatures have risen by 1.2 degrees Celsius since pre-industrial times.
+                    </div>
+                    
+                    <div class="transcript-segment" data-start="91" data-end="150">
+                        <span class="timestamp">[01:31 - 02:30]</span>
+                        <span class="speaker">Prof. Michael Rodriguez:</span>
+                        Thank you, Sarah. I'd like to add that recent coverage in 
+                        <span class="citation" data-url="https://www.scientificamerican.com/climate-change" data-title="Scientific American Climate Analysis">
+                            Scientific American
+                        </span> 
+                        highlights how these changes are creating feedback loops we hadn't fully anticipated. The Arctic permafrost thaw is releasing methane at alarming rates.
+                    </div>
+                    
+                    <div class="transcript-segment" data-start="151" data-end="210">
+                        <span class="timestamp">[02:31 - 03:30]</span>
+                        <span class="speaker">Prof. Michael Rodriguez:</span>
+                        The economic implications are staggering. 
+                        <span class="citation" data-url="https://www.worldbank.org/climate-change-action-plan" data-title="World Bank Climate Action Plan 2024">
+                            The World Bank's latest analysis
+                        </span> 
+                        projects that without immediate action, climate change could displace up to 216 million people within their own countries by 2050.
+                    </div>
+                </div>
+                
+                <!-- Topics Content -->
+                <div class="topics-content" id="topics">
+                    <div class="topic-item" onclick="seekTo(0)">
+                        <div>
+                            <div class="topic-title">Introduction & Methodology</div>
+                            <div class="topic-description">Overview of the presentation and research approach</div>
+                        </div>
+                        <span class="topic-time">00:00 - 00:45</span>
+                    </div>
+                    <div class="topic-item" onclick="seekTo(46)">
+                        <div>
+                            <div class="topic-title">IPCC Report Analysis</div>
+                            <div class="topic-description">Key findings from the latest climate assessment</div>
+                        </div>
+                        <span class="topic-time">00:46 - 01:30</span>
+                    </div>
+                    <div class="topic-item" onclick="seekTo(91)">
+                        <div>
+                            <div class="topic-title">Feedback Loops & Arctic Changes</div>
+                            <div class="topic-description">Unexpected acceleration in permafrost thaw</div>
+                        </div>
+                        <span class="topic-time">01:31 - 02:30</span>
+                    </div>
+                    <div class="topic-item" onclick="seekTo(151)">
+                        <div>
+                            <div class="topic-title">Economic & Humanitarian Impact</div>
+                            <div class="topic-description">World Bank projections on climate displacement</div>
+                        </div>
+                        <span class="topic-time">02:31 - 03:30</span>
+                    </div>
+                    <div class="topic-item" onclick="seekTo(211)">
+                        <div>
+                            <div class="topic-title">Q&A Session</div>
+                            <div class="topic-description">Audience questions and expert responses</div>
+                        </div>
+                        <span class="topic-time">03:31 - End</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="video-container">
+                <!-- Replace with your video URL -->
+                <iframe 
+                    id="video-player"
+                    src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+            <div class="video-controls">
+                <div class="progress-bar" onclick="seekToProgress(event)">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="time-display" id="timeDisplay">00:00 / 00:00</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+    <div class="modal" id="citationModal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modalTitle">Citation</h3>
+            <div class="modal-controls">
+                <button class="modal-control-btn close" onclick="closeModal()">
+                    <span>✕</span>
+                </button>
+                <button class="modal-control-btn minimize" onclick="minimizeModal()">
+                    <span>−</span>
+                </button>
+                <button class="modal-control-btn maximize" onclick="maximizeModal()">
+                    <span>+</span>
+                </button>
+                <button class="new-tab-btn" id="newTabBtn" onclick="openInNewTab()">
+                    <span>↗</span>
+                    <span>New Tab</span>
+                </button>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="loading" id="modalLoading">
+                <div class="spinner"></div>
+            </div>
+            <iframe 
+                class="modal-content-frame" 
+                id="modalContent"
+                style="display: none;"
+                sandbox="allow-same-origin allow-scripts">
+            </iframe>
+            <div id="simplifiedContent" class="simplified-content" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        // State management
+        let isAutoScrollEnabled = false;
+        let isPauseVideoEnabled = false;
+        let currentTime = 0;
+        let videoDuration = 300; // 5 minutes for demo
+        let isUserScrolling = false;
+        let scrollTimeout = null;
+        let player = null;
+        let currentCitationUrl = '';
+        let wasPlayingBeforePause = false;
+        let isModalMaximized = false;
+        
+        // Initialize YouTube Player API
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('video-player', {
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        
+        function onPlayerReady(event) {
+            videoDuration = player.getDuration();
+            updateProgress();
+        }
+        
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.PLAYING) {
+                updateProgress();
+            }
+        }
+        
+        // Load YouTube API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // Toggle between transcript and topics
+        function showTranscript() {
+            document.getElementById('transcript').style.display = 'block';
+            document.getElementById('topics').style.display = 'none';
+            document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+            document.querySelectorAll('.toggle-btn')[1].classList.remove('active');
+        }
+        
+        function showTopics() {
+            document.getElementById('transcript').style.display = 'none';
+            document.getElementById('topics').style.display = 'block';
+            document.querySelectorAll('.toggle-btn')[0].classList.remove('active');
+            document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+        }
+        
+        // Auto-scroll functionality
+        function toggleAutoScroll() {
+            isAutoScrollEnabled = !isAutoScrollEnabled;
+            const switchEl = document.getElementById('autoScrollSwitch');
+            switchEl.classList.toggle('active', isAutoScrollEnabled);
+        }
+        
+        // Pause video when reading toggle
+        function togglePauseVideo() {
+            isPauseVideoEnabled = !isPauseVideoEnabled;
+            const switchEl = document.getElementById('pauseVideoSwitch');
+            switchEl.classList.toggle('active', isPauseVideoEnabled);
+        }
+        
+        // Detect user scrolling
+        document.getElementById('panelContent').addEventListener('scroll', function() {
+            if (!isUserScrolling && isAutoScrollEnabled) {
+                isUserScrolling = true;
+            }
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                isUserScrolling = false;
+            }, 1000);
+        });
+        
+        // Video seeking function
+        function seekTo(seconds) {
+            currentTime = seconds;
+            if (player && player.seekTo) {
+                player.seekTo(seconds, true);
+            }
+            updateActiveSegment();
+        }
+        
+        // Progress bar click
+        function seekToProgress(event) {
+            const progressBar = event.currentTarget;
+            const clickPosition = event.offsetX / progressBar.offsetWidth;
+            const seekTime = clickPosition * videoDuration;
+            seekTo(seekTime);
+        }
+        
+        // Update progress and sync transcript
+        function updateProgress() {
+            if (!player || !player.getCurrentTime) return;
+            
+            currentTime = player.getCurrentTime();
+            const progress = (currentTime / videoDuration) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // Update time display
+            const currentFormatted = formatTime(currentTime);
+            const durationFormatted = formatTime(videoDuration);
+            document.getElementById('timeDisplay').textContent = `${currentFormatted} / ${durationFormatted}`;
+            
+            updateActiveSegment();
+            
+            if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+        
+        // Update active transcript segment
+        function updateActiveSegment() {
+            const segments = document.querySelectorAll('.transcript-segment');
+            let activeSegment = null;
+            
+            segments.forEach(segment => {
+                const start = parseFloat(segment.dataset.start);
+                const end = parseFloat(segment.dataset.end);
+                
+                if (currentTime >= start && currentTime <= end) {
+                    segment.classList.add('active');
+                    activeSegment = segment;
+                } else {
+                    segment.classList.remove('active');
+                }
+            });
+            
+            // Auto-scroll to active segment
+            if (activeSegment && isAutoScrollEnabled && !isUserScrolling) {
+                const container = document.getElementById('panelContent');
+                const segmentTop = activeSegment.offsetTop - container.offsetTop;
+                const segmentHeight = activeSegment.offsetHeight;
+                const containerHeight = container.offsetHeight;
+                const scrollTop = segmentTop - (containerHeight / 2) + (segmentHeight / 2);
+                
+                container.scrollTo({
+                    top: scrollTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+        
+        // Format time helper
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Search functionality
+        function searchTranscript(query) {
+            const segments = document.querySelectorAll('.transcript-segment');
+            const lowerQuery = query.toLowerCase();
+            
+            if (!query) {
+                segments.forEach(segment => {
+                    segment.style.display = 'block';
+                    // Remove any existing highlights
+                    const highlighted = segment.querySelectorAll('.highlight');
+                    highlighted.forEach(hl => {
+                        const parent = hl.parentNode;
+                        parent.replaceChild(document.createTextNode(hl.textContent), hl);
+                        parent.normalize();
+                    });
+                });
+                return;
+            }
+            
+            segments.forEach(segment => {
+                const text = segment.textContent.toLowerCase();
+                if (text.includes(lowerQuery)) {
+                    segment.style.display = 'block';
+                    // Highlight matching text
+                    highlightText(segment, query);
+                } else {
+                    segment.style.display = 'none';
+                }
+            });
+        }
+        
+        function highlightText(element, searchText) {
+            // This is a simplified highlight function
+            // In production, you'd want a more robust solution
+            const walker = document.createTreeWalker(
+                element,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            
+            const textNodes = [];
+            let node;
+            while (node = walker.nextNode()) {
+                textNodes.push(node);
+            }
+            
+            textNodes.forEach(textNode => {
+                const text = textNode.nodeValue;
+                const regex = new RegExp(`(${searchText})`, 'gi');
+                if (regex.test(text)) {
+                    const span = document.createElement('span');
+                    span.innerHTML = text.replace(regex, '<span class="highlight">$1</span>');
+                    textNode.parentNode.replaceChild(span, textNode);
+                }
+            });
+        }
+        
+        // Citation modal handling
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to all citations
+            const citations = document.querySelectorAll('.citation');
+            citations.forEach(citation => {
+                citation.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const url = this.getAttribute('data-url');
+                    const title = this.getAttribute('data-title');
+                    openModal(url, title);
+                });
+            });
+            
+            // Add click handlers to transcript segments
+            const segments = document.querySelectorAll('.transcript-segment');
+            segments.forEach(segment => {
+                segment.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('citation')) {
+                        const start = parseFloat(this.dataset.start);
+                        seekTo(start);
+                    }
+                });
+            });
+        });
+        
+        function openModal(url, title) {
+            const modal = document.getElementById('citationModal');
+            const overlay = document.getElementById('modalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const modalLoading = document.getElementById('modalLoading');
+            const simplifiedContent = document.getElementById('simplifiedContent');
+            const videoShadowbox = document.getElementById('videoShadowbox');
+            
+            // Store current URL
+            currentCitationUrl = url;
+            
+            // Pause video if option is enabled
+            if (isPauseVideoEnabled && player && player.getPlayerState) {
+                wasPlayingBeforePause = player.getPlayerState() === YT.PlayerState.PLAYING;
+                if (wasPlayingBeforePause) {
+                    player.pauseVideo();
+                }
+            }
+            
+            // Apply shadowbox if modal is maximized
+            if (isModalMaximized) {
+                videoShadowbox.classList.add('active');
+            }
+            
+            // Reset modal state
+            modalContent.style.display = 'none';
+            modalLoading.style.display = 'flex';
+            simplifiedContent.style.display = 'none';
+            
+            modalTitle.textContent = title || 'Citation';
+            modal.style.display = 'flex';
+            overlay.style.display = 'block';
+            
+            // Try to load the content
+            modalContent.onload = function() {
+                modalLoading.style.display = 'none';
+                modalContent.style.display = 'block';
+            };
+            
+            modalContent.onerror = function() {
+                modalLoading.style.display = 'none';
+                simplifiedContent.style.display = 'block';
+                simplifiedContent.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h2 style="color: var(--text-primary); margin-bottom: 16px;">Unable to load external content</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 16px;">The content from <strong>${url}</strong> cannot be loaded directly due to security restrictions.</p>
+                        <p style="color: var(--text-secondary); margin-bottom: 24px;">You can view the full content by opening it in a new tab:</p>
+                        <a href="${url}" target="_blank" style="display: inline-block; padding: 12px 24px; background: var(--primary-color); color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">Open ${title} →</a>
+                    </div>
+                `;
+            };
+            
+            // Attempt to load the URL
+            modalContent.src = url;
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('citationModal');
+            const overlay = document.getElementById('modalOverlay');
+            const modalContent = document.getElementById('modalContent');
+            const videoShadowbox = document.getElementById('videoShadowbox');
+            
+            modal.style.display = 'none';
+            overlay.style.display = 'none';
+            modalContent.src = '';
+            videoShadowbox.classList.remove('active');
+            
+            // Resume video if it was playing before
+            if (isPauseVideoEnabled && wasPlayingBeforePause && player && player.playVideo) {
+                player.playVideo();
+            }
+            
+            // Reset modal state
+            isModalMaximized = false;
+            modal.classList.remove('maximized', 'minimized');
+        }
+        
+        function minimizeModal() {
+            const modal = document.getElementById('citationModal');
+            const videoShadowbox = document.getElementById('videoShadowbox');
+            
+            isModalMaximized = false;
+            modal.classList.remove('maximized');
+            modal.classList.add('minimized');
+            videoShadowbox.classList.remove('active');
+        }
+        
+        function maximizeModal() {
+            const modal = document.getElementById('citationModal');
+            const videoShadowbox = document.getElementById('videoShadowbox');
+            
+            isModalMaximized = true;
+            modal.classList.remove('minimized');
+            modal.classList.add('maximized');
+            videoShadowbox.classList.add('active');
+        }
+        
+        function openInNewTab() {
+            if (currentCitationUrl) {
+                window.open(currentCitationUrl, '_blank');
+            }
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        
+        // For demo purposes - simulate video progress
+        // Remove this in production when using actual video
+        if (!window.YT) {
+            setInterval(() => {
+                if (currentTime < videoDuration) {
+                    currentTime += 0.1;
+                    updateProgress();
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>
