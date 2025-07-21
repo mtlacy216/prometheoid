@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nashville Civic - Your Voice in Local Government</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e40af;
+            --trust-blue: #3b82f6;
+            --civic-green: #10b981;
+            --warm-orange: #f97316;
+            --neutral-900: #111827;
+            --neutral-800: #1f2937;
+            --neutral-700: #374151;
+            --neutral-600: #4b5563;
+            --neutral-400: #9ca3af;
+            --neutral-200: #e5e7eb;
+            --neutral-100: #f3f4f6;
+            --neutral-50: #f9fafb;
+            --gradient-civic: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #10b981 100%);
+            --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--neutral-50);
+            color: var(--neutral-900);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            background: white;
+            box-shadow: var(--shadow-soft);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--primary-blue);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-civic);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--neutral-700);
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--trust-blue);
+        }
+
+        .nav-user {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .notification-bell:hover {
+            background: var(--neutral-100);
+        }
+
+        .notification-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: var(--warm-orange);
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-civic);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--neutral-50) 0%, white 50%, var(--neutral-50) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+            top: -400px;
+            right: -200px;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-text h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+            background: var(--gradient-civic);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            color: var(--neutral-600);
+            margin-bottom: 2rem;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--trust-blue);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--trust-blue);
+            border: 2px solid var(--neutral-200);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--trust-blue);
+            background: var(--neutral-50);
+        }
+
+        /* Live Activity Feed */
+        .live-feed {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-medium);
+            max-height: 400px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .live-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .live-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--warm-orange);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            background: var(--neutral-50);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .activity-item:hover {
+            background: var(--neutral-100);
+            transform: translateX(4px);
+        }
+
+        .activity-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .activity-user {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--neutral-800);
+        }
+
+        .activity-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--civic-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .activity-time {
+            color: var(--neutral-400);
+            font-size: 0.875rem;
+        }
+
+        .activity-content {
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+        }
+
+        .activity-tag {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--trust-blue);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            margin-bottom: 4rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+        }
+
+        .section-subtitle {
+            color: var(--neutral-600);
+            margin-top: 0.5rem;
+        }
+
+        .action-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .action-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient-civic);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .action-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-large);
+        }
+
+        .action-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--neutral-100);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .action-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--neutral-900);
+        }
+
+        .action-card p {
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-link {
+            color: var(--trust-blue);
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Trending Legislation */
+        .legislation-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .legislation-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            gap: 1.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .legislation-card:hover {
+            box-shadow: var(--shadow-medium);
+            transform: translateX(4px);
+        }
+
+        .legislation-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            background: var(--neutral-50);
+            border-radius: 12px;
+            min-width: 120px;
+        }
+
+        .status-label {
+            font-size: 0.75rem;
+            color: var(--neutral-600);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--civic-green);
+        }
+
+        .legislation-content {
+            flex: 1;
+        }
+
+        .legislation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .legislation-id {
+            background: var(--primary-blue);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .legislation-engagement {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .engagement-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+        }
+
+        .legislation-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--neutral-900);
+        }
+
+        .legislation-description {
+            color: var(--neutral-600);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .legislation-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            padding: 0.25rem 0.75rem;
+            background: var(--neutral-100);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--neutral-700);
+            border: 1px solid var(--neutral-200);
+        }
+
+        .tag.tag-community {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--trust-blue);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .legislation-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sponsor-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--neutral-200);
+            background: white;
+            color: var(--neutral-700);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .action-btn:hover {
+            background: var(--neutral-50);
+            border-color: var(--trust-blue);
+            color: var(--trust-blue);
+        }
+
+        .action-btn.active {
+            background: var(--trust-blue);
+            color: white;
+            border-color: var(--trust-blue);
+        }
+
+        /* Community Values */
+        .values-section {
+            background: linear-gradient(135deg, white 0%, var(--neutral-50) 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .values-section::before {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            bottom: -150px;
+            left: -100px;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .value-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .value-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .value-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .value-name {
+            font-weight: 600;
+            color: var(--neutral-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .value-count {
+            color: var(--neutral-600);
+            font-size: 0.875rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .hero-text h1 {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero-stats {
+                gap: 1.5rem;
+            }
+
+            .legislation-card {
+                flex-direction: column;
+            }
+
+            .legislation-status {
+                flex-direction: row;
+                justify-content: space-between;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon">N</div>
+                <span>Nashville Civic</span>
+            </div>
+            <div class="nav-links">
+                <a href="#">Legislation</a>
+                <a href="#">Meetings</a>
+                <a href="#">Community</a>
+                <a href="#">Impact</a>
+            </div>
+            <div class="nav-user">
+                <div class="notification-bell">
+                    <span class="notification-dot"></span>
+                    🔔
+                </div>
+                <div class="user-avatar">JD</div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Your Voice in Nashville's Future</h1>
+                <p>Track legislation, join conversations, and shape the policies that affect your community. Democracy made delightful.</p>
+                
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">247</span>
+                        <span class="stat-label">Active Bills</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">1,849</span>
+                        <span class="stat-label">Community Members</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">92</span>
+                        <span class="stat-label">Actions Today</span>
+                    </div>
+                </div>
+
+                <div class="hero-actions">
+                    <button class="btn btn-primary">
+                        <span>🚀</span> Start Tracking Bills
+                    </button>
+                    <button class="btn btn-secondary">
+                        <span>🎥</span> Watch Today's Meeting
+                    </button>
+                </div>
+            </div>
+
+            <div class="live-feed">
+                <div class="live-header">
+                    <div class="live-dot"></div>
+                    <h3>Live Community Activity</h3>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-meta">
+                        <div class="activity-user">
+                            <div class="activity-avatar">S</div>
+                            <span>Sarah M.</span>
+                        </div>
+                        <span class="activity-time">2 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Added insights on affordable housing bill BL2023-1876
+                        <span class="activity-tag">Housing Justice</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-meta">
+                        <div class="activity-user">
+                            <div class="activity-avatar">M</div>
+                            <span>Marcus T.</span>
+                        </div>
+                        <span class="activity-time">5 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Started following transit expansion proposal
+                        <span class="activity-tag">Sustainable Transit</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-meta">
+                        <div class="activity-user">
+                            <div class="activity-avatar">C</div>
+                            <span>Community Alert</span>
+                        </div>
+                        <span class="activity-time">12 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Public hearing scheduled for March 15 on green infrastructure fund
+                        <span class="activity-tag">Climate Action</span>
+                    </div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-meta">
+                        <div class="activity-user">
+                            <div class="activity-avatar">A</div>
+                            <span>Amy L.</span>
+                        </div>
+                        <span class="activity-time">18 min ago</span>
+                    </div>
+                    <div class="activity-content">
+                        Created discussion thread on small business support ordinance
+                        <span class="activity-tag">Economic Equity</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Quick Actions</h2>
+                    <p class="section-subtitle">Jump into what matters most to you</p>
+                </div>
+            </div>
+
+            <div class="action-cards">
+                <div class="action-card">
+                    <div class="action-icon">📍</div>
+                    <h3>Find My District</h3>
+                    <p>Discover your council member and local issues affecting your neighborhood</p>
+                    <a href="#" class="action-link">Get started →</a>
+                </div>
+
+                <div class="action-card">
+                    <div class="action-icon">💬</div>
+                    <h3>Join Discussions</h3>
+                    <p>Connect with neighbors on issues you care about</p>
+                    <a href="#" class="action-link">Browse topics →</a>
+                </div>
+
+                <div class="action-card">
+                    <div class="action-icon">📊</div>
+                    <h3>Track Impact</h3>
+                    <p>See how community input shapes final policies</p>
+                    <a href="#" class="action-link">View dashboard →</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trending Legislation -->
+        <section class="trending-legislation">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Trending Legislation</h2>
+                    <p class="section-subtitle">Bills getting the most community attention this week</p>
+                </div>
+                <button class="btn btn-secondary">View All Bills</button>
+            </div>
+
+            <div class="legislation-grid">
+                <div class="legislation-card">
+                    <div class="legislation-status">
+                        <span class="status-label">Committee</span>
+                        <span class="status-value">Stage 2</span>
+                    </div>
+                    <div class="legislation-content">
+                        <div class="legislation-header">
+                            <span class="legislation-id">BL2024-1923</span>
+                            <div class="legislation-engagement">
+                                <span class="engagement-stat">👁 342 watching</span>
+                                <span class="engagement-stat">💬 28 comments</span>
+                            </div>
+                        </div>
+                        <h3 class="legislation-title">Affordable Housing Trust Fund Expansion</h3>
+                        <p class="legislation-description">Proposes increasing funding for affordable housing development by $50M through a dedicated revenue stream...</p>
+                        <div class="legislation-tags">
+                            <span class="tag tag-community">🏠 Housing Justice</span>
+                            <span class="tag">💰 Budget</span>
+                            <span class="tag">🌱 Sustainability</span>
+                        </div>
+                        <div class="legislation-footer">
+                            <span class="sponsor-info">
+                                <span>Sponsored by CM Jennifer Davis</span>
+                            </span>
+                            <div class="action-buttons">
+                                <button class="action-btn active">
+                                    <span>👁</span> Following
+                                </button>
+                                <button class="action-btn">
+                                    <span>💬</span> Discuss
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legislation-card">
+                    <div class="legislation-status">
+                        <span class="status-label">Vote</span>
+                        <span class="status-value" style="color: var(--warm-orange);">Mar 19</span>
+                    </div>
+                    <div class="legislation-content">
+                        <div class="legislation-header">
+                            <span class="legislation-id">RS2024-312</span>
+                            <div class="legislation-engagement">
+                                <span class="engagement-stat">👁 567 watching</span>
+                                <span class="engagement-stat">💬 89 comments</span>
+                            </div>
+                        </div>
+                        <h3 class="legislation-title">Climate Action & Green Infrastructure Initiative</h3>
+                        <p class="legislation-description">Comprehensive plan to reduce emissions 40% by 2030 through renewable energy, building efficiency upgrades...</p>
+                        <div class="legislation-tags">
+                            <span class="tag tag-community">🌍 Climate Action</span>
+                            <span class="tag">⚡ Energy</span>
+                            <span class="tag">🚶 Public Health</span>
+                        </div>
+                        <div class="legislation-footer">
+                            <span class="sponsor-info">
+                                <span>Sponsored by CM Robert Chen</span>
+                            </span>
+                            <div class="action-buttons">
+                                <button class="action-btn">
+                                    <span>👁</span> Follow
+                                </button>
+                                <button class="action-btn">
+                                    <span>📅</span> Remind Me
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="legislation-card">
+                    <div class="legislation-status">
+                        <span class="status-label">Public Input</span>
+                        <span class="status-value" style="color: var(--trust-blue);">Open</span>
+                    </div>
+                    <div class="legislation-content">
+                        <div class="legislation-header">
+                            <span class="legislation-id">BL2024-1867</span>
+                            <div class="legislation-engagement">
+                                <span class="engagement-stat">👁 234 watching</span>
+                                <span class="engagement-stat">💬 45 comments</span>
+                            </div>
+                        </div>
+                        <h3 class="legislation-title">Small Business Recovery & Support Act</h3>
+                        <p class="legislation-description">Creates grant program and reduces regulatory burden for local businesses with under 50 employees...</p>
+                        <div class="legislation-tags">
+                            <span class="tag tag-community">💼 Economic Equity</span>
+                            <span class="tag">🏪 Small Business</span>
+                            <span class="tag">💵 Grants</span>
+                        </div>
+                        <div class="legislation-footer">
+                            <span class="sponsor-info">
+                                <span>Sponsored by CM Maria Rodriguez</span>
+                            </span>
+                            <div class="action-buttons">
+                                <button class="action-btn">
+                                    <span>✍️</span> Add Input
+                                </button>
+                                <button class="action-btn">
+                                    <span>📊</span> View Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Community Values -->
+        <section class="values-section">
+            <h2 class="section-title">Track by Your Values</h2>
+            <p class="section-subtitle">Follow legislation aligned with what matters to you</p>
+            
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">🏠</div>
+                    <div class="value-name">Housing Justice</div>
+                    <div class="value-count">34 active bills</div>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🌍</div>
+                    <div class="value-name">Climate Action</div>
+                    <div class="value-count">28 active bills</div>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🚌</div>
+                    <div class="value-name">Transit Equity</div>
+                    <div class="value-count">19 active bills</div>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">💼</div>
+                    <div class="value-name">Economic Justice</div>
+                    <div class="value-count">42 active bills</div>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🎓</div>
+                    <div class="value-name">Education Access</div>
+                    <div class="value-count">23 active bills</div>
+                </div>
+                <div class="value-card">
+                    <div class="value-icon">🏥</div>
+                    <div class="value-name">Public Health</div>
+                    <div class="value-count">31 active bills</div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
