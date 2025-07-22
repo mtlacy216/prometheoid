@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: #f9fafb;
+            min-height: 100vh;
+            color: #111827;
+        }
+
+        .container {
+            max-width: 64rem;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+        }
+
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #6b7280;
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-message {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-error {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .status-success {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .status-info {
+            background-color: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            resize: none;
+            font-family: inherit;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .comment-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.75rem;
+        }
+
+        .comment-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #f9fafb;
+        }
+
+        .sort-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .sort-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            text-transform: capitalize;
+            cursor: pointer;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #374151;
+        }
+
+        .sort-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .sort-btn:hover:not(.active) {
+            background-color: #f9fafb;
+        }
+
+        .comment {
+            margin-bottom: 1rem;
+        }
+
+        .comment.nested {
+            margin-left: 1rem;
+            border-left: 2px solid #e5e7eb;
+            padding-left: 1rem;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .author {
+            font-weight: 500;
+            color: #111827;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .you-badge {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .comment-content {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .comment-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .vote-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .vote-btn {
+            padding: 0.25rem;
+            border: none;
+            background: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+        }
+
+        .vote-btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .vote-btn.upvoted {
+            color: #f97316;
+            background-color: #fff7ed;
+        }
+
+        .vote-btn.downvoted {
+            color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .score {
+            font-weight: 500;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+
+        .score.positive {
+            color: #f97316;
+        }
+
+        .score.negative {
+            color: #3b82f6;
+        }
+
+        .score.neutral {
+            color: #6b7280;
+        }
+
+        .control-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #6b7280;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+
+        .control-btn:hover {
+            color: #374151;
+        }
+
+        .reply-form {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #f9fafb;
+            border-radius: 0.5rem;
+        }
+
+        .reply-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-state svg {
+            margin: 0 auto 1rem;
+            color: #9ca3af;
+        }
+
+        .debug-info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .debug-info h3 {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Comments</h1>
+            <p><span id="comment-count">0</span> comments • Anonymous commenting (names determined by IP lookup)</p>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status-message" class="hidden"></div>
+
+        <!-- New Comment -->
+        <div class="card">
+            <textarea 
+                id="new-comment" 
+                placeholder="What do you think?" 
+                rows="4"
+            ></textarea>
+            <div class="comment-actions">
+                <div class="comment-info">
+                    <span>Session ID: <span id="session-id"></span> • Your display name will be determined automatically</span>
+                </div>
+                <button id="post-comment" class="btn btn-primary">
+                    <span id="post-icon">📤</span>
+                    <span>Post Comment</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sort Options -->
+        <div class="sort-buttons">
+            <button class="sort-btn active" data-sort="newest">Newest</button>
+            <button class="sort-btn" data-sort="oldest">Oldest</button>
+            <button class="sort-btn" data-sort="best">Best</button>
+            <button id="refresh-btn" class="btn btn-secondary" style="margin-left: auto;">
+                🔄 Refresh Comments
+            </button>
+        </div>
+
+        <!-- Comments List -->
+        <div id="comments-container">
+            <div id="empty-state" class="empty-state">
+                <div style="width: 48px; height: 48px; margin: 0 auto 1rem;">💬</div>
+                <p>No comments yet. Be the first to comment!</p>
+            </div>
+        </div>
+
+        <!-- Debug Info -->
+        <div class="debug-info">
+            <h3>Debug Info:</h3>
+            <p>POST Webhook URL: <span id="webhook-url"></span></p>
+            <p>GET Data URL: <span id="data-webhook-url"></span></p>
+            <p>Session ID: <span id="debug-session-id"></span></p>
+            <p>IP Address: Will be determined by backend from request headers</p>
+            <p>Total Comments: <span id="debug-comment-count">0</span></p>
+            <p>Data Format: CSV with fields - Name,Comments,Assignee,Vote,Attachments,Date,users,Created,parent record,type</p>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let comments = [];
+        let sessionId = '';
+        let sortBy = 'newest';
+        let isSubmitting = false;
+        let replyingTo = null;
+        let userVotes = {};
+
+        const WEBHOOK_URL = 'https://rkl-fallback.intelechia.com/webhook/new-message';
+        const DATA_WEBHOOK_URL = 'https://rkl-fallback.intelechia.com/webhook/data';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSession();
+            setupEventListeners();
+            updateDebugInfo();
+            loadExistingComments();
+        });
+
+        function initializeSession() {
+            let storedSessionId = localStorage.getItem('comments_session_id');
+            
+            if (!storedSessionId) {
+                storedSessionId = 'anon_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+                localStorage.setItem('comments_session_id', storedSessionId);
+            }
+            
+            sessionId = storedSessionId;
+            document.getElementById('session-id').textContent = sessionId;
+            document.getElementById('debug-session-id').textContent = sessionId;
+            
+            // Load stored votes
+            const storedVotes = localStorage.getItem('comments_votes');
+            if (storedVotes) {
+                userVotes = JSON.parse(storedVotes);
+            }
+        }
+
+        async function loadExistingComments() {
+            try {
+                showStatusMessage('info', 'Loading existing comments...');
+                
+                const response = await fetch(DATA_WEBHOOK_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.text();
+                const parsedComments = parseCommentsData(data);
+                
+                // Merge with any local comments that might not be in the data yet
+                comments = parsedComments;
+                renderComments();
+                hideStatusMessage();
+                
+            } catch (error) {
+                console.error('Failed to load existing comments:', error);
+                showStatusMessage('error', 'Failed to load existing comments');
+                setTimeout(hideStatusMessage, 3000);
+            }
+        }
+
+        function parseCommentsData(csvData) {
+            const lines = csvData.trim().split('\n');
+            if (lines.length <= 1) return []; // No data or just headers
+            
+            const headers = lines[0].split(',');
+            const parsedComments = [];
+            
+            // Map CSV structure: Name,Comments,Assignee,Vote,Attachments,Date,users,Created,parent record,type
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length < headers.length) continue;
+                
+                const comment = {
+                    id: Date.parse(values[7]) || Date.now() + i, // Use Created timestamp as ID
+                    author: values[6] || values[0] || 'Anonymous User', // users field or Name field
+                    content: values[1] || '', // Comments field
+                    score: parseVoteScore(values[3]), // Vote field
+                    timestamp: formatTimestamp(values[7] || values[5]), // Created or Date field
+                    replies: [],
+                    isOwn: false, // Will be determined by session matching
+                    parentId: values[8] || null, // parent record field
+                    rawVote: values[3] || '' // Store original vote for debugging
+                };
+                
+                if (comment.content) { // Only add if there's actual content
+                    parsedComments.push(comment);
+                }
+            }
+            
+            // Build threaded structure
+            return buildThreadedComments(parsedComments);
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            
+            return result;
+        }
+
+        function parseVoteScore(voteField) {
+            if (!voteField) return 0;
+            
+            // Count thumbs up and thumbs down emojis
+            const upvotes = (voteField.match(/👍/g) || []).length;
+            const downvotes = (voteField.match(/👎/g) || []).length;
+            
+            return upvotes - downvotes;
+        }
+
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'unknown';
+            
+            try {
+                const date = new Date(timestamp);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+                
+                if (diffMins < 1) return 'just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+                
+                return date.toLocaleDateString();
+            } catch (e) {
+                return timestamp;
+            }
+        }
+
+        function buildThreadedComments(flatComments) {
+            const commentMap = new Map();
+            const rootComments = [];
+            
+            // First pass: create comment map
+            flatComments.forEach(comment => {
+                commentMap.set(comment.id, comment);
+            });
+            
+            // Second pass: build tree structure
+            flatComments.forEach(comment => {
+                if (comment.parentId && commentMap.has(comment.parentId)) {
+                    const parent = commentMap.get(comment.parentId);
+                    parent.replies.push(comment);
+                } else {
+                    rootComments.push(comment);
+                }
+            });
+            
+            return rootComments;
+        }
+
+        function setupEventListeners() {
+            // Post comment button
+            document.getElementById('post-comment').addEventListener('click', addComment);
+            
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', loadExistingComments);
+            
+            // Sort buttons
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    setSortBy(this.dataset.sort);
+                });
+            });
+
+            // Enter key for new comment
+            document.getElementById('new-comment').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    addComment();
+                }
+            });
+        }
+
+        async function sendToWebhook(data) {
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...data,
+                    session_id: sessionId,
+                    timestamp: new Date().toISOString(),
+                    user_agent: navigator.userAgent,
+                    page_url: window.location.href
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return await response.json();
+        }
+
+        async function addComment() {
+            const textarea = document.getElementById('new-comment');
+            const content = textarea.value.trim();
+            
+            if (!content || isSubmitting) return;
+
+            setSubmitting(true);
+            hideStatusMessage();
+
+            try {
+                const commentData = {
+                    action: 'new_comment',
+                    content: content,
+                    parent_id: null,
+                    note: 'Display name will be determined by IP lookup on backend'
+                };
+
+                await sendToWebhook(commentData);
+                textarea.value = '';
+                showStatusMessage('success', 'Comment posted successfully!');
+                
+                // Refresh comments from server after a short delay
+                setTimeout(() => {
+                    loadExistingComments();
+                }, 1000);
+                
+                setTimeout(hideStatusMessage, 3000);
+                
+            } catch (error) {
+                showStatusMessage('error', 'Failed to post comment. Please try again.');
+            } finally {
+                setSubmitting(false);
+            }
+        }
+
+        async function addReply(parentId, content) {
+            if (!content.trim() || isSubmitting) return;
+
+            setSubmitting(true);
+            
+            try {
+                const replyData = {
+                    action: 'new_reply',
+                    content: content.trim(),
+                    parent_id: parentId,
+                    note: 'Display name will be determined by IP lookup on backend'
+                };
+
+                await sendToWebhook(replyData);
+                showStatusMessage('success', 'Reply posted successfully!');
+                
+                // Refresh comments from server after a short delay
+                setTimeout(() => {
+                    loadExistingComments();
+                }, 1000);
+                
+                setTimeout(hideStatusMessage, 3000);
+                
+            } catch (error) {
+                showStatusMessage('error', 'Failed to post reply. Please try again.');
+            } finally {
+                setSubmitting(false);
+            }
+        }
+
+        function addReplyToComments(commentsList, parentId, newReply) {
+            for (let comment of commentsList) {
+                if (comment.id === parentId) {
+                    comment.replies.push(newReply);
+                    return true;
+                }
+                if (comment.replies && comment.replies.length > 0) {
+                    if (addReplyToComments(comment.replies, parentId, newReply)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        async function handleVote(commentId, voteType) {
+            const currentVote = userVotes[commentId];
+            
+            if (currentVote === voteType) return;
+
+            try {
+                const voteData = {
+                    action: 'vote',
+                    comment_id: commentId,
+                    vote_type: voteType,
+                    previous_vote: currentVote || null
+                };
+
+                await sendToWebhook(voteData);
+
+                userVotes[commentId] = voteType;
+                localStorage.setItem('comments_votes', JSON.stringify(userVotes));
+
+                // Refresh comments from server to get updated vote counts
+                setTimeout(() => {
+                    loadExistingComments();
+                }, 500);
+                
+            } catch (error) {
+                showStatusMessage('error', 'Failed to record vote');
+            }
+        }
+
+        function updateCommentScore(commentsList, commentId, voteType, currentVote) {
+            for (let comment of commentsList) {
+                if (comment.id === commentId) {
+                    let scoreChange = 0;
+                    if (voteType === 'up') {
+                        scoreChange = currentVote === 'down' ? 2 : 1;
+                    } else {
+                        scoreChange = currentVote === 'up' ? -2 : -1;
+                    }
+                    comment.score += scoreChange;
+                    return true;
+                }
+                if (comment.replies && comment.replies.length > 0) {
+                    if (updateCommentScore(comment.replies, commentId, voteType, currentVote)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function setSortBy(sort) {
+            sortBy = sort;
+            
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-sort="${sort}"]`).classList.add('active');
+            
+            renderComments();
+        }
+
+        function sortComments(commentsList, sortType) {
+            const sorted = [...commentsList].sort((a, b) => {
+                switch (sortType) {
+                    case 'newest':
+                        return new Date(b.timestamp) - new Date(a.timestamp);
+                    case 'oldest':
+                        return new Date(a.timestamp) - new Date(b.timestamp);
+                    case 'best':
+                        return b.score - a.score;
+                    default:
+                        return 0;
+                }
+            });
+
+            return sorted.map(comment => ({
+                ...comment,
+                replies: comment.replies ? sortComments(comment.replies, sortType) : []
+            }));
+        }
+
+        function renderComments() {
+            const container = document.getElementById('comments-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            if (comments.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.innerHTML = '';
+                container.appendChild(emptyState);
+                updateCommentCount([]);
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            const sortedComments = sortComments(comments, sortBy);
+            
+            container.innerHTML = '';
+            sortedComments.forEach(comment => {
+                container.appendChild(renderComment(comment, 0));
+            });
+            
+            updateCommentCount(comments);
+        }
+
+        function renderComment(comment, depth) {
+            const commentEl = document.createElement('div');
+            commentEl.className = `comment ${depth > 0 ? 'nested' : ''}`;
+            
+            const scoreClass = comment.score > 0 ? 'positive' : comment.score < 0 ? 'negative' : 'neutral';
+            const upvoted = userVotes[comment.id] === 'up' ? 'upvoted' : '';
+            const downvoted = userVotes[comment.id] === 'down' ? 'downvoted' : '';
+            
+            commentEl.innerHTML = `
+                <div class="card">
+                    <div class="comment-header">
+                        <div class="comment-meta">
+                            <span class="author">${comment.author}</span>
+                            <span class="timestamp">${comment.timestamp}</span>
+                            ${comment.isOwn ? '<span class="you-badge">You</span>' : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="comment-content">${comment.content}</div>
+                    
+                    <div class="comment-controls">
+                        <div class="vote-controls">
+                            <button class="vote-btn ${upvoted}" onclick="handleVote(${comment.id}, 'up')">
+                                ▲
+                            </button>
+                            <span class="score ${scoreClass}">${comment.score}</span>
+                            <button class="vote-btn ${downvoted}" onclick="handleVote(${comment.id}, 'down')">
+                                ▼
+                            </button>
+                        </div>
+                        
+                        <button class="control-btn" onclick="toggleReply(${comment.id})">
+                            ↩️ Reply
+                        </button>
+                        
+                        ${comment.replies && comment.replies.length > 0 ? 
+                            `<button class="control-btn" onclick="toggleCollapse(${comment.id})">
+                                💬 ${comment.replies.length} replies
+                            </button>` : ''
+                        }
+                    </div>
+                    
+                    <div id="reply-form-${comment.id}" class="reply-form hidden">
+                        <textarea id="reply-text-${comment.id}" placeholder="Write a reply..." rows="3"></textarea>
+                        <div class="reply-actions">
+                            <button class="btn btn-secondary" onclick="toggleReply(${comment.id})">Cancel</button>
+                            <button class="btn btn-primary" onclick="submitReply(${comment.id})">Reply</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add replies
+            if (comment.replies && comment.replies.length > 0) {
+                const repliesContainer = document.createElement('div');
+                repliesContainer.id = `replies-${comment.id}`;
+                comment.replies.forEach(reply => {
+                    repliesContainer.appendChild(renderComment(reply, depth + 1));
+                });
+                commentEl.appendChild(repliesContainer);
+            }
+            
+            return commentEl;
+        }
+
+        function toggleReply(commentId) {
+            const replyForm = document.getElementById(`reply-form-${commentId}`);
+            const isHidden = replyForm.classList.contains('hidden');
+            
+            // Hide all other reply forms
+            document.querySelectorAll('.reply-form').forEach(form => {
+                form.classList.add('hidden');
+            });
+            
+            if (isHidden) {
+                replyForm.classList.remove('hidden');
+                document.getElementById(`reply-text-${commentId}`).focus();
+                replyingTo = commentId;
+            } else {
+                replyingTo = null;
+            }
+        }
+
+        function toggleCollapse(commentId) {
+            const repliesContainer = document.getElementById(`replies-${commentId}`);
+            repliesContainer.style.display = repliesContainer.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitReply(commentId) {
+            const textarea = document.getElementById(`reply-text-${commentId}`);
+            const content = textarea.value.trim();
+            
+            if (!content) return;
+
+            await addReply(commentId, content);
+            textarea.value = '';
+            toggleReply(commentId);
+        }
+
+        function setSubmitting(submitting) {
+            isSubmitting = submitting;
+            const button = document.getElementById('post-comment');
+            const icon = document.getElementById('post-icon');
+            
+            if (submitting) {
+                button.disabled = true;
+                icon.textContent = '⏳';
+            } else {
+                button.disabled = false;
+                icon.textContent = '📤';
+            }
+        }
+
+        function showStatusMessage(type, message) {
+            const statusEl = document.getElementById('status-message');
+            statusEl.className = `status-message status-${type}`;
+            
+            let icon = '❌';
+            if (type === 'success') icon = '✅';
+            if (type === 'info') icon = 'ℹ️';
+            
+            statusEl.innerHTML = `
+                <span>${icon}</span>
+                <span>${message}</span>
+            `;
+            statusEl.classList.remove('hidden');
+        }
+
+        function hideStatusMessage() {
+            document.getElementById('status-message').classList.add('hidden');
+        }
+
+        function updateCommentCount(commentsList) {
+            // Count all comments including replies
+            function countComments(comments) {
+                let count = comments.length;
+                comments.forEach(comment => {
+                    if (comment.replies && comment.replies.length > 0) {
+                        count += countComments(comment.replies);
+                    }
+                });
+                return count;
+            }
+            
+            const totalCount = countComments(commentsList);
+            document.getElementById('comment-count').textContent = totalCount;
+            document.getElementById('debug-comment-count').textContent = totalCount;
+        }
+
+        function updateDebugInfo() {
+            document.getElementById('webhook-url').textContent = WEBHOOK_URL;
+            document.getElementById('data-webhook-url').textContent = DATA_WEBHOOK_URL;
+        }
+
+        // Make functions global for onclick handlers
+        window.handleVote = handleVote;
+        window.toggleReply = toggleReply;
+        window.toggleCollapse = toggleCollapse;
+        window.submitReply = submitReply;
+    </script>
+</body>
+</html>
