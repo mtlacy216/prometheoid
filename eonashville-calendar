@@ -1343,8 +1343,7 @@ body {
       btn.classList.toggle('active', btn.dataset.view === view);
     });
     
-    // If switching to month/week view, load events for that period
-    // If switching to list view, load events for the period being viewed
+    // Reload events when switching between views to load data for the active period
     if (view === 'list' && (previousView === 'month' || previousView === 'week')) {
       loadEvents(currentDate); // Load events for the selected period
     } else if ((view === 'month' || view === 'week') && previousView === 'list') {
