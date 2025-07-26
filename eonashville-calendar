@@ -1154,12 +1154,12 @@ body {
       
       // Calculate date range based on current view or filter
       let dateRange;
-      if (specificDate && (currentView === 'month' || currentView === 'week')) {
+      if (currentView === 'month' || currentView === 'week') {
         // Load events for the specific month/week being viewed
-        dateRange = getViewDateRange(specificDate);
+        dateRange = getViewDateRange(specificDate || currentDate);
       } else {
         // Use filter date range for list view or initial load
-        dateRange = getDateRange();
+        dateRange = getDateRange(specificDate || new Date());
       }
       
       let url = `${baseUrl}/events?$orderby=EventDate desc`;
@@ -1236,8 +1236,8 @@ body {
   }
   
   // Get date range based on filter
-  function getDateRange() {
-    const now = new Date();
+  function getDateRange(referenceDate = new Date()) {
+    const now = referenceDate;
     const start = new Date(now);
     const end = new Date(now);
     
@@ -1291,7 +1291,7 @@ body {
     
     // If date range filter changed and we're in list view, reload events
     if (previousDateRange !== activeFilters.dateRange && currentView === 'list') {
-      loadEvents();
+      loadEvents(currentDate);
       return; // loadEvents will call applyFilters again
     }
     
@@ -1344,9 +1344,9 @@ body {
     });
     
     // If switching to month/week view, load events for that period
-    // If switching to list view, load events based on filter
+    // If switching to list view, load events for the period being viewed
     if (view === 'list' && (previousView === 'month' || previousView === 'week')) {
-      loadEvents(); // Load based on filters
+      loadEvents(currentDate); // Load events for the selected period
     } else if ((view === 'month' || view === 'week') && previousView === 'list') {
       loadEvents(currentDate); // Load for current view period
     } else {
@@ -1813,11 +1813,7 @@ body {
   
   // Refresh events
   window.refreshEvents = function() {
-    if (currentView === 'month' || currentView === 'week') {
-      loadEvents(currentDate);
-    } else {
-      loadEvents();
-    }
+    loadEvents(currentDate);
   }
   
   // Utility functions
