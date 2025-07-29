@@ -1624,9 +1624,14 @@
                             
                             <div class="grid">
                                 <div class="form-group">
-                                    <label>Full Name</label>
-                                    <input type="text" id="fullName" onchange="autoSave()">
-                                </div>
+    <label>First Name</label>
+    <input type="text" id="firstName" onchange="autoSave()">
+</div>
+
+<div class="form-group">
+    <label>Last Name</label>
+    <input type="text" id="lastName" onchange="autoSave()">
+</div>
                                 
                                 <div class="form-group">
                                     <label>Pronouns</label>
