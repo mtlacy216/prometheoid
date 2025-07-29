@@ -1601,15 +1601,15 @@
                     <div id="dynamicTabs" style="display: contents;">
                         <!-- Dynamic journey tabs will be inserted here -->
                     </div>
- <button class="tab" onclick="switchTab('case-notes')">
-                        Case Notes
-                        <span class="note-count" id="noteCount" style="display: none;">0</span>
-                    </button>
                     <button class="tab" onclick="switchTab('insurance')">Insurance</button>
                     <button class="tab" onclick="switchTab('medical')">Medical</button>
                     <button class="tab" onclick="switchTab('medications')">Medications</button>
                     <button class="tab" onclick="switchTab('documents')">Documents</button>
                     <button class="tab" onclick="switchTab('providers')">Providers</button>
+                    <button class="tab" onclick="switchTab('case-notes')">
+                        Case Notes
+                        <span class="note-count" id="noteCount" style="display: none;">0</span>
+                    </button>
                     <button class="tab" onclick="switchTab('contacts')">Contacts</button>
                     <button class="tab" onclick="switchTab('journeys')">Journey Modules</button>
                     <button class="tab" onclick="switchTab('settings')">Settings</button>
@@ -3874,8 +3874,7 @@ lastName: document.getElementById('lastName')?.value || '',
             
             populateFields() {
                 // Personal (Enhanced)
-                firstName: document.getElementById('firstName')?.value || '',
-lastName: document.getElementById('lastName')?.value || '',
+                document.getElementById('fullName').value = this.data.personal?.fullName || '';
                 document.getElementById('pronouns').value = this.data.personal?.pronouns || '';
                 document.getElementById('dateOfBirth').value = this.data.personal?.dateOfBirth || '';
                 document.getElementById('genderIdentity').value = this.data.personal?.genderIdentity || '';
