@@ -3874,7 +3874,8 @@ lastName: document.getElementById('lastName')?.value || '',
             
             populateFields() {
                 // Personal (Enhanced)
-                document.getElementById('fullName').value = this.data.personal?.fullName || '';
+                firstName: document.getElementById('firstName')?.value || '',
+lastName: document.getElementById('lastName')?.value || '',
                 document.getElementById('pronouns').value = this.data.personal?.pronouns || '';
                 document.getElementById('dateOfBirth').value = this.data.personal?.dateOfBirth || '';
                 document.getElementById('genderIdentity').value = this.data.personal?.genderIdentity || '';
