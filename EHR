@@ -8,11 +8,6 @@
     <meta http-equiv="Expires" content="0">
     <title>Your Health Vault - Private Health Records</title>
     
-    <!-- For TOTP 2FA -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <!-- For QR Code generation (keeping for 2FA setup only) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
     <style>
         :root {
             --primary: #3b82f6;
@@ -25,6 +20,8 @@
             --text: #1e293b;
             --text-light: #64748b;
             --border: #e2e8f0;
+            --gac-primary: #8b5cf6;
+            --gac-light: #e9d5ff;
         }
 
         * {
@@ -103,17 +100,6 @@
             align-items: center;
             gap: 1rem;
         }
-
-        .save-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--bg);
-            border-radius: 1rem;
-            font-size: 0.875rem;
-            transition: all 0.3s;
-        }
         
         .session-timer {
             display: flex;
@@ -134,17 +120,6 @@
             background: #fee2e2;
             color: #991b1b;
             animation: pulse 1s infinite;
-        }
-
-        .save-indicator.saving {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .save-indicator.saved {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
         }
 
         /* View Toggle */
@@ -332,6 +307,15 @@
             color: white;
         }
 
+        .btn-gac {
+            background: var(--gac-primary);
+            color: white;
+        }
+
+        .btn-gac:hover {
+            background: #7c3aed;
+        }
+
         .btn-block {
             width: 100%;
             justify-content: center;
@@ -353,66 +337,6 @@
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.875rem;
-        }
-
-        /* Recovery Card */
-        .recovery-card {
-            background: white;
-            border: 2px dashed var(--primary);
-            border-radius: 0.75rem;
-            padding: 2rem;
-            margin: 1.5rem 0;
-            position: relative;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        .recovery-card::before {
-            content: "✂️ Cut along dotted line";
-            position: absolute;
-            top: -0.75rem;
-            left: 1rem;
-            background: white;
-            padding: 0 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-
-        .recovery-card-header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .recovery-card-header h3 {
-            color: var(--primary);
-            margin-bottom: 0.25rem;
-        }
-
-        .recovery-code {
-            font-family: monospace;
-            font-size: 1.5rem;
-            text-align: center;
-            padding: 1rem;
-            background: var(--bg);
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-        }
-
-        .recovery-instructions {
-            background: #f0f9ff;
-            border-radius: 0.5rem;
-            padding: 1rem;
-        }
-
-        .recovery-instructions ol {
-            margin: 0.5rem 0 0 1.5rem;
-        }
-
-        .recovery-instructions li {
-            margin: 0.25rem 0;
         }
 
         /* Info Box */
@@ -437,6 +361,11 @@
         .info-box.tip {
             background: #f3f4f6;
             border-color: #e5e7eb;
+        }
+
+        .info-box.gac {
+            background: var(--gac-light);
+            border-color: var(--gac-primary);
         }
 
         /* Help Section */
@@ -492,6 +421,14 @@
             right: 0;
             height: 2px;
             background: var(--primary);
+        }
+
+        .tab.gac-tab.active {
+            color: var(--gac-primary);
+        }
+
+        .tab.gac-tab.active::after {
+            background: var(--gac-primary);
         }
 
         .tab .note-count {
@@ -596,41 +533,46 @@
             background: var(--bg);
         }
 
-        /* QR Code Container */
-        .qr-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.75rem;
-            text-align: center;
-            margin: 1.5rem 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        /* Case Journey Selection */
+        .journey-selection {
+            margin: 2rem 0;
         }
 
-        .qr-container #qrcode,
-        .qr-container #setupQrCode {
-            display: inline-block;
-            margin: 1rem auto;
+        .journey-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
         }
 
-        /* Phone Setup Guide */
-        .phone-setup-guide {
-            background: var(--bg);
+        .journey-option {
+            padding: 1rem;
+            border: 2px solid var(--border);
             border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
         }
 
-        .phone-setup-guide h4 {
-            margin-bottom: 0.75rem;
+        .journey-option.selected {
+            border-color: var(--primary);
+            background: #f0f9ff;
+        }
+
+        .journey-option input[type="checkbox"] {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+        }
+
+        .journey-option h4 {
+            margin-bottom: 0.5rem;
             color: var(--primary);
         }
 
-        .phone-setup-guide ol {
-            margin-left: 1.5rem;
-        }
-
-        .phone-setup-guide li {
-            margin: 0.5rem 0;
+        .journey-option p {
+            font-size: 0.875rem;
+            color: var(--text-light);
         }
 
         /* File Upload */
@@ -686,109 +628,6 @@
             height: 100%;
             background: var(--primary);
             transition: width 0.3s;
-        }
-
-        /* Checkbox */
-        .checkbox-group {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            margin: 1.5rem 0;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-top: 0.125rem;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            cursor: pointer;
-            flex: 1;
-        }
-
-        /* Help Options */
-        .help-options {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        .help-option {
-            padding: 1rem;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .help-option:hover {
-            border-color: var(--primary);
-            background: #f0f9ff;
-        }
-
-        .help-option-icon {
-            font-size: 1.5rem;
-        }
-
-        /* Case Journey Selection */
-        .journey-selection {
-            margin: 2rem 0;
-        }
-
-        .journey-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .journey-option {
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .journey-option.selected {
-            border-color: var(--primary);
-            background: #f0f9ff;
-        }
-
-        .journey-option input[type="checkbox"] {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-        }
-
-        .journey-option h4 {
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .journey-option p {
-            font-size: 0.875rem;
-            color: var(--text-light);
-        }
-
-        /* Image Preview */
-        .image-preview-container {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .image-preview-container img {
-            max-width: 100%;
-            max-height: 600px;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
 
         /* Item List */
@@ -900,7 +739,32 @@
             gap: 0.5rem;
         }
 
-        /* Case Notes */
+        /* Case Notes Enhanced Styles */
+        .case-notes-header {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .case-notes-header h3 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .case-notes-header p {
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        .case-notes-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .case-notes-list {
             display: flex;
             flex-direction: column;
@@ -911,8 +775,15 @@
         .case-note {
             background: white;
             border: 1px solid var(--border);
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             overflow: hidden;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .case-note:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
         }
 
         .case-note-header {
@@ -952,8 +823,24 @@
             background: var(--success);
         }
 
+        .case-note-type.visit {
+            background: #8b5cf6;
+        }
+
+        .case-note-type.symptom {
+            background: var(--warning);
+        }
+
+        .case-note-type.treatment {
+            background: #ec4899;
+        }
+
+        .case-note-type.gac {
+            background: var(--gac-primary);
+        }
+
         .case-note-content {
-            padding: 1rem;
+            padding: 1.5rem;
         }
 
         .case-note-section {
@@ -970,10 +857,37 @@
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .case-note-section-content {
             color: var(--text);
+            line-height: 1.6;
+        }
+
+        .case-note-mood {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg);
+            border-radius: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .case-note-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .case-note-tag {
+            padding: 0.25rem 0.5rem;
+            background: #e0e7ff;
+            color: #4338ca;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
         }
 
         /* Note Summary */
@@ -988,6 +902,100 @@
         .note-summary-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state h4 {
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Note Form Enhanced */
+        .note-form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .note-form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+            color: var(--text);
+        }
+
+        .note-form-hint {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        .mood-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .mood-option {
+            width: 2.5rem;
+            height: 2.5rem;
+            border: 2px solid var(--border);
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .mood-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .mood-option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Filter Pills */
+        .filter-pills {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-pill {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-pill:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         /* Data Preview */
@@ -1045,6 +1053,93 @@
             margin-top: 0.5rem;
         }
 
+        /* Image Preview */
+        .image-preview-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .image-preview-container img {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        /* GAC Specific Styles */
+        .gac-header {
+            background: linear-gradient(135deg, var(--gac-light) 0%, #faf5ff 100%);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .gac-header h3 {
+            font-size: 1.5rem;
+            color: var(--gac-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .gac-timeline {
+            position: relative;
+            padding-left: 2rem;
+            margin: 2rem 0;
+        }
+
+        .gac-timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--gac-primary);
+        }
+
+        .gac-timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: var(--bg);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .gac-timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.75rem;
+            top: 1rem;
+            width: 1rem;
+            height: 1rem;
+            background: var(--gac-primary);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--gac-primary);
+        }
+
+        .gac-timeline-date {
+            font-weight: 600;
+            color: var(--gac-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .gac-timeline-content {
+            color: var(--text);
+        }
+
+        .pronoun-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--gac-light);
+            color: var(--gac-primary);
+            border-radius: 1rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -1078,26 +1173,6 @@
         /* Hidden */
         .hidden {
             display: none !important;
-        }
-
-        /* Print styles */
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            
-            .recovery-card, .recovery-card * {
-                visibility: visible;
-            }
-            
-            .recovery-card {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                box-shadow: none;
-            }
         }
 
         /* Responsive */
@@ -1157,6 +1232,7 @@
     "name": "Gender Affirming Care",
     "description": "Comprehensive tracking for transition-related healthcare",
     "icon": "🏳️‍⚧️",
+    "tabOrder": 2,
     "sections": [
       {
         "id": "identity",
@@ -1173,7 +1249,7 @@
             "id": "pronouns",
             "type": "text",
             "label": "Pronouns",
-            "placeholder": "e.g., she/her, they/them",
+            "placeholder": "e.g., she/her, they/them, he/him",
             "required": true
           },
           {
@@ -1182,6 +1258,13 @@
             "label": "Gender Identity",
             "options": ["Woman", "Man", "Non-binary", "Genderfluid", "Agender", "Two-Spirit", "Other"],
             "allowCustom": true
+          },
+          {
+            "id": "legal_name",
+            "type": "text",
+            "label": "Legal Name (if different)",
+            "placeholder": "For insurance/legal purposes only",
+            "private": true
           }
         ]
       },
@@ -1193,7 +1276,7 @@
             "id": "hrt_status",
             "type": "select",
             "label": "HRT Status",
-            "options": ["Not Started", "Active", "Paused", "Discontinued"],
+            "options": ["Not Started", "Active", "Paused", "Discontinued", "Considering"],
             "required": true
           },
           {
@@ -1206,6 +1289,17 @@
             "id": "start_date",
             "type": "date",
             "label": "HRT Start Date"
+          },
+          {
+            "id": "prescribing_provider",
+            "type": "text",
+            "label": "Prescribing Provider"
+          },
+          {
+            "id": "monitoring_schedule",
+            "type": "textarea",
+            "label": "Lab Monitoring Schedule",
+            "placeholder": "Blood work frequency and tests"
           }
         ]
       },
@@ -1220,8 +1314,43 @@
             "listFields": [
               {"id": "procedure", "type": "text", "label": "Procedure"},
               {"id": "date", "type": "date", "label": "Date"},
-              {"id": "surgeon", "type": "text", "label": "Surgeon"}
+              {"id": "surgeon", "type": "text", "label": "Surgeon"},
+              {"id": "facility", "type": "text", "label": "Facility"}
             ]
+          },
+          {
+            "id": "future_surgeries",
+            "type": "textarea",
+            "label": "Planned/Desired Surgeries",
+            "placeholder": "Future surgical goals and timeline"
+          }
+        ]
+      },
+      {
+        "id": "support_team",
+        "name": "Support & Care Team",
+        "fields": [
+          {
+            "id": "therapist",
+            "type": "text",
+            "label": "Mental Health Provider"
+          },
+          {
+            "id": "support_groups",
+            "type": "textarea",
+            "label": "Support Groups",
+            "placeholder": "Groups you attend or are interested in"
+          },
+          {
+            "id": "insurance_coverage",
+            "type": "textarea",
+            "label": "Insurance Coverage Notes",
+            "placeholder": "Coverage for GAC, exclusions, appeals, etc."
+          },
+          {
+            "id": "pharmacy",
+            "type": "text",
+            "label": "Preferred Pharmacy for HRT"
           }
         ]
       }
@@ -1247,7 +1376,7 @@
             
             // Small delay to ensure DOM is fully ready
             setTimeout(() => {
-                console.log('Enhanced Health Vault initializing...');
+                console.log('Simple Health Vault initializing...');
                 // App will be initialized at the bottom of the file
             }, 100);
         });
@@ -1264,22 +1393,16 @@
                 </div>
                 
                 <div class="info-box">
-                    <strong>Enhanced Features:</strong><br>
+                    <strong>Features:</strong><br>
                     • Comprehensive health insurance tracking<br>
                     • Personal case notes and health journal<br>
-                    • Provider directory (no remote access)<br>
-                    • Everything stays encrypted on your device
+                    • Provider directory<br>
+                    • Document storage<br>
+                    • Password protected with secure browser storage
                 </div>
                 
                 <div id="newOrExisting">
                     <!-- Will be populated based on instance status -->
-                </div>
-                
-                <!-- Debug info (only shown when there's embedded data) -->
-                <div id="debugInfo" style="margin-top: 2rem; font-size: 0.75rem; color: var(--text-light); text-align: center; display: none;">
-                    <a href="#" onclick="showDebugInfo(); return false;" style="color: var(--text-light);">
-                        Show vault info
-                    </a>
                 </div>
             </div>
 
@@ -1287,9 +1410,9 @@
             <div id="newUserSetup" class="hidden">
                 <!-- Step 1: Password -->
                 <div id="setupStep1" class="setup-step">
-                    <h2 style="margin-bottom: 1rem;">Create Your Safe Combination</h2>
+                    <h2 style="margin-bottom: 1rem;">Create Your Password</h2>
                     <p style="color: var(--text-light); margin-bottom: 1.5rem;">
-                        Choose a password you'll remember. This is the key to your health records.
+                        Choose a password you'll remember. This protects your health records.
                     </p>
                     
                     <div class="form-group">
@@ -1313,48 +1436,8 @@
                     </button>
                 </div>
 
-                <!-- Step 2: Phone Security -->
+                <!-- Step 2: Case Journeys -->
                 <div id="setupStep2" class="setup-step hidden">
-                    <h2 style="margin-bottom: 1rem;">Add Phone Security</h2>
-                    <p style="color: var(--text-light); margin-bottom: 1.5rem;">
-                        Use your phone as a second key. This keeps your records extra safe.
-                    </p>
-                    
-                    <div class="qr-container">
-                        <div id="setupQrCode"></div>
-                        <p style="margin-top: 1rem; color: var(--text-light);">
-                            Scan with Google Authenticator
-                        </p>
-                    </div>
-                    
-                    <div class="phone-setup-guide">
-                        <h4>📱 How to set up:</h4>
-                        <ol>
-                            <li>Download "Google Authenticator" from your app store</li>
-                            <li>Open the app and tap the + button</li>
-                            <li>Choose "Scan QR code"</li>
-                            <li>Point your camera at the code above</li>
-                        </ol>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Enter the 6-digit code from your app:</label>
-                        <input type="text" id="setupVerifyCode" placeholder="000000" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em;">
-                    </div>
-                    
-                    <button class="btn btn-primary btn-block" onclick="setupStep2()">
-                        Verify Code →
-                    </button>
-                    
-                    <div class="help-section">
-                        <a href="#" onclick="showNoPhoneOption(); return false;">
-                            Don't have a smartphone?
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Step 3: Case Journeys -->
-                <div id="setupStep3" class="setup-step hidden">
                     <h2 style="margin-bottom: 1rem;">Choose Your Health Tracking</h2>
                     <p style="color: var(--text-light); margin-bottom: 1rem;">
                         Select any specialized health tracking you need. You can change these later in settings.
@@ -1394,72 +1477,12 @@
                         </div>
                     </div>
                     
-                    <button class="btn btn-primary btn-block" onclick="setupStep3()">
+                    <button class="btn btn-primary btn-block" onclick="completeSetup()">
                         Continue →
                     </button>
                     
-                    <button class="btn btn-secondary btn-block" onclick="setupStep3()">
+                    <button class="btn btn-secondary btn-block" onclick="completeSetup()">
                         Skip for Now
-                    </button>
-                </div>
-
-                <!-- Step 4: Recovery Card -->
-                <div id="setupStep4" class="setup-step hidden">
-                    <h2 style="margin-bottom: 1rem;">Create Your Safety Net</h2>
-                    <p style="color: var(--text-light); margin-bottom: 1rem;">
-                        Print this card and keep it somewhere safe. You'll need it if you forget your password.
-                    </p>
-                    
-                    <div class="recovery-card" id="recoveryCard">
-                        <div class="recovery-card-header">
-                            <h3>🏥 Health Vault Recovery Card</h3>
-                            <small>Keep this card safe!</small>
-                        </div>
-                        
-                        <div style="background: #f0f9ff; padding: 0.75rem; border-radius: 0.25rem; margin-bottom: 1rem;">
-                            <strong>Vault Name:</strong> <span id="recoveryVaultName" style="font-family: monospace;">-</span><br>
-                            <strong>Vault ID:</strong> <span id="recoveryVaultId" style="font-family: monospace; font-size: 0.875rem;">-</span>
-                        </div>
-                        
-                        <div class="recovery-instructions">
-                            <strong>If you forget your password:</strong>
-                            <ol>
-                                <li>Go to your Health Vault</li>
-                                <li>Click "Can't get in?"</li>
-                                <li>Use this recovery code:</li>
-                            </ol>
-                        </div>
-                        
-                        <div class="recovery-code" id="recoveryCodeDisplay">
-                            XXXX-XXXX-XXXX
-                        </div>
-                        
-                        <div style="text-align: center; margin-top: 1rem;">
-                            <small style="color: var(--danger);">
-                                ⚠️ This code works only ONCE<br>
-                                Without it, you cannot recover your password
-                            </small>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                        <button class="btn btn-secondary" onclick="printRecoveryCard()">
-                            🖨️ Print Card
-                        </button>
-                        <button class="btn btn-secondary" onclick="downloadRecoveryCard()">
-                            📥 Save as Image
-                        </button>
-                    </div>
-                    
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="confirmSaved">
-                        <label for="confirmSaved">
-                            I've saved my recovery card somewhere safe
-                        </label>
-                    </div>
-                    
-                    <button class="btn btn-primary btn-block" onclick="completeSetup()" id="finishSetupBtn" disabled>
-                        Open My Health Vault →
                     </button>
                 </div>
             </div>
@@ -1478,11 +1501,6 @@
                     <input type="password" id="loginPassword" placeholder="Enter your password">
                 </div>
                 
-                <div class="form-group">
-                    <label>6-digit code from your phone</label>
-                    <input type="text" id="loginCode" placeholder="000000" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5em;">
-                </div>
-                
                 <button class="btn btn-primary btn-block" onclick="login()">
                     🔓 Unlock My Records
                 </button>
@@ -1497,116 +1515,19 @@
             <!-- Help Screen -->
             <div id="helpScreen" class="hidden">
                 <h2 style="margin-bottom: 1.5rem;">🤔 Having Trouble?</h2>
-                <p style="color: var(--text-light); margin-bottom: 1.5rem;">
-                    What's the problem?
-                </p>
                 
-                <div class="help-options">
-                    <div class="help-option" onclick="showRecoveryOption()">
-                        <span class="help-option-icon">🔑</span>
-                        <div>
-                            <strong>I forgot my password</strong><br>
-                            <small>Use your recovery card to reset it</small>
-                        </div>
-                    </div>
-                    
-                    <div class="help-option" onclick="showRecoveryOption()">
-                        <span class="help-option-icon">📱</span>
-                        <div>
-                            <strong>Lost my phone/app</strong><br>
-                            <small>Use your recovery card to get back in</small>
-                        </div>
-                    </div>
-                    
-                    <div class="help-option" onclick="showLostEverything()">
-                        <span class="help-option-icon">😰</span>
-                        <div>
-                            <strong>Lost my recovery card</strong><br>
-                            <small>See what options you have</small>
-                        </div>
-                    </div>
-                    
-                    <div class="help-option" onclick="showGuide()">
-                        <span class="help-option-icon">📖</span>
-                        <div>
-                            <strong>Just need help</strong><br>
-                            <small>Show me how this works</small>
-                        </div>
-                    </div>
+                <div class="info-box warning">
+                    <strong>Forgot your password?</strong><br>
+                    Unfortunately, for security reasons, passwords cannot be recovered.<br>
+                    You'll need to create a new vault if you've forgotten your password.
                 </div>
                 
-                <button class="btn btn-secondary btn-block" onclick="backToLogin()" style="margin-top: 1rem;">
-                    ← Back to Login
-                </button>
-            </div>
-
-            <!-- Recovery Screen -->
-            <div id="recoveryScreen" class="hidden">
-                <h2 style="margin-bottom: 1.5rem;">🔑 Password Recovery</h2>
-                <p style="color: var(--text-light); margin-bottom: 1.5rem;">
-                    Enter your recovery code from your printed card
-                </p>
-                
-                <div class="form-group">
-                    <label>Recovery Code</label>
-                    <input type="text" id="recoveryCodeInput" placeholder="XXXX-XXXX-XXXX" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.1em;">
-                </div>
-                
-                <div id="recoveryNewPassword" class="hidden">
-                    <div class="form-group">
-                        <label>Create New Password</label>
-                        <input type="password" id="recoveryPassword" placeholder="Your new password">
-                        <small>💡 Choose something you'll remember this time!</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Type It Again</label>
-                        <input type="password" id="recoveryPasswordConfirm" placeholder="Same password">
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary btn-block" onclick="verifyRecoveryCode()" id="recoveryBtn">
-                    Verify Code →
+                <button class="btn btn-primary btn-block" onclick="startFresh()">
+                    Start Fresh Records
                 </button>
                 
                 <button class="btn btn-secondary btn-block" onclick="backToLogin()" style="margin-top: 0.5rem;">
-                    Cancel
-                </button>
-            </div>
-
-            <!-- Lost Everything Screen -->
-            <div id="lostEverythingScreen" class="hidden">
-                <h2 style="margin-bottom: 1.5rem;">😔 Lost Access</h2>
-                
-                <div class="info-box warning">
-                    <strong>Without your password AND recovery card...</strong><br>
-                    Your health records are locked in your digital safe, and we don't have a master key. 
-                    This is what keeps your records truly private.
-                </div>
-                
-                <p style="margin: 1.5rem 0;">Your options:</p>
-                
-                <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                    <strong>1. Try to remember</strong><br>
-                    Sometimes taking a break helps. Try again later.
-                </div>
-                
-                <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                    <strong>2. Check for vault files</strong><br>
-                    Look for files named HealthVault_YYYY-MM-DD_HH-MM-SS.html
-                </div>
-                
-                <div style="background: var(--bg); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                    <strong>3. Start fresh</strong><br>
-                    Create new health records (old ones stay locked).
-                </div>
-                
-                <button class="btn btn-secondary btn-block" onclick="backToLogin()">
-                    Try Password Again
-                </button>
-                
-                <button class="btn btn-primary btn-block" onclick="startFresh()" style="margin-top: 0.5rem;">
-                    Start Fresh Records
+                    ← Back to Login
                 </button>
             </div>
         </div>
@@ -1626,7 +1547,7 @@
                         <div class="vault-id" id="headerVaultId">-</div>
                     </div>
                     <div class="version-info">
-                        <div>App v<span id="appVersion">3.0.0</span></div>
+                        <div>App v<span id="appVersion">2.0.0</span></div>
                         <div style="font-size: 0.7rem;"><span id="moduleCount">0</span> modules loaded</div>
                     </div>
                 </div>
@@ -1634,10 +1555,10 @@
                 <div class="status-bar">
                     <div class="view-toggle">
                         <button class="active" onclick="toggleView('normal')">
-                            🔓 Normal View
+                            📄 Normal View
                         </button>
-                        <button onclick="toggleView('encrypted')">
-                            🔐 Encrypted View
+                        <button onclick="toggleView('data')">
+                            📊 Data View
                         </button>
                     </div>
                     
@@ -1656,7 +1577,7 @@
                         📊 Export Data
                     </button>
                     
-                    <button class="btn btn-secondary" onclick="lockVault()" title="Lock vault and clear from memory">
+                    <button class="btn btn-secondary" onclick="lockVault()" title="Lock vault">
                         🔒 Lock
                     </button>
                 </div>
@@ -1677,6 +1598,9 @@
                 <!-- Tabs -->
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('personal')">Personal</button>
+                    <div id="dynamicTabs" style="display: contents;">
+                        <!-- Dynamic journey tabs will be inserted here -->
+                    </div>
                     <button class="tab" onclick="switchTab('insurance')">Insurance</button>
                     <button class="tab" onclick="switchTab('medical')">Medical</button>
                     <button class="tab" onclick="switchTab('medications')">Medications</button>
@@ -1687,9 +1611,6 @@
                         <span class="note-count" id="noteCount" style="display: none;">0</span>
                     </button>
                     <button class="tab" onclick="switchTab('contacts')">Contacts</button>
-                    <div id="dynamicTabs" style="display: contents;">
-                        <!-- Dynamic journey tabs will be inserted here -->
-                    </div>
                     <button class="tab" onclick="switchTab('journeys')">Journey Modules</button>
                     <button class="tab" onclick="switchTab('settings')">Settings</button>
                 </div>
@@ -1708,8 +1629,41 @@
                                 </div>
                                 
                                 <div class="form-group">
+                                    <label>Pronouns</label>
+                                    <input type="text" id="pronouns" placeholder="e.g., she/her, they/them, he/him" onchange="autoSave()">
+                                    <small>💡 These will be displayed throughout the app</small>
+                                </div>
+                                
+                                <div class="form-group">
                                     <label>Date of Birth</label>
                                     <input type="date" id="dateOfBirth" onchange="autoSave()">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Gender Identity</label>
+                                    <select id="genderIdentity" onchange="autoSave()">
+                                        <option value="">Select...</option>
+                                        <option value="woman">Woman</option>
+                                        <option value="man">Man</option>
+                                        <option value="non-binary">Non-binary</option>
+                                        <option value="genderfluid">Genderfluid</option>
+                                        <option value="agender">Agender</option>
+                                        <option value="two-spirit">Two-Spirit</option>
+                                        <option value="prefer-not-to-say">Prefer not to say</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Sex Assigned at Birth</label>
+                                    <select id="sexAssignedAtBirth" onchange="autoSave()">
+                                        <option value="">Select...</option>
+                                        <option value="female">Female</option>
+                                        <option value="male">Male</option>
+                                        <option value="intersex">Intersex</option>
+                                        <option value="prefer-not-to-say">Prefer not to say</option>
+                                    </select>
+                                    <small>For medical history purposes</small>
                                 </div>
                                 
                                 <div class="form-group">
@@ -2025,33 +1979,53 @@
                             • Keep a directory of all your healthcare providers<br>
                             • Include contact information and specialties<br>
                             • Add notes about your visits and treatments<br>
-                            • No remote access - all data stays on your device
+                            • All data stays on your device
                         </div>
                     </div>
 
                     <!-- Case Notes Tab -->
                     <div id="case-notes-tab" class="tab-content hidden">
+                        <div class="case-notes-header">
+                            <h3>📝 Case Notes & Health Journal</h3>
+                            <p>Document your health journey, track symptoms, and record visit notes</p>
+                        </div>
+                        
                         <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Case Notes & Health Journal</h3>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-primary" onclick="showAddNoteModal()">
-                                        ➕ Add Note
-                                    </button>
-                                    <select id="noteFilter" onchange="filterNotes()">
-                                        <option value="all">All Notes</option>
-                                        <option value="personal">Personal Notes</option>
-                                        <option value="visit">Visit Notes</option>
-                                        <option value="recent">Recent (30 days)</option>
-                                    </select>
-                                </div>
+                            <div class="case-notes-actions">
+                                <button class="btn btn-primary" onclick="showAddNoteModal()">
+                                    ➕ Add Note
+                                </button>
+                                <select id="noteFilter" onchange="filterNotes()" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+                                    <option value="all">All Notes</option>
+                                    <option value="personal">Personal Notes</option>
+                                    <option value="visit">Visit Notes</option>
+                                    <option value="symptom">Symptom Tracking</option>
+                                    <option value="treatment">Treatment Progress</option>
+                                    <option value="gac">Gender Affirming Care</option>
+                                    <option value="recent">Recent (30 days)</option>
+                                </select>
+                                <input type="text" id="noteSearch" placeholder="Search notes..." onkeyup="searchNotes()" style="padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid var(--border); flex: 1; max-width: 300px;">
                             </div>
                             
                             <div id="caseNotesList" class="case-notes-list">
-                                <p style="text-align: center; color: var(--text-light); padding: 2rem;">
-                                    No notes yet. Start documenting your health journey!
-                                </p>
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📔</div>
+                                    <h4>No notes yet</h4>
+                                    <p>Start documenting your health journey!</p>
+                                    <button class="btn btn-primary" onclick="showAddNoteModal()" style="margin-top: 1rem;">
+                                        Create Your First Note
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+                        
+                        <div class="info-box tip" style="margin-top: 2rem;">
+                            <strong>💡 Tips for effective health journaling:</strong><br>
+                            • Be consistent - daily or weekly notes help track patterns<br>
+                            • Include specific details about symptoms and triggers<br>
+                            • Note what helps or makes things worse<br>
+                            • Track your mood and energy levels<br>
+                            • Document questions for your next provider visit
                         </div>
                     </div>
 
@@ -2157,6 +2131,16 @@
                         </div>
                         
                         <div class="card">
+                            <h3 class="card-title">Security</h3>
+                            <button class="btn btn-warning" onclick="changePassword()">
+                                🔑 Change Password
+                            </button>
+                            <p style="margin-top: 0.5rem; color: var(--text-light); font-size: 0.875rem;">
+                                Update your vault password
+                            </p>
+                        </div>
+                        
+                        <div class="card">
                             <h3 class="card-title">Data Management</h3>
                             <button class="btn btn-success" onclick="showExportModal()">
                                 📊 Export All Data as JSON
@@ -2176,7 +2160,7 @@
                         <div class="card">
                             <h3 class="card-title">System Information</h3>
                             <div style="font-family: monospace; font-size: 0.875rem; line-height: 1.8;">
-                                App Version: <span id="settingsAppVersion">3.0.0</span><br>
+                                App Version: <span id="settingsAppVersion">2.0.0</span><br>
                                 Vault Created: <span id="settingsCreated">-</span><br>
                                 Last Modified: <span id="settingsModified">-</span><br>
                                 Loaded Modules: <span id="settingsModules">-</span>
@@ -2186,15 +2170,15 @@
                 </div>
             </div>
             
-            <!-- Encrypted View -->
-            <div id="encryptedView" class="hidden">
+            <!-- Data View -->
+            <div id="dataView" class="hidden">
                 <div class="card">
-                    <h3 class="card-title">🔐 Encrypted Data Preview</h3>
+                    <h3 class="card-title">📊 Raw Data View</h3>
                     <p style="margin-bottom: 1rem; color: var(--text-light);">
-                        This shows how your data looks when saved in the HTML file - completely encrypted and unreadable without your password:
+                        This shows your health data in JSON format:
                     </p>
-                    <div class="data-preview" id="encryptedPreview">
-                        Loading encrypted data...
+                    <div class="data-preview" id="dataPreview">
+                        Loading data...
                     </div>
                 </div>
             </div>
@@ -2216,7 +2200,7 @@
                 The original file remains unchanged. Each save creates a new file.
             </div>
             
-            <button class="btn btn-primary btn-block" onclick="downloadSelfContained()" style="padding: 1.5rem; font-size: 1.1rem;">
+            <button class="btn btn-primary btn-block" onclick="downloadVault()" style="padding: 1.5rem; font-size: 1.1rem;">
                 <strong>💾 Save Health Vault</strong>
             </button>
             
@@ -2245,20 +2229,13 @@
                 <button class="close-btn" onclick="closeModal('exportModal')">×</button>
             </div>
             
-            <div class="info-box warning">
-                <strong>⚠️ Important:</strong> Exported data will be UNENCRYPTED!<br>
-                Anyone who gets the export file can read your health information.<br>
-                Keep exported files secure and delete them when no longer needed.
+            <div class="info-box">
+                <strong>Export Format:</strong> Your data will be exported as a JSON file that can be read by other applications.
             </div>
             
-            <p style="margin: 1.5rem 0;">Choose export format:</p>
-            
             <button class="btn btn-primary btn-block" onclick="exportAsJSON()">
-                📋 Export as JSON (Text Data Only)
+                📋 Export as JSON
             </button>
-            <p style="text-align: center; color: var(--text-light); font-size: 0.875rem; margin-top: 0.5rem;">
-                Includes all your health information in a format readable by other applications
-            </p>
             
             <div style="margin-top: 2rem; padding: 1rem; background: var(--bg); border-radius: 0.5rem;">
                 <strong>What's included in JSON export:</strong>
@@ -2293,7 +2270,7 @@
             <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
                 <div id="uploadText">
                     📁 Click to select file<br>
-                    <small>PDF, Images, Documents (Any size - large files may take time)</small>
+                    <small>PDF, Images, Documents (Any size)</small>
                 </div>
                 <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
             </div>
@@ -2310,11 +2287,6 @@
             <div class="modal-header">
                 <h3 class="modal-title">📷 Document Preview</h3>
                 <button class="close-btn" onclick="closeModal('imagePreviewModal')">×</button>
-            </div>
-            
-            <div class="info-box warning">
-                <strong>⚠️ Security Notice:</strong> This image is temporarily decrypted for viewing.<br>
-                It remains encrypted in your vault storage.
             </div>
             
             <div class="image-preview-container" id="imagePreviewContainer">
@@ -2398,6 +2370,7 @@
                     <option value="visit">Visit Note</option>
                     <option value="symptom">Symptom Tracking</option>
                     <option value="treatment">Treatment Progress</option>
+                    <option value="gac">Gender Affirming Care</option>
                     <option value="general">General Note</option>
                 </select>
             </div>
@@ -2452,7 +2425,7 @@
             <div class="info-box">
                 <strong>You can import:</strong><br>
                 • <strong>HealthVault_YYYY-MM-DD_HH-MM-SS.html</strong> - A saved vault file<br>
-                • <strong>vault_data.json</strong> - Data export (advanced users)<br><br>
+                • <strong>vault_data.json</strong> - Data export<br><br>
                 ⚠️ <strong>Note:</strong> Importing replaces any data currently in this browser tab
             </div>
             
@@ -2568,9 +2541,75 @@
         </div>
     </div>
 
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔑 Change Password</h3>
+                <button class="close-btn" onclick="closeModal('changePasswordModal')">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" id="currentPassword" placeholder="Enter current password">
+            </div>
+            
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPasswordChange" placeholder="Enter new password">
+                <small>Must be at least 8 characters</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirmNewPassword" placeholder="Confirm new password">
+            </div>
+            
+            <button class="btn btn-primary btn-block" onclick="updatePassword()">
+                Update Password
+            </button>
+        </div>
+    </div>
+
+    <!-- GAC Note Modal -->
+    <div id="gacNoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🏳️‍⚧️ Add GAC Note</h3>
+                <button class="close-btn" onclick="closeModal('gacNoteModal')">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Note Title</label>
+                <input type="text" id="gacNoteTitle" placeholder="e.g., HRT Check-in, Name Change Progress">
+            </div>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="gacNoteCategory">
+                    <option value="hrt">Hormone Therapy</option>
+                    <option value="surgery">Surgery Related</option>
+                    <option value="legal">Legal/Documentation</option>
+                    <option value="social">Social Transition</option>
+                    <option value="mental-health">Mental Health</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Note Content</label>
+                <textarea id="gacNoteContent" rows="6" placeholder="What happened? How are you feeling?"></textarea>
+            </div>
+            
+            <button class="btn btn-gac btn-block" onclick="saveGacNote()">
+                Save GAC Note
+            </button>
+        </div>
+    </div>
+
     <script>
         // ============================================
-        // ENHANCED HEALTH VAULT APPLICATION
+        // SIMPLE HEALTH VAULT APPLICATION (ENHANCED)
         // ============================================
         
         // Friendly name lists for random vault names
@@ -2589,7 +2628,7 @@
         ];
         
         // ============================================
-        // JOURNEY ENGINE CLASS
+        // JOURNEY ENGINE CLASS (ENHANCED)
         // ============================================
         
         class JourneyEngine {
@@ -2646,10 +2685,20 @@
                     tab = document.createElement('button');
                     tab.id = tabId;
                     tab.className = 'tab';
+                    if (journey.journeyId === 'gender-affirming-care') {
+                        tab.className += ' gac-tab';
+                    }
                     tab.innerHTML = `${journey.icon || '📋'} ${journey.name}`;
                     tab.onclick = () => this.app.switchTab(journey.journeyId);
                     
-                    document.getElementById('dynamicTabs').appendChild(tab);
+                    // Insert at correct position based on tabOrder
+                    const dynamicTabs = document.getElementById('dynamicTabs');
+                    if (journey.tabOrder === 2) {
+                        // Insert at the beginning for second position
+                        dynamicTabs.insertBefore(tab, dynamicTabs.firstChild);
+                    } else {
+                        dynamicTabs.appendChild(tab);
+                    }
                 }
                 
                 // Create content area if it doesn't exist
@@ -2671,27 +2720,72 @@
                 
                 let html = '';
                 
-                journey.sections.forEach(section => {
-                    html += `
+                // Special handling for GAC
+                if (journey.journeyId === 'gender-affirming-care') {
+                    html = this.renderGACContent(journey);
+                } else {
+                    // Placeholder for other journeys
+                    html = `
                         <div class="card">
-                            <h3 class="card-title">${section.name}</h3>
-                            <div class="grid">
-                    `;
-                    
-                    section.fields.forEach(field => {
-                        html += this.renderField(journey.journeyId, section.id, field);
-                    });
-                    
-                    html += `
-                            </div>
+                            <h3 class="card-title">${journey.icon} ${journey.name}</h3>
+                            <p style="text-align: center; color: var(--text-light); padding: 2rem;">
+                                This journey module is coming soon!
+                            </p>
                         </div>
                     `;
-                });
+                }
                 
                 content.innerHTML = html;
                 
                 // Populate with existing data
                 this.populateJourneyFields(journey.journeyId);
+            }
+            
+            renderGACContent(journey) {
+                return `
+                    <div class="gac-header">
+                        <h3>🏳️‍⚧️ Gender Affirming Care Journey</h3>
+                        <p>Track your transition, celebrate milestones, and document your care</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Quick Actions</h3>
+                        </div>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <button class="btn btn-gac" onclick="showGacNoteModal()">
+                                ➕ Add GAC Note
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewGacTimeline()">
+                                📅 View Timeline
+                            </button>
+                        </div>
+                    </div>
+                    
+                    ${journey.sections.map(section => `
+                        <div class="card">
+                            <h3 class="card-title">${section.name}</h3>
+                            <div class="grid">
+                                ${section.fields.map(field => this.renderField(journey.journeyId, section.id, field)).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                    
+                    <div class="card">
+                        <h3 class="card-title">Transition Timeline</h3>
+                        <div id="gacTimeline" class="gac-timeline">
+                            <p style="text-align: center; color: var(--text-light);">Your timeline will appear here as you add notes and milestones</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box gac">
+                        <strong>Resources & Support:</strong><br>
+                        • Document your journey at your own pace<br>
+                        • Use case notes to track changes and feelings<br>
+                        • Keep important documents in the Documents tab<br>
+                        • Remember: Your journey is unique and valid 💜
+                    </div>
+                `;
             }
             
             renderField(journeyId, sectionId, field) {
@@ -2727,13 +2821,20 @@
                         break;
                         
                     case 'list':
-                        // Complex list fields would need special handling
-                        html += `<div id="${fieldId}_container">List field - implementation needed</div>`;
+                        // Special handling for list fields
+                        html += `<div id="${fieldId}_container">
+                            <button class="btn btn-secondary btn-sm" onclick="addListItem('${journeyId}', '${sectionId}', '${field.id}')">
+                                + Add ${field.label}
+                            </button>
+                            <div id="${fieldId}_list" class="item-list" style="margin-top: 0.5rem;">
+                                <!-- List items will be added here -->
+                            </div>
+                        </div>`;
                         break;
                 }
                 
                 if (field.bestPractice) {
-                    html += `<small style="color: var(--primary);">💡 ${field.bestPractice}</small>`;
+                    html += `<small style="color: var(--gac-primary);">💡 ${field.bestPractice}</small>`;
                 }
                 
                 html += '</div>';
@@ -2752,9 +2853,35 @@
                         const fieldId = `journey_${journeyId}_${section.id}_${field.id}`;
                         const element = document.getElementById(fieldId);
                         if (element && journeyData[`${section.id}_${field.id}`]) {
-                            element.value = journeyData[`${section.id}_${field.id}`];
+                            if (field.type === 'list') {
+                                // Handle list fields
+                                this.populateListField(journeyId, section.id, field, journeyData[`${section.id}_${field.id}`]);
+                            } else {
+                                element.value = journeyData[`${section.id}_${field.id}`];
+                            }
                         }
                     });
+                });
+            }
+            
+            populateListField(journeyId, sectionId, field, data) {
+                if (!Array.isArray(data)) return;
+                
+                const listContainer = document.getElementById(`journey_${journeyId}_${sectionId}_${field.id}_list`);
+                if (!listContainer) return;
+                
+                listContainer.innerHTML = '';
+                
+                data.forEach((item, index) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item-card';
+                    itemDiv.innerHTML = `
+                        <button class="remove-btn" onclick="removeListItem('${journeyId}', '${sectionId}', '${field.id}', ${index})">×</button>
+                        ${field.listFields.map(lf => 
+                            `<strong>${lf.label}:</strong> ${item[lf.id] || 'N/A'}<br>`
+                        ).join('')}
+                    `;
+                    listContainer.appendChild(itemDiv);
                 });
             }
             
@@ -2767,9 +2894,18 @@
                 journey.sections.forEach(section => {
                     section.fields.forEach(field => {
                         const fieldId = `journey_${journeyId}_${section.id}_${field.id}`;
-                        const element = document.getElementById(fieldId);
-                        if (element) {
-                            data[`${section.id}_${field.id}`] = element.value;
+                        
+                        if (field.type === 'list') {
+                            // Collect list data from app state
+                            const listData = this.app.data.journeyData?.[journeyId]?.[`${section.id}_${field.id}`];
+                            if (listData) {
+                                data[`${section.id}_${field.id}`] = listData;
+                            }
+                        } else {
+                            const element = document.getElementById(fieldId);
+                            if (element) {
+                                data[`${section.id}_${field.id}`] = element.value;
+                            }
                         }
                     });
                 });
@@ -2779,18 +2915,16 @@
         }
         
         // ============================================
-        // MAIN HEALTH VAULT CLASS
+        // MAIN HEALTH VAULT CLASS (ENHANCED)
         // ============================================
         
-        class HealthVault {
+        class SimpleHealthVault {
             constructor() {
                 // Core properties
                 this.instanceId = null;
                 this.vaultGuid = null;
                 this.vaultName = null;
-                this.encryptionKey = null;
-                this.totpSecret = null;
-                this.recoveryCode = null;
+                this.passwordHash = null;
                 this.data = {};
                 this.attachments = {};
                 this.providers = {};
@@ -2814,8 +2948,7 @@
                 this.instanceId = null;
                 this.vaultGuid = null;
                 this.vaultName = null;
-                this.encryptionKey = null;
-                this.totpSecret = null;
+                this.passwordHash = null;
                 this.data = {};
                 this.attachments = {};
                 this.providers = {};
@@ -2836,9 +2969,6 @@
                             // This HTML file contains vault data
                             console.log('Found embedded vault data');
                             
-                            // Show debug link
-                            document.getElementById('debugInfo').style.display = 'block';
-                            
                             // Set the instance ID and vault name from embedded data
                             this.instanceId = embeddedData.instanceId;
                             this.vaultGuid = embeddedData.vaultGuid || this.instanceId;
@@ -2847,26 +2977,22 @@
                             
                             // Restore to localStorage for this session
                             if (embeddedData.profile) {
-                                localStorage.setItem(`vault_profile_${this.instanceId}`, embeddedData.profile);
+                                localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(embeddedData.profile));
                             }
                             if (embeddedData.data) {
-                                localStorage.setItem(`vault_data_${this.instanceId}`, embeddedData.data);
+                                localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(embeddedData.data));
                             }
                             
                             // Restore attachments
                             if (embeddedData.attachments) {
-                                for (const [id, fileInfo] of Object.entries(embeddedData.attachments)) {
-                                    if (fileInfo.data) {
-                                        localStorage.setItem(`vault_file_${this.instanceId}_${id}`, fileInfo.data);
-                                    }
-                                }
+                                localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(embeddedData.attachments));
                             }
                             
                             // Show login screen for this vault with saved date
-                            let subtitle = 'Encrypted vault ready to unlock';
+                            let subtitle = `${this.vaultName} - Ready to unlock`;
                             if (embeddedData.savedAt) {
                                 const savedDate = new Date(embeddedData.savedAt);
-                                subtitle = `Vault saved on ${savedDate.toLocaleDateString()} at ${savedDate.toLocaleTimeString()}`;
+                                subtitle = `${this.vaultName} - Saved ${savedDate.toLocaleDateString()} at ${savedDate.toLocaleTimeString()}`;
                             }
                             document.getElementById('welcomeSubtitle').textContent = subtitle;
                             this.showExistingUser();
@@ -2890,11 +3016,6 @@
                 // Password strength checker
                 document.getElementById('newPassword')?.addEventListener('input', (e) => {
                     this.checkPasswordStrength(e.target.value);
-                });
-                
-                // Recovery card checkbox
-                document.getElementById('confirmSaved')?.addEventListener('change', (e) => {
-                    document.getElementById('finishSetupBtn').disabled = !e.target.checked;
                 });
                 
                 // Enter key handling
@@ -2926,14 +3047,10 @@
                 document.getElementById('newUserSetup').classList.add('hidden');
                 document.getElementById('existingUserLogin').classList.add('hidden');
                 document.getElementById('helpScreen').classList.add('hidden');
-                document.getElementById('recoveryScreen').classList.add('hidden');
-                document.getElementById('lostEverythingScreen').classList.add('hidden');
                 
                 // Reset setup steps
                 document.getElementById('setupStep1')?.classList.remove('hidden');
                 document.getElementById('setupStep2')?.classList.add('hidden');
-                document.getElementById('setupStep3')?.classList.add('hidden');
-                document.getElementById('setupStep4')?.classList.add('hidden');
                 
                 // Reset modal states
                 document.querySelectorAll('.modal').forEach(modal => {
@@ -2942,7 +3059,7 @@
                 
                 // Reset view states
                 document.getElementById('normalView')?.classList.remove('hidden');
-                document.getElementById('encryptedView')?.classList.add('hidden');
+                document.getElementById('dataView')?.classList.add('hidden');
                 
                 // Reset tabs to first tab
                 document.querySelectorAll('.tab-content').forEach((content, index) => {
@@ -2986,7 +3103,6 @@
                 
                 // Clear any temp data
                 this.tempPassword = null;
-                this.tempRecoveryCode = null;
                 this.pendingFile = null;
                 this.pendingBackupFile = null;
                 this.pendingJourneyFile = null;
@@ -3074,7 +3190,7 @@
                     </button>
                     
                     <div class="help-section">
-                        <small>This file contains encrypted health records</small>
+                        <small>This file contains your health records</small>
                     </div>
                 `;
                 
@@ -3085,7 +3201,7 @@
             }
             
             // ==========================================
-            // SETUP FLOW
+            // SETUP FLOW (SIMPLIFIED)
             // ==========================================
             
             startNewSetup() {
@@ -3129,92 +3245,39 @@
                     return;
                 }
                 
-                // Generate instance ID, GUID, vault name, and TOTP secret
+                // Generate instance ID, GUID, and vault name
                 this.instanceId = this.generateId();
                 this.vaultGuid = this.generateGuid();
                 this.vaultName = this.generateVaultName();
-                this.totpSecret = this.generateTOTPSecret();
                 
                 // Store password temporarily
                 this.tempPassword = password;
                 
-                // Generate QR code
-                const qrContainer = document.getElementById('setupQrCode');
-                qrContainer.innerHTML = ''; // Clear any existing QR
+                // Initialize selected journeys
+                this.selectedJourneys = {};
                 
-                const otpUrl = `otpauth://totp/HealthVault:${this.vaultName}?secret=${this.totpSecret}&issuer=HealthVault`;
-                new QRCode(qrContainer, {
-                    text: otpUrl,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#1e293b",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-                
-                // Move to step 2
+                // Move to step 2 (case journeys)
                 document.getElementById('setupStep1').classList.add('hidden');
                 document.getElementById('setupStep2').classList.remove('hidden');
             }
             
-            async setupStep2() {
-                const code = document.getElementById('setupVerifyCode').value;
-                
-                if (!this.verifyTOTP(code, this.totpSecret)) {
-                    this.showError('That code doesn\'t match. Check your app and try again.');
-                    return;
-                }
-                
-                // Initialize selected journeys
-                this.selectedJourneys = {};
-                
-                // Move to step 3 (case journeys)
-                document.getElementById('setupStep2').classList.add('hidden');
-                document.getElementById('setupStep3').classList.remove('hidden');
-            }
-            
-            async setupStep3() {
-                // Generate recovery code
-                this.recoveryCode = this.generateRecoveryCode();
-                document.getElementById('recoveryCodeDisplay').textContent = this.recoveryCode;
-                document.getElementById('recoveryVaultName').textContent = this.vaultName;
-                document.getElementById('recoveryVaultId').textContent = this.vaultGuid;
-                
-                // Move to step 4 (recovery card)
-                document.getElementById('setupStep3').classList.add('hidden');
-                document.getElementById('setupStep4').classList.remove('hidden');
-            }
-            
             async completeSetup() {
-                if (!document.getElementById('confirmSaved').checked) {
-                    this.showError('Please confirm you\'ve saved your recovery card');
-                    return;
-                }
+                // Hash password for storage
+                this.passwordHash = await this.hashPassword(this.tempPassword);
                 
                 // Create profile
-                const salt = crypto.getRandomValues(new Uint8Array(16));
                 const profile = {
-                    salt: btoa(String.fromCharCode(...salt)),
                     created: new Date().toISOString(),
                     instanceId: this.instanceId,
                     vaultGuid: this.vaultGuid,
-                    vaultName: this.vaultName
+                    vaultName: this.vaultName,
+                    passwordHash: this.passwordHash
                 };
-                
-                // Encrypt test data for password verification
-                const key = await this.deriveKey(this.tempPassword, salt);
-                const testData = await this.encrypt({ test: true }, this.tempPassword);
-                profile.verifier = testData;
-                
-                // Encrypt TOTP secret and recovery code
-                profile.totpSecret = await this.encrypt(this.totpSecret, this.tempPassword);
-                profile.recoveryCode = await this.encrypt(this.recoveryCode, this.tempPassword);
                 
                 // Save profile
                 localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(profile));
                 
                 // Initialize empty data with selected journeys
-                this.encryptionKey = this.tempPassword;
                 this.data = {
                     journeys: this.selectedJourneys || {},
                     journeyData: {},
@@ -3264,7 +3327,7 @@
             }
             
             // ==========================================
-            // LOGIN & RECOVERY
+            // LOGIN
             // ==========================================
             
             showLogin() {
@@ -3275,10 +3338,9 @@
             
             async login() {
                 const password = document.getElementById('loginPassword').value;
-                const code = document.getElementById('loginCode').value;
                 
-                if (!password || !code) {
-                    this.showError('Please enter both password and code');
+                if (!password) {
+                    this.showError('Please enter your password');
                     return;
                 }
                 
@@ -3291,33 +3353,29 @@
                     
                     const profile = JSON.parse(profileStr);
                     
-                    // Get vault name and GUID from profile
-                    this.vaultName = profile.vaultName || 'Unknown Vault';
-                    this.vaultGuid = profile.vaultGuid || this.instanceId;
+                    // Get vault name and GUID from profile - these should already be set from init()
+                    // but double-check from profile as well
+                    this.vaultName = this.vaultName || profile.vaultName || 'Unknown Vault';
+                    this.vaultGuid = this.vaultGuid || profile.vaultGuid || this.instanceId;
                     
                     // Verify password
-                    await this.decrypt(profile.verifier, password);
-                    
-                    // Verify TOTP
-                    const secret = await this.decrypt(profile.totpSecret, password);
-                    if (!this.verifyTOTP(code, secret)) {
-                        this.showError('Invalid code. Check your authenticator app.');
+                    const hash = await this.hashPassword(password);
+                    if (hash !== profile.passwordHash) {
+                        this.showError('Wrong password');
                         return;
                     }
                     
                     // Success
-                    this.encryptionKey = password;
-                    this.totpSecret = secret;
+                    this.passwordHash = hash;
                     await this.loadData();
                     this.unlock();
                     
                     // Clear login fields
                     document.getElementById('loginPassword').value = '';
-                    document.getElementById('loginCode').value = '';
                     
                 } catch (error) {
                     console.error('Login error:', error);
-                    this.showError('Wrong password or code');
+                    this.showError('Wrong password');
                 }
             }
             
@@ -3328,67 +3386,7 @@
             
             backToLogin() {
                 document.getElementById('helpScreen').classList.add('hidden');
-                document.getElementById('recoveryScreen').classList.add('hidden');
-                document.getElementById('lostEverythingScreen').classList.add('hidden');
                 document.getElementById('existingUserLogin').classList.remove('hidden');
-            }
-            
-            showRecoveryOption() {
-                document.getElementById('helpScreen').classList.add('hidden');
-                document.getElementById('recoveryScreen').classList.remove('hidden');
-            }
-            
-            showLostEverything() {
-                document.getElementById('helpScreen').classList.add('hidden');
-                document.getElementById('lostEverythingScreen').classList.remove('hidden');
-            }
-            
-            async verifyRecoveryCode() {
-                const code = document.getElementById('recoveryCodeInput').value;
-                
-                if (!code) {
-                    this.showError('Please enter your recovery code');
-                    return;
-                }
-                
-                try {
-                    const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`));
-                    
-                    // We need a way to verify the recovery code without the password
-                    // For this implementation, we'll use a hash-based approach
-                    
-                    // Show new password fields
-                    document.getElementById('recoveryNewPassword').classList.remove('hidden');
-                    document.getElementById('recoveryBtn').textContent = 'Reset Password';
-                    document.getElementById('recoveryBtn').onclick = () => this.resetPassword();
-                    
-                    // Store recovery code for reset
-                    this.tempRecoveryCode = code;
-                    
-                } catch (error) {
-                    this.showError('Invalid recovery code');
-                }
-            }
-            
-            async resetPassword() {
-                const newPassword = document.getElementById('recoveryPassword').value;
-                const confirm = document.getElementById('recoveryPasswordConfirm').value;
-                
-                if (newPassword.length < 8) {
-                    this.showError('Password needs at least 8 characters');
-                    return;
-                }
-                
-                if (newPassword !== confirm) {
-                    this.showError('Passwords don\'t match');
-                    return;
-                }
-                
-                // In a real implementation, you'd verify the recovery code
-                // and re-encrypt everything with the new password
-                
-                this.showSuccess('Password reset! You can now login.');
-                this.backToLogin();
             }
             
             startFresh() {
@@ -3400,11 +3398,72 @@
                     document.getElementById('instanceId').textContent = '';
                     
                     // Show new setup
-                    document.getElementById('lostEverythingScreen').classList.add('hidden');
+                    document.getElementById('helpScreen').classList.add('hidden');
                     document.getElementById('welcomeIntro').classList.remove('hidden');
                     document.getElementById('welcomeSubtitle').textContent = 'Starting fresh - create a new vault';
                     this.showNewUser();
                 }
+            }
+            
+            // ==========================================
+            // PASSWORD MANAGEMENT
+            // ==========================================
+            
+            async hashPassword(password) {
+                // Simple hash for password verification
+                // In production, use proper password hashing with salt
+                const encoder = new TextEncoder();
+                const data = encoder.encode(password);
+                const hash = await crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(hash))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+            }
+            
+            changePassword() {
+                document.getElementById('changePasswordModal').classList.add('active');
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPasswordChange').value = '';
+                document.getElementById('confirmNewPassword').value = '';
+            }
+            
+            async updatePassword() {
+                const current = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPasswordChange').value;
+                const confirm = document.getElementById('confirmNewPassword').value;
+                
+                if (!current || !newPassword || !confirm) {
+                    this.showError('Please fill in all fields');
+                    return;
+                }
+                
+                // Verify current password
+                const currentHash = await this.hashPassword(current);
+                if (currentHash !== this.passwordHash) {
+                    this.showError('Current password is incorrect');
+                    return;
+                }
+                
+                if (newPassword.length < 8) {
+                    this.showError('New password must be at least 8 characters');
+                    return;
+                }
+                
+                if (newPassword !== confirm) {
+                    this.showError('New passwords don\'t match');
+                    return;
+                }
+                
+                // Update password
+                this.passwordHash = await this.hashPassword(newPassword);
+                
+                // Update profile
+                const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`));
+                profile.passwordHash = this.passwordHash;
+                localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(profile));
+                
+                this.closeModal('changePasswordModal');
+                this.showSuccess('Password updated successfully');
             }
             
             // ==========================================
@@ -3446,6 +3505,11 @@
                 // Update note count
                 this.updateNoteCount();
                 
+                // Update GAC timeline if enabled
+                if (this.data.journeys?.['gender-affirming-care']) {
+                    this.updateGacTimeline();
+                }
+                
                 // Show success message
                 this.showSuccess(`✅ ${this.vaultName} unlocked!\n\nYou can now edit your data.\nRemember to save to file when done!`);
                 
@@ -3483,8 +3547,7 @@
                 // Clear all sensitive data from memory
                 this.isLocked = true;
                 this.hasUnsavedChanges = false;
-                this.encryptionKey = null;
-                this.totpSecret = null;
+                this.passwordHash = null;
                 this.data = {};
                 this.attachments = {};
                 this.providers = {};
@@ -3586,85 +3649,69 @@
             
             toggleView(view) {
                 const normalView = document.getElementById('normalView');
-                const encryptedView = document.getElementById('encryptedView');
+                const dataView = document.getElementById('dataView');
                 const buttons = document.querySelectorAll('.view-toggle button');
                 
                 buttons.forEach(btn => btn.classList.remove('active'));
                 
-                if (view === 'encrypted') {
+                if (view === 'data') {
                     normalView.classList.add('hidden');
-                    encryptedView.classList.remove('hidden');
+                    dataView.classList.remove('hidden');
                     buttons[1].classList.add('active');
                     
-                    // Show encrypted data preview
-                    this.showEncryptedPreview();
+                    // Show data preview
+                    this.showDataPreview();
                 } else {
                     normalView.classList.remove('hidden');
-                    encryptedView.classList.add('hidden');
+                    dataView.classList.add('hidden');
                     buttons[0].classList.add('active');
                 }
             }
             
-            async showEncryptedPreview() {
-                const preview = document.getElementById('encryptedPreview');
+            async showDataPreview() {
+                const preview = document.getElementById('dataPreview');
                 
-                // Get all the current data
-                const currentData = await localStorage.getItem(`vault_data_${this.instanceId}`);
-                const profile = localStorage.getItem(`vault_profile_${this.instanceId}`);
-                
-                // Create a preview object showing the structure
-                const previewData = {
-                    "🔐 Health Vault Encrypted Data": {
-                        "vaultName": this.vaultName,
-                        "instanceId": this.instanceId,
-                        "vaultGuid": this.vaultGuid,
-                        "profile": profile ? {
-                            "created": JSON.parse(profile).created,
-                            "salt": "*** encrypted ***",
-                            "verifier": "*** encrypted ***",
-                            "totpSecret": "*** encrypted ***",
-                            "recoveryCode": "*** encrypted ***"
-                        } : "No profile",
-                        "encryptedData": currentData ? 
-                            currentData.substring(0, 100) + "..." + 
-                            " (total: " + currentData.length + " characters)" : 
-                            "No data saved yet",
-                        "attachments": {}
-                    }
+                // Collect all data
+                const allData = {
+                    vaultInfo: {
+                        name: this.vaultName,
+                        id: this.instanceId,
+                        guid: this.vaultGuid,
+                        created: JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}').created,
+                        lastModified: this.data.metadata?.lastModified
+                    },
+                    personal: this.data.personal || {},
+                    insurance: this.data.insurance || {},
+                    medical: this.data.medical || {},
+                    medications: this.data.medications || {},
+                    contacts: this.data.contacts || {},
+                    journeys: this.data.journeys || {},
+                    journeyData: this.data.journeyData || {},
+                    providers: this.providers || {},
+                    caseNotes: this.caseNotes || [],
+                    attachments: Object.keys(this.attachments).length + ' documents'
                 };
                 
-                // Add attachment previews
-                for (const [id, attachment] of Object.entries(this.attachments)) {
-                    const fileData = localStorage.getItem(`vault_file_${this.instanceId}_${id}`);
-                    const sizeText = attachment.size > 1024 * 1024 
-                        ? `${(attachment.size / 1024 / 1024).toFixed(2)} MB`
-                        : `${(attachment.size / 1024).toFixed(2)} KB`;
-                        
-                    previewData["🔐 Health Vault Encrypted Data"].attachments[attachment.name] = {
-                        "type": attachment.type,
-                        "size": sizeText,
-                        "encrypted": fileData ? 
-                            "🔐 " + fileData.substring(0, 50) + "..." + 
-                            ` (${(fileData.length / 1024).toFixed(2)} KB encrypted)` : 
-                            "No file data"
-                    };
-                }
-                
-                preview.textContent = JSON.stringify(previewData, null, 2);
+                preview.textContent = JSON.stringify(allData, null, 2);
             }
             
             // ==========================================
-            // DATA MANAGEMENT
+            // DATA MANAGEMENT (ENHANCED)
             // ==========================================
             
             async loadData() {
-                const encrypted = localStorage.getItem(`vault_data_${this.instanceId}`);
-                if (encrypted) {
+                const dataStr = localStorage.getItem(`vault_data_${this.instanceId}`);
+                if (dataStr) {
                     try {
-                        this.data = await this.decrypt(encrypted, this.encryptionKey);
-                        this.attachments = this.data.attachments || {};
+                        this.data = JSON.parse(dataStr);
                         this.providers = this.data.providers || {};
                         this.caseNotes = this.data.caseNotes || [];
+                        
+                        // Load attachments
+                        const attachmentsStr = localStorage.getItem(`vault_attachments_${this.instanceId}`);
+                        if (attachmentsStr) {
+                            this.attachments = JSON.parse(attachmentsStr);
+                        }
                         
                         // Load journeys
                         if (this.data.journeys) {
@@ -3694,7 +3741,10 @@
                 // Collect form data from all fields
                 const personalData = {
                     fullName: document.getElementById('fullName')?.value || '',
+                    pronouns: document.getElementById('pronouns')?.value || '',
                     dateOfBirth: document.getElementById('dateOfBirth')?.value || '',
+                    genderIdentity: document.getElementById('genderIdentity')?.value || '',
+                    sexAssignedAtBirth: document.getElementById('sexAssignedAtBirth')?.value || '',
                     bloodType: document.getElementById('bloodType')?.value || '',
                     phone: document.getElementById('phone')?.value || '',
                     email: document.getElementById('email')?.value || '',
@@ -3767,6 +3817,8 @@
                     enabledJourneys[journeyId] = true;
                 });
                 
+                // Don't include attachment data in main data object
+                // Keep attachments separate to avoid duplication
                 this.data = {
                     personal: personalData,
                     insurance: insuranceData,
@@ -3776,35 +3828,51 @@
                     journeys: enabledJourneys,
                     journeyData: journeyData,
                     customJourneys: this.data.customJourneys || {},
-                    attachments: this.attachments,
                     providers: this.providers,
                     caseNotes: this.caseNotes,
                     metadata: {
                         lastModified: new Date().toISOString(),
-                        version: '3.0.0',
+                        version: '2.0.0',
                         vaultName: this.vaultName,
                         vaultGuid: this.vaultGuid
                     }
                 };
                 
-                // Encrypt and save
-                const encrypted = await this.encrypt(this.data, this.encryptionKey);
-                localStorage.setItem(`vault_data_${this.instanceId}`, encrypted);
+                // Save data
+                localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
+                
+                // Save attachments separately
+                try {
+                    localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(this.attachments));
+                } catch (e) {
+                    console.error('Storage error:', e);
+                    if (e.name === 'QuotaExceededError' || e.message.includes('QuotaExceededError')) {
+                        // Calculate approximate size
+                        const dataSize = JSON.stringify(this.attachments).length;
+                        const sizeMB = (dataSize / 1024 / 1024).toFixed(2);
+                        this.showError(`Storage quota exceeded!\n\nYour vault with attachments (≈${sizeMB} MB) is too large for browser storage.\n\nTry:\n• Removing some documents\n• Saving to file regularly\n• Using smaller document files`);
+                    } else {
+                        this.showError(`Storage error: ${e.message}`);
+                    }
+                    throw e;
+                }
                 
                 console.log('Data saved:', {
                     instanceId: this.instanceId,
                     vaultName: this.vaultName,
                     vaultGuid: this.vaultGuid,
-                    hasData: !!encrypted,
-                    dataLength: encrypted?.length,
+                    hasData: true,
                     journeys: Object.keys(enabledJourneys)
                 });
             }
             
             populateFields() {
-                // Personal
+                // Personal (Enhanced)
                 document.getElementById('fullName').value = this.data.personal?.fullName || '';
+                document.getElementById('pronouns').value = this.data.personal?.pronouns || '';
                 document.getElementById('dateOfBirth').value = this.data.personal?.dateOfBirth || '';
+                document.getElementById('genderIdentity').value = this.data.personal?.genderIdentity || '';
+                document.getElementById('sexAssignedAtBirth').value = this.data.personal?.sexAssignedAtBirth || '';
                 document.getElementById('bloodType').value = this.data.personal?.bloodType || '';
                 document.getElementById('phone').value = this.data.personal?.phone || '';
                 document.getElementById('email').value = this.data.personal?.email || '';
@@ -3901,10 +3969,13 @@
                     this.updateRelatedNotes('condition');
                 } else if (tabName === 'medications') {
                     this.updateRelatedNotes('medication');
+                } else if (tabName === 'gender-affirming-care') {
+                    this.updateGacTimeline();
                 }
             }
             
             regenerateVaultName() {
+                const oldName = this.vaultName;
                 const newName = this.generateVaultName();
                 this.vaultName = newName;
                 
@@ -3913,9 +3984,14 @@
                 document.getElementById('settingsVaultName').textContent = newName;
                 document.title = `${newName} - Health Vault`;
                 
+                // Update profile with new name
+                const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}');
+                profile.vaultName = newName;
+                localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(profile));
+                
                 // Save the change
                 this.autoSave();
-                this.showSuccess(`Vault renamed to: ${newName}`);
+                this.showSuccess(`Vault renamed from "${oldName}" to "${newName}"`);
             }
             
             // ==========================================
@@ -4025,7 +4101,7 @@
             }
             
             // ==========================================
-            // CASE NOTES
+            // CASE NOTES (ENHANCED WITH GAC)
             // ==========================================
             
             updateNoteForm() {
@@ -4041,21 +4117,30 @@
                             <div class="note-form-section">
                                 <label class="note-form-label">Note Title</label>
                                 <input type="text" id="noteTitle" placeholder="e.g., Feeling better today">
+                                <div class="note-form-hint">Give your note a descriptive title</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Note Content</label>
                                 <textarea id="noteContent" rows="6" placeholder="How are you feeling? What happened today?"></textarea>
+                                <div class="note-form-hint">Be as detailed as you'd like. This is your personal health journal.</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Mood (1-10)</label>
-                                <input type="number" id="noteMood" min="1" max="10" placeholder="1 = Very bad, 10 = Excellent">
+                                <div class="mood-selector" id="moodSelector">
+                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+                                        `<button type="button" class="mood-option" onclick="selectMood(${n})" data-mood="${n}">${n}</button>`
+                                    ).join('')}
+                                </div>
+                                <input type="hidden" id="noteMood">
+                                <div class="note-form-hint">1 = Very bad, 10 = Excellent</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Tags (optional)</label>
                                 <input type="text" id="noteTags" placeholder="e.g., anxiety, pain, improvement">
+                                <div class="note-form-hint">Separate tags with commas for easier searching</div>
                             </div>
                         `;
                         break;
@@ -4070,6 +4155,7 @@
                                         `<option value="${p.id}">${p.name} - ${p.specialty || 'General'}</option>`
                                     ).join('')}
                                 </select>
+                                <div class="note-form-hint">Choose from your provider list or add a new provider first</div>
                             </div>
                             
                             <div class="note-form-section">
@@ -4080,16 +4166,19 @@
                             <div class="note-form-section">
                                 <label class="note-form-label">Reason for Visit</label>
                                 <textarea id="noteReason" rows="2" placeholder="Why did you visit?"></textarea>
+                                <div class="note-form-hint">Brief description of the main concern</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">What Happened</label>
                                 <textarea id="noteDiscussion" rows="4" placeholder="What was discussed? Tests ordered? Diagnosis?"></textarea>
+                                <div class="note-form-hint">Include important details from your visit</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Follow-up Actions</label>
                                 <textarea id="noteFollowup" rows="3" placeholder="Next steps, prescriptions, referrals, etc."></textarea>
+                                <div class="note-form-hint">Document any action items or next appointments</div>
                             </div>
                         `;
                         break;
@@ -4099,26 +4188,36 @@
                             <div class="note-form-section">
                                 <label class="note-form-label">Symptom</label>
                                 <input type="text" id="noteSymptom" placeholder="e.g., Headache, Fatigue">
+                                <div class="note-form-hint">Be specific about what you're experiencing</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Severity (1-10)</label>
-                                <input type="number" id="noteSeverity" min="1" max="10" placeholder="1 = Mild, 10 = Severe">
+                                <div class="mood-selector" id="severitySelector">
+                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+                                        `<button type="button" class="mood-option" onclick="selectSeverity(${n})" data-severity="${n}">${n}</button>`
+                                    ).join('')}
+                                </div>
+                                <input type="hidden" id="noteSeverity">
+                                <div class="note-form-hint">1 = Mild, 10 = Severe</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Started When</label>
                                 <input type="datetime-local" id="noteSymptomStart">
+                                <div class="note-form-hint">When did you first notice this symptom?</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Triggers</label>
                                 <textarea id="noteTriggers" rows="2" placeholder="What might have caused this?"></textarea>
+                                <div class="note-form-hint">Note any patterns or triggers you've noticed</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">What Helps</label>
                                 <textarea id="noteHelps" rows="2" placeholder="What makes it better?"></textarea>
+                                <div class="note-form-hint">Document what provides relief</div>
                             </div>
                             
                             <div class="note-form-section">
@@ -4133,6 +4232,7 @@
                             <div class="note-form-section">
                                 <label class="note-form-label">Treatment/Medication</label>
                                 <input type="text" id="noteTreatment" placeholder="What treatment or medication?">
+                                <div class="note-form-hint">Name of the treatment or medication</div>
                             </div>
                             
                             <div class="note-form-section">
@@ -4142,17 +4242,75 @@
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Effectiveness (1-10)</label>
-                                <input type="number" id="noteEffectiveness" min="1" max="10" placeholder="1 = Not working, 10 = Very effective">
+                                <div class="mood-selector" id="effectivenessSelector">
+                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+                                        `<button type="button" class="mood-option" onclick="selectEffectiveness(${n})" data-effectiveness="${n}">${n}</button>`
+                                    ).join('')}
+                                </div>
+                                <input type="hidden" id="noteEffectiveness">
+                                <div class="note-form-hint">1 = Not working, 10 = Very effective</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Side Effects</label>
                                 <textarea id="noteSideEffects" rows="3" placeholder="Any side effects experienced?"></textarea>
+                                <div class="note-form-hint">Document any unwanted effects</div>
                             </div>
                             
                             <div class="note-form-section">
                                 <label class="note-form-label">Notes</label>
                                 <textarea id="noteTreatmentNotes" rows="3" placeholder="Other observations"></textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'gac':
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Title</label>
+                                <input type="text" id="noteTitle" placeholder="e.g., HRT Check-in, Name Change Progress">
+                                <div class="note-form-hint">Give your GAC note a descriptive title</div>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">GAC Category</label>
+                                <select id="noteGacCategory">
+                                    <option value="hrt">Hormone Therapy</option>
+                                    <option value="surgery">Surgery Related</option>
+                                    <option value="legal">Legal/Documentation</option>
+                                    <option value="social">Social Transition</option>
+                                    <option value="mental-health">Mental Health Support</option>
+                                    <option value="insurance">Insurance/Coverage</option>
+                                    <option value="milestone">Milestone/Achievement</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <div class="note-form-hint">Categorize your note for better organization</div>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Content</label>
+                                <textarea id="noteContent" rows="6" placeholder="What happened? How are you feeling? What changes have you noticed?"></textarea>
+                                <div class="note-form-hint">Document your journey - every detail matters 💜</div>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Mood/Dysphoria Level (1-10)</label>
+                                <div class="mood-selector" id="moodSelector">
+                                    ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+                                        `<button type="button" class="mood-option" onclick="selectMood(${n})" data-mood="${n}">${n}</button>`
+                                    ).join('')}
+                                </div>
+                                <input type="hidden" id="noteMood">
+                                <div class="note-form-hint">1 = Very dysphoric/bad, 10 = Very euphoric/good</div>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Milestone?</label>
+                                <label style="font-weight: normal;">
+                                    <input type="checkbox" id="noteIsMilestone" style="width: auto; margin-right: 0.5rem;">
+                                    This is a milestone or achievement
+                                </label>
+                                <div class="note-form-hint">Mark important moments in your journey</div>
                             </div>
                         `;
                         break;
@@ -4181,13 +4339,21 @@
                 this.editingNoteId = null;
             }
             
+            showGacNoteModal() {
+                document.getElementById('addNoteModal').classList.add('active');
+                document.getElementById('noteType').value = 'gac';
+                this.updateNoteForm();
+                this.editingNoteId = null;
+            }
+            
             saveNote() {
                 const noteType = document.getElementById('noteType').value;
                 const noteData = {
                     id: this.editingNoteId || 'note_' + this.generateId(),
                     type: noteType,
                     timestamp: new Date().toISOString(),
-                    author: 'You'
+                    author: this.data.personal?.pronouns ? 
+                        `You (${this.data.personal.pronouns})` : 'You'
                 };
                 
                 // Collect data based on note type
@@ -4224,6 +4390,14 @@
                         noteData.notes = document.getElementById('noteTreatmentNotes').value;
                         break;
                         
+                    case 'gac':
+                        noteData.title = document.getElementById('noteTitle').value;
+                        noteData.content = document.getElementById('noteContent').value;
+                        noteData.gacCategory = document.getElementById('noteGacCategory').value;
+                        noteData.mood = document.getElementById('noteMood').value;
+                        noteData.isMilestone = document.getElementById('noteIsMilestone')?.checked || false;
+                        break;
+                        
                     default:
                         noteData.title = document.getElementById('noteTitle').value;
                         noteData.content = document.getElementById('noteContent').value;
@@ -4242,9 +4416,32 @@
                 this.autoSave();
                 this.updateCaseNotesList();
                 this.updateNoteCount();
+                this.updateGacTimeline();
                 this.closeModal('addNoteModal');
                 
                 this.showSuccess('Note saved successfully');
+            }
+            
+            saveGacNote() {
+                const noteData = {
+                    id: 'note_' + this.generateId(),
+                    type: 'gac',
+                    timestamp: new Date().toISOString(),
+                    author: this.data.personal?.pronouns ? 
+                        `You (${this.data.personal.pronouns})` : 'You',
+                    title: document.getElementById('gacNoteTitle').value,
+                    gacCategory: document.getElementById('gacNoteCategory').value,
+                    content: document.getElementById('gacNoteContent').value
+                };
+                
+                this.caseNotes.push(noteData);
+                this.autoSave();
+                this.updateCaseNotesList();
+                this.updateNoteCount();
+                this.updateGacTimeline();
+                this.closeModal('gacNoteModal');
+                
+                this.showSuccess('GAC note saved successfully');
             }
             
             updateCaseNotesList() {
@@ -4252,7 +4449,16 @@
                 container.innerHTML = '';
                 
                 if (this.caseNotes.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No notes yet. Start documenting your health journey!</p>';
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📔</div>
+                            <h4>No notes yet</h4>
+                            <p>Start documenting your health journey!</p>
+                            <button class="btn btn-primary" onclick="showAddNoteModal()" style="margin-top: 1rem;">
+                                Create Your First Note
+                            </button>
+                        </div>
+                    `;
                     return;
                 }
                 
@@ -4263,33 +4469,69 @@
                 
                 // Apply filter
                 const filterValue = document.getElementById('noteFilter')?.value || 'all';
+                const searchValue = document.getElementById('noteSearch')?.value?.toLowerCase() || '';
+                
                 const filteredNotes = sortedNotes.filter(note => {
+                    // Filter by type
+                    let passesFilter = true;
                     switch (filterValue) {
                         case 'personal':
-                            return note.type === 'personal';
+                            passesFilter = note.type === 'personal';
+                            break;
                         case 'visit':
-                            return note.type === 'visit';
+                            passesFilter = note.type === 'visit';
+                            break;
+                        case 'symptom':
+                            passesFilter = note.type === 'symptom';
+                            break;
+                        case 'treatment':
+                            passesFilter = note.type === 'treatment';
+                            break;
+                        case 'gac':
+                            passesFilter = note.type === 'gac';
+                            break;
                         case 'recent':
                             const thirtyDaysAgo = new Date();
                             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                            return new Date(note.timestamp) > thirtyDaysAgo;
-                        default:
-                            return true;
+                            passesFilter = new Date(note.timestamp) > thirtyDaysAgo;
+                            break;
                     }
+                    
+                    // Search filter
+                    if (searchValue && passesFilter) {
+                        const searchableContent = JSON.stringify(note).toLowerCase();
+                        passesFilter = searchableContent.includes(searchValue);
+                    }
+                    
+                    return passesFilter;
                 });
+                
+                if (filteredNotes.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <h4>No notes found</h4>
+                            <p>Try adjusting your filters or search terms</p>
+                        </div>
+                    `;
+                    return;
+                }
                 
                 filteredNotes.forEach(note => {
                     const noteElement = document.createElement('div');
                     noteElement.className = 'case-note';
                     
                     const noteDate = new Date(note.timestamp);
-                    const typeLabel = {
-                        'personal': 'Personal Note',
-                        'visit': 'Visit Note',
-                        'symptom': 'Symptom Tracking',
-                        'treatment': 'Treatment Progress',
-                        'general': 'General Note'
-                    }[note.type] || 'Note';
+                    const typeConfig = {
+                        'personal': { label: 'Personal Note', class: 'personal', icon: '💭' },
+                        'visit': { label: 'Visit Note', class: 'visit', icon: '🏥' },
+                        'symptom': { label: 'Symptom Tracking', class: 'symptom', icon: '🌡️' },
+                        'treatment': { label: 'Treatment Progress', class: 'treatment', icon: '💊' },
+                        'gac': { label: 'Gender Affirming Care', class: 'gac', icon: '🏳️‍⚧️' },
+                        'general': { label: 'General Note', class: 'general', icon: '📝' }
+                    };
+                    
+                    const config = typeConfig[note.type] || typeConfig.general;
                     
                     let contentHtml = '';
                     
@@ -4297,113 +4539,80 @@
                     switch (note.type) {
                         case 'personal':
                             contentHtml = `
-                                ${note.title ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Title</div>
-                                    <div class="case-note-section-content">${note.title}</div>
-                                </div>` : ''}
-                                ${note.content ? `<div class="case-note-section">
-                                    <div class="case-note-section-content">${note.content.replace(/\n/g, '<br>')}</div>
-                                </div>` : ''}
-                                ${note.mood ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Mood</div>
-                                    <div class="case-note-section-content">${note.mood}/10</div>
-                                </div>` : ''}
-                                ${note.tags && note.tags.length ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Tags</div>
-                                    <div class="case-note-section-content">${note.tags.join(', ')}</div>
-                                </div>` : ''}
+                                ${note.title ? `<h4 style="margin-bottom: 0.5rem;">${config.icon} ${note.title}</h4>` : ''}
+                                ${note.content ? `<p style="margin-bottom: 1rem;">${note.content.replace(/\n/g, '<br>')}</p>` : ''}
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    ${note.mood ? `<div class="case-note-mood">😊 Mood: ${note.mood}/10</div>` : ''}
+                                    ${note.tags && note.tags.length ? `<div class="case-note-tags">${note.tags.map(tag => 
+                                        `<span class="case-note-tag">${tag}</span>`
+                                    ).join('')}</div>` : ''}
+                                </div>
                             `;
                             break;
                             
                         case 'visit':
                             const provider = note.providerId ? this.providers[note.providerId] : null;
                             contentHtml = `
-                                ${provider ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Provider</div>
-                                    <div class="case-note-section-content">${provider.name} - ${provider.specialty || 'General'}</div>
-                                </div>` : ''}
-                                ${note.visitDate ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Visit Date</div>
-                                    <div class="case-note-section-content">${new Date(note.visitDate).toLocaleDateString()}</div>
-                                </div>` : ''}
-                                ${note.reason ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Reason for Visit</div>
-                                    <div class="case-note-section-content">${note.reason}</div>
-                                </div>` : ''}
-                                ${note.discussion ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">What Happened</div>
-                                    <div class="case-note-section-content">${note.discussion.replace(/\n/g, '<br>')}</div>
-                                </div>` : ''}
-                                ${note.followup ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Follow-up Actions</div>
-                                    <div class="case-note-section-content">${note.followup.replace(/\n/g, '<br>')}</div>
-                                </div>` : ''}
+                                <h4 style="margin-bottom: 0.5rem;">${config.icon} Visit Note</h4>
+                                ${provider ? `<p style="color: var(--primary); margin-bottom: 1rem;"><strong>${provider.name}</strong> - ${provider.specialty || 'General'}</p>` : ''}
+                                ${note.visitDate ? `<p><strong>Date:</strong> ${new Date(note.visitDate).toLocaleDateString()}</p>` : ''}
+                                ${note.reason ? `<p><strong>Reason:</strong> ${note.reason}</p>` : ''}
+                                ${note.discussion ? `<div style="margin-top: 1rem;"><strong>Discussion:</strong><br>${note.discussion.replace(/\n/g, '<br>')}</div>` : ''}
+                                ${note.followup ? `<div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg); border-radius: 0.5rem;"><strong>Follow-up:</strong><br>${note.followup.replace(/\n/g, '<br>')}</div>` : ''}
                             `;
                             break;
                             
                         case 'symptom':
                             contentHtml = `
-                                ${note.symptom ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Symptom</div>
-                                    <div class="case-note-section-content">${note.symptom}</div>
-                                </div>` : ''}
-                                ${note.severity ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Severity</div>
-                                    <div class="case-note-section-content">${note.severity}/10</div>
-                                </div>` : ''}
-                                ${note.startTime ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Started</div>
-                                    <div class="case-note-section-content">${new Date(note.startTime).toLocaleString()}</div>
-                                </div>` : ''}
-                                ${note.triggers ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Triggers</div>
-                                    <div class="case-note-section-content">${note.triggers}</div>
-                                </div>` : ''}
-                                ${note.helps ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">What Helps</div>
-                                    <div class="case-note-section-content">${note.helps}</div>
-                                </div>` : ''}
-                                ${note.additional ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Additional Notes</div>
-                                    <div class="case-note-section-content">${note.additional}</div>
-                                </div>` : ''}
+                                <h4 style="margin-bottom: 0.5rem;">${config.icon} ${note.symptom || 'Symptom'}</h4>
+                                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                    ${note.severity ? `<div class="case-note-mood">⚡ Severity: ${note.severity}/10</div>` : ''}
+                                    ${note.startTime ? `<div class="case-note-mood">🕒 Started: ${new Date(note.startTime).toLocaleString()}</div>` : ''}
+                                </div>
+                                ${note.triggers ? `<p><strong>Triggers:</strong> ${note.triggers}</p>` : ''}
+                                ${note.helps ? `<p><strong>What helps:</strong> ${note.helps}</p>` : ''}
+                                ${note.additional ? `<p style="margin-top: 0.5rem;">${note.additional}</p>` : ''}
                             `;
                             break;
                             
                         case 'treatment':
                             contentHtml = `
-                                ${note.treatment ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Treatment/Medication</div>
-                                    <div class="case-note-section-content">${note.treatment}</div>
-                                </div>` : ''}
-                                ${note.startDate ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Started</div>
-                                    <div class="case-note-section-content">${new Date(note.startDate).toLocaleDateString()}</div>
-                                </div>` : ''}
-                                ${note.effectiveness ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Effectiveness</div>
-                                    <div class="case-note-section-content">${note.effectiveness}/10</div>
-                                </div>` : ''}
-                                ${note.sideEffects ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Side Effects</div>
-                                    <div class="case-note-section-content">${note.sideEffects}</div>
-                                </div>` : ''}
-                                ${note.notes ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Notes</div>
-                                    <div class="case-note-section-content">${note.notes}</div>
-                                </div>` : ''}
+                                <h4 style="margin-bottom: 0.5rem;">${config.icon} ${note.treatment || 'Treatment'}</h4>
+                                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                    ${note.startDate ? `<div class="case-note-mood">📅 Started: ${new Date(note.startDate).toLocaleDateString()}</div>` : ''}
+                                    ${note.effectiveness ? `<div class="case-note-mood">✨ Effectiveness: ${note.effectiveness}/10</div>` : ''}
+                                </div>
+                                ${note.sideEffects ? `<p><strong>Side Effects:</strong> ${note.sideEffects}</p>` : ''}
+                                ${note.notes ? `<p>${note.notes}</p>` : ''}
+                            `;
+                            break;
+                            
+                        case 'gac':
+                            const categoryLabels = {
+                                'hrt': '💊 HRT',
+                                'surgery': '🏥 Surgery',
+                                'legal': '📄 Legal',
+                                'social': '👥 Social',
+                                'mental-health': '🧠 Mental Health',
+                                'insurance': '📋 Insurance',
+                                'milestone': '🌟 Milestone',
+                                'other': '📝 Other'
+                            };
+                            contentHtml = `
+                                ${note.title ? `<h4 style="margin-bottom: 0.5rem;">${config.icon} ${note.title}</h4>` : ''}
+                                ${note.gacCategory ? `<p style="color: var(--gac-primary); margin-bottom: 0.5rem;">${categoryLabels[note.gacCategory] || note.gacCategory}</p>` : ''}
+                                ${note.content ? `<p style="margin-bottom: 1rem;">${note.content.replace(/\n/g, '<br>')}</p>` : ''}
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    ${note.mood ? `<div class="case-note-mood" style="background: var(--gac-light); color: var(--gac-primary);">😊 Mood: ${note.mood}/10</div>` : ''}
+                                    ${note.isMilestone ? `<span style="background: var(--gac-primary); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.875rem;">🌟 Milestone</span>` : ''}
+                                </div>
                             `;
                             break;
                             
                         default:
                             contentHtml = `
-                                ${note.title ? `<div class="case-note-section">
-                                    <div class="case-note-section-title">Title</div>
-                                    <div class="case-note-section-content">${note.title}</div>
-                                </div>` : ''}
-                                ${note.content ? `<div class="case-note-section">
-                                    <div class="case-note-section-content">${note.content.replace(/\n/g, '<br>')}</div>
-                                </div>` : ''}
+                                ${note.title ? `<h4 style="margin-bottom: 0.5rem;">${config.icon} ${note.title}</h4>` : ''}
+                                ${note.content ? `<p>${note.content.replace(/\n/g, '<br>')}</p>` : ''}
                             `;
                     }
                     
@@ -4411,10 +4620,10 @@
                         <div class="case-note-header">
                             <div class="case-note-meta">
                                 <div class="case-note-author">${note.author}</div>
-                                <div class="case-note-date">${noteDate.toLocaleString()}</div>
+                                <div class="case-note-date">${noteDate.toLocaleDateString()} at ${noteDate.toLocaleTimeString()}</div>
                             </div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <div class="case-note-type ${note.type === 'personal' ? 'personal' : ''}">${typeLabel}</div>
+                                <div class="case-note-type ${config.class}">${config.label}</div>
                                 <button class="btn btn-secondary btn-sm" onclick="editNote('${note.id}')">Edit</button>
                                 <button class="btn btn-danger btn-sm" onclick="deleteNote('${note.id}')">Delete</button>
                             </div>
@@ -4471,6 +4680,14 @@
                             if (document.getElementById('noteTreatmentNotes')) document.getElementById('noteTreatmentNotes').value = note.notes || '';
                             break;
                             
+                        case 'gac':
+                            if (document.getElementById('noteTitle')) document.getElementById('noteTitle').value = note.title || '';
+                            if (document.getElementById('noteContent')) document.getElementById('noteContent').value = note.content || '';
+                            if (document.getElementById('noteGacCategory')) document.getElementById('noteGacCategory').value = note.gacCategory || '';
+                            if (document.getElementById('noteMood')) document.getElementById('noteMood').value = note.mood || '';
+                            if (document.getElementById('noteIsMilestone')) document.getElementById('noteIsMilestone').checked = note.isMilestone || false;
+                            break;
+                            
                         default:
                             if (document.getElementById('noteTitle')) document.getElementById('noteTitle').value = note.title || '';
                             if (document.getElementById('noteContent')) document.getElementById('noteContent').value = note.content || '';
@@ -4486,6 +4703,7 @@
                     this.autoSave();
                     this.updateCaseNotesList();
                     this.updateNoteCount();
+                    this.updateGacTimeline();
                 }
             }
             
@@ -4501,6 +4719,10 @@
             }
             
             filterNotes() {
+                this.updateCaseNotesList();
+            }
+            
+            searchNotes() {
                 this.updateCaseNotesList();
             }
             
@@ -4536,6 +4758,71 @@
                     } else {
                         medicationNotesEl.classList.add('hidden');
                     }
+                }
+            }
+            
+            // ==========================================
+            // GAC SPECIFIC FEATURES
+            // ==========================================
+            
+            updateGacTimeline() {
+                const container = document.getElementById('gacTimeline');
+                if (!container) return;
+                
+                // Get all GAC notes and milestones
+                const gacNotes = this.caseNotes.filter(note => 
+                    note.type === 'gac' || note.gacCategory
+                );
+                
+                if (gacNotes.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-light);">Your timeline will appear here as you add notes and milestones</p>';
+                    return;
+                }
+                
+                // Sort by date
+                gacNotes.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                container.innerHTML = '';
+                
+                gacNotes.forEach(note => {
+                    const item = document.createElement('div');
+                    item.className = 'gac-timeline-item';
+                    if (note.isMilestone) {
+                        item.style.borderColor = 'var(--gac-primary)';
+                        item.style.borderWidth = '2px';
+                    }
+                    
+                    const date = new Date(note.timestamp);
+                    const categoryIcons = {
+                        'hrt': '💊',
+                        'surgery': '🏥',
+                        'legal': '📄',
+                        'social': '👥',
+                        'mental-health': '🧠',
+                        'insurance': '📋',
+                        'milestone': '🌟',
+                        'other': '📝'
+                    };
+                    
+                    item.innerHTML = `
+                        <div class="gac-timeline-date">
+                            ${date.toLocaleDateString()} ${note.isMilestone ? '🌟' : ''}
+                        </div>
+                        <div class="gac-timeline-content">
+                            <strong>${categoryIcons[note.gacCategory] || '📝'} ${note.title || 'GAC Note'}</strong><br>
+                            ${note.content ? `<p style="margin-top: 0.5rem;">${note.content}</p>` : ''}
+                            ${note.mood ? `<div style="margin-top: 0.5rem;"><span class="pronoun-display">Mood: ${note.mood}/10</span></div>` : ''}
+                        </div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            viewGacTimeline() {
+                const timelineElement = document.getElementById('gacTimeline');
+                if (timelineElement) {
+                    timelineElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }
             
@@ -4879,7 +5166,7 @@
             }
             
             autoSave() {
-                if (!this.encryptionKey || this.isLocked) {
+                if (this.isLocked) {
                     console.log('Cannot autosave - vault is locked');
                     return;
                 }
@@ -4912,8 +5199,8 @@
             
             showSaveModal() {
                 // Check if user is logged in and has a vault
-                if (!this.instanceId || !this.encryptionKey || this.isLocked) {
-                    this.showError('You must unlock a vault before saving!\n\n1. Create a new vault or import one\n2. Enter your password and 2FA code\n3. Then you can save your data');
+                if (!this.instanceId || this.isLocked) {
+                    this.showError('You must unlock a vault before saving!\n\n1. Create a new vault or import one\n2. Enter your password\n3. Then you can save your data');
                     return;
                 }
                 
@@ -4975,7 +5262,7 @@
                     URL.revokeObjectURL(url);
                     
                     this.closeModal('exportModal');
-                    this.showSuccess(`✅ Data exported successfully!\n\nFile: ${filename}\n\n⚠️ Remember: This file is UNENCRYPTED.\nKeep it secure or delete when done.`);
+                    this.showSuccess(`✅ Data exported successfully!\n\nFile: ${filename}`);
                     
                 } catch (error) {
                     console.error('Export error:', error);
@@ -4984,7 +5271,7 @@
             }
             
             // ==========================================
-            // FILE OPERATIONS
+            // FILE OPERATIONS (SIMPLIFIED)
             // ==========================================
             
             showOpenFile() {
@@ -5042,15 +5329,6 @@
                             return;
                         }
                         
-                        // Restore attachments from embedded data
-                        if (backupData.attachments) {
-                            for (const [id, fileInfo] of Object.entries(backupData.attachments)) {
-                                if (fileInfo.data) {
-                                    localStorage.setItem(`vault_file_${backupData.instanceId}_${id}`, fileInfo.data);
-                                }
-                            }
-                        }
-                        
                     } else {
                         // Handle JSON file directly
                         const content = await this.pendingBackupFile.text();
@@ -5090,15 +5368,18 @@
                     
                     // Restore profile and data to localStorage
                     if (backupData.profile) {
-                        localStorage.setItem(`vault_profile_${this.instanceId}`, backupData.profile);
+                        localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(backupData.profile));
                     }
                     if (backupData.data) {
-                        localStorage.setItem(`vault_data_${this.instanceId}`, backupData.data);
+                        localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
+                    }
+                    if (backupData.attachments) {
+                        localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(backupData.attachments));
                     }
                     
                     this.closeModal('openFileModal');
                     
-                    let importMessage = `✅ Vault imported successfully!\n\n${this.vaultName}\n\nYou can now login with your password and 2FA code.`;
+                    let importMessage = `✅ Vault imported successfully!\n\n${this.vaultName}\n\nYou can now login with your password.`;
                     if (backupData.savedAt) {
                         const savedDate = new Date(backupData.savedAt);
                         importMessage += `\n\nThis vault was saved on ${savedDate.toLocaleDateString()} at ${savedDate.toLocaleTimeString()}`;
@@ -5115,6 +5396,10 @@
                     // Show login screen with saved date if available
                     document.getElementById('welcomeIntro').classList.add('hidden');
                     document.getElementById('existingUserLogin').classList.remove('hidden');
+                    
+                    // Update login screen with vault info immediately
+                    document.getElementById('loginVaultName').textContent = this.vaultName;
+                    document.getElementById('loginVaultId').textContent = this.vaultGuid || this.instanceId;
                     
                     if (backupData.savedAt) {
                         const savedDate = new Date(backupData.savedAt);
@@ -5133,11 +5418,11 @@
                 }
             }
             
-            async downloadSelfContained() {
+            async downloadVault() {
                 try {
                     // Check if we have a vault set up
-                    if (!this.instanceId || !this.encryptionKey) {
-                        this.showError('No vault found!\n\nYou must create a vault first:\n1. Click "Create New Health Vault"\n2. Set up password and 2FA\n3. Then you can save your data');
+                    if (!this.instanceId) {
+                        this.showError('No vault found!\n\nYou must create a vault first:\n1. Click "Create New Health Vault"\n2. Set up password\n3. Then you can save your data');
                         this.closeModal('saveModal');
                         return;
                     }
@@ -5152,16 +5437,16 @@
                     let htmlContent = document.documentElement.outerHTML;
                     
                     // Get the data from localStorage
-                    const profile = localStorage.getItem(`vault_profile_${this.instanceId}`);
-                    const data = localStorage.getItem(`vault_data_${this.instanceId}`);
+                    const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}');
+                    const data = JSON.parse(localStorage.getItem(`vault_data_${this.instanceId}`) || '{}');
+                    const attachments = JSON.parse(localStorage.getItem(`vault_attachments_${this.instanceId}`) || '{}');
                     
                     console.log('Preparing to save:', {
                         hasProfile: !!profile,
                         hasData: !!data,
                         instanceId: this.instanceId,
                         vaultName: this.vaultName,
-                        vaultGuid: this.vaultGuid,
-                        dataLength: data?.length
+                        vaultGuid: this.vaultGuid
                     });
                     
                     if (!profile || !data) {
@@ -5175,34 +5460,21 @@
                         vaultName: this.vaultName,
                         profile: profile,
                         data: data,
-                        attachments: {},
+                        attachments: attachments,
                         savedAt: new Date().toISOString()
                     };
                     
-                    // Include attachments
-                    let totalAttachmentSize = 0;
-                    for (const [id, attachment] of Object.entries(this.attachments)) {
-                        const fileData = localStorage.getItem(`vault_file_${this.instanceId}_${id}`);
-                        if (fileData) {
-                            totalAttachmentSize += fileData.length;
-                            embeddedData.attachments[id] = {
-                                metadata: attachment,
-                                data: fileData
-                            };
-                        }
-                    }
+                    // Check total size
+                    const jsonData = JSON.stringify(embeddedData, null, 2);
+                    const estimatedSize = jsonData.length;
                     
-                    // Warn if the vault file will be very large
-                    const estimatedFileSize = JSON.stringify(embeddedData).length;
-                    if (estimatedFileSize > 50 * 1024 * 1024) {
-                        const sizeMB = (estimatedFileSize / 1024 / 1024).toFixed(2);
+                    if (estimatedSize > 50 * 1024 * 1024) {
+                        const sizeMB = (estimatedSize / 1024 / 1024).toFixed(2);
                         if (!confirm(`Warning: The vault file will be approximately ${sizeMB} MB.\n\nLarge files may take time to download and could be difficult to open in some browsers.\n\nContinue?`)) {
+                            this.closeModal('saveModal');
                             return;
                         }
                     }
-                    
-                    // Create the embedded data JSON - properly escape any closing script tags
-                    const jsonData = JSON.stringify(embeddedData, null, 2).replace(/<\/script>/gi, '<\\/script>');
                     
                     console.log('Embedded data preview:', {
                         instanceId: embeddedData.instanceId,
@@ -5279,7 +5551,7 @@
             }
             
             // ==========================================
-            // DOCUMENTS
+            // DOCUMENTS (SIMPLIFIED)
             // ==========================================
             
             showUploadModal() {
@@ -5293,7 +5565,7 @@
                 
                 // No file size limit - but warn for very large files
                 if (file.size > 50 * 1024 * 1024) {
-                    if (!confirm(`This file is ${(file.size / 1024 / 1024).toFixed(2)} MB. Large files may take time to process and use significant browser storage. Continue?`)) {
+                    if (!confirm(`This file is ${(file.size / 1024 / 1024).toFixed(2)} MB. Large files may take time to process and save. Continue?`)) {
                         event.target.value = '';
                         return;
                     }
@@ -5320,7 +5592,7 @@
                 }
                 
                 // Check if vault is properly unlocked
-                if (!this.encryptionKey || this.isLocked) {
+                if (this.isLocked) {
                     this.showError('Vault is locked!\n\nPlease unlock your vault first before uploading documents.');
                     return;
                 }
@@ -5335,59 +5607,33 @@
                     // Generate ID
                     const id = this.generateId();
                     
-                    // For large files, read and convert in chunks to avoid stack overflow
-                    let base64;
-                    
                     // Show progress for large files
                     if (this.pendingFile.size > 5 * 1024 * 1024) {
                         this.showSuccess(`Processing large file (${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB)...`);
                     }
                     
-                    try {
-                        // Read file as data URL directly to avoid intermediate array buffer for large files
-                        base64 = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                try {
-                                    // Extract base64 from data URL
-                                    const dataUrl = e.target.result;
-                                    if (!dataUrl || typeof dataUrl !== 'string') {
-                                        reject(new Error('Failed to read file - no data'));
-                                        return;
-                                    }
-                                    
-                                    const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
-                                    if (!base64Match || !base64Match[1]) {
-                                        reject(new Error('Invalid data URL format'));
-                                        return;
-                                    }
-                                    
-                                    const base64Data = base64Match[1];
-                                    console.log('File read successfully, base64 length:', base64Data.length);
-                                    resolve(base64Data);
-                                } catch (error) {
-                                    reject(new Error('Failed to extract base64: ' + error.message));
+                    // Read file as base64
+                    const base64 = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            try {
+                                const dataUrl = e.target.result;
+                                // Extract base64 from data URL
+                                const base64Match = dataUrl.match(/^data:[^;]+;base64,(.+)$/);
+                                if (!base64Match || !base64Match[1]) {
+                                    reject(new Error('Invalid data URL format'));
+                                    return;
                                 }
-                            };
-                            reader.onerror = () => reject(new Error('File reading failed'));
-                            reader.onabort = () => reject(new Error('File reading was aborted'));
-                            
-                            // Start reading the file
-                            reader.readAsDataURL(this.pendingFile);
-                        });
-                        
-                        if (!base64) {
-                            throw new Error('Failed to read file data');
-                        }
-                    } catch (readError) {
-                        console.error('File read error:', readError);
-                        this.showError('Failed to read file: ' + readError.message);
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = originalText;
-                        return;
-                    }
+                                resolve(base64Match[1]);
+                            } catch (error) {
+                                reject(error);
+                            }
+                        };
+                        reader.onerror = () => reject(new Error('File reading failed'));
+                        reader.readAsDataURL(this.pendingFile);
+                    });
                     
-                    // Store metadata first
+                    // Store metadata and data together
                     const attachment = {
                         id: id,
                         name: name,
@@ -5395,98 +5641,20 @@
                         size: this.pendingFile.size,
                         type: this.pendingFile.type,
                         uploadDate: new Date().toISOString(),
-                        encryptedFilename: id + '.dat'
+                        data: base64
                     };
                     
-                    // Test encryption before processing file
-                    try {
-                        const testData = "test";
-                        const testEncrypted = await this.encrypt(testData, this.encryptionKey);
-                        const testDecrypted = await this.decrypt(testEncrypted, this.encryptionKey);
-                        if (testDecrypted !== testData) {
-                            throw new Error('Encryption test failed');
-                        }
-                        console.log('Encryption test passed');
-                    } catch (testError) {
-                        console.error('Encryption test failed:', testError);
-                        this.showError('Encryption system error.\n\nTry logging out and back in.');
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = originalText;
-                        return;
-                    }
+                    // Add to attachments
+                    this.attachments[id] = attachment;
                     
-                    // Encrypt the file data
-                    let encrypted;
+                    // Save - catch storage errors
                     try {
-                        // Check if we have an encryption key
-                        if (!this.encryptionKey) {
-                            throw new Error('No encryption key available');
-                        }
-                        
-                        // For very large files (over 10MB of base64), use simplified storage
-                        // Note: base64 is ~33% larger than original file size
-                        if (this.pendingFile.size > 10 * 1024 * 1024) {
-                            // Store large files with a marker for simplified handling
-                            const wrapper = {
-                                type: 'large_file_v2',
-                                data: base64,
-                                originalSize: this.pendingFile.size,
-                                encrypted: false
-                            };
-                            // Convert to string and encode
-                            encrypted = btoa(JSON.stringify(wrapper));
-                            console.log('Using simplified storage for large file');
-                        } else {
-                            // Normal encryption for smaller files
-                            console.log('Encrypting file of size:', (base64.length / 1024).toFixed(2), 'KB (base64)');
-                            encrypted = await this.encrypt(base64, this.encryptionKey);
-                            console.log('Encryption successful');
-                        }
-                    } catch (encryptError) {
-                        console.error('Detailed encryption error:', encryptError);
-                        
-                        let errorMessage = 'Failed to encrypt file.\n\n';
-                        
-                        if (encryptError.message.includes('key')) {
-                            errorMessage += 'Encryption key error. Try logging out and back in.';
-                        } else if (encryptError.name === 'QuotaExceededError') {
-                            errorMessage += 'File is too large for encryption.';
-                        } else {
-                            errorMessage += 'Error details: ' + encryptError.message;
-                        }
-                        
-                        this.showError(errorMessage);
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = originalText;
-                        return;
-                    }
-                    
-                    // Try to store file
-                    try {
-                        localStorage.setItem(`vault_file_${this.instanceId}_${id}`, encrypted);
-                        
-                        // Add to attachments only after successful storage
-                        this.attachments[id] = attachment;
+                        await this.saveData();
                     } catch (e) {
-                        console.error('Storage error:', e);
-                        
-                        // Calculate approximate storage size
-                        const estimatedSize = encrypted.length * 2; // UTF-16 encoding
-                        const estimatedSizeMB = (estimatedSize / 1024 / 1024).toFixed(2);
-                        
-                        if (e.name === 'QuotaExceededError' || e.message.includes('QuotaExceededError')) {
-                            this.showError(`Storage quota exceeded!\n\nThe encrypted file (≈${estimatedSizeMB} MB) is too large for browser storage.\n\nTry:\n• Compressing the file first\n• Using a smaller file\n• Clearing browser storage`);
-                        } else {
-                            this.showError(`Storage error: ${e.message}\n\nThe file may be too large for browser storage.`);
-                        }
-                        
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = originalText;
-                        return;
+                        // Remove the attachment that caused the error
+                        delete this.attachments[id];
+                        throw e;
                     }
-                    
-                    // Save metadata
-                    await this.saveData();
                     
                     // Mark as having unsaved changes
                     this.hasUnsavedChanges = true;
@@ -5499,17 +5667,19 @@
                     const sizeText = this.pendingFile.size > 1024 * 1024 
                         ? `${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB`
                         : `${(this.pendingFile.size / 1024).toFixed(2)} KB`;
-                        
-                    this.showSuccess(`Document uploaded successfully!\n\n📄 ${name}\n💾 ${sizeText}`);
+                    
+                    // Show success message with green checkmark
+                    const notification = document.createElement('div');
+                    notification.className = 'info-box success';
+                    notification.style.cssText = 'position: fixed; top: 1rem; right: 1rem; z-index: 1001; max-width: 400px;';
+                    notification.innerHTML = `✅ Document uploaded successfully!<br><br>📄 <strong>${name}</strong><br>💾 ${sizeText}`;
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 4000);
                     
                 } catch (error) {
                     console.error('Upload error:', error);
-                    const errorMessage = error.stack && error.stack.includes('Maximum call stack') 
-                        ? 'File is too large to process. Try a smaller file or compress it first.'
-                        : (error.message || 'Unknown error');
-                        
+                    const errorMessage = error.message || 'Unknown error';
                     this.showError('Error uploading document: ' + errorMessage);
-                    
                 } finally {
                     // Always restore button state
                     uploadBtn.disabled = false;
@@ -5563,38 +5733,8 @@
                 if (!doc || !doc.type.startsWith('image/')) return;
                 
                 try {
-                    const encrypted = localStorage.getItem(`vault_file_${this.instanceId}_${id}`);
-                    if (!encrypted) {
-                        this.showError('Document not found in storage');
-                        return;
-                    }
-                    
-                    let base64;
-                    
-                    // Check if this is a large file with simplified storage
-                    try {
-                        const decrypted = atob(encrypted);
-                        const parsed = JSON.parse(decrypted);
-                        if (parsed.type === 'large_file' || parsed.type === 'large_file_v2') {
-                            base64 = parsed.data;
-                            console.log('Retrieved large file from simplified storage');
-                        } else {
-                            throw new Error('Not a simplified storage format');
-                        }
-                    } catch {
-                        // Normal encrypted file - decrypt it
-                        try {
-                            base64 = await this.decrypt(encrypted, this.encryptionKey);
-                            console.log('Successfully decrypted file');
-                        } catch (decryptError) {
-                            console.error('Decryption error:', decryptError);
-                            this.showError('Failed to decrypt document. The file may be corrupted.');
-                            return;
-                        }
-                    }
-                    
                     // Create data URL for image preview
-                    const dataUrl = `data:${doc.type};base64,${base64}`;
+                    const dataUrl = `data:${doc.type};base64,${doc.data}`;
                     
                     // Show in modal
                     const container = document.getElementById('imagePreviewContainer');
@@ -5612,62 +5752,30 @@
                 if (!doc) return;
                 
                 try {
-                    const encrypted = localStorage.getItem(`vault_file_${this.instanceId}_${id}`);
-                    if (!encrypted) {
-                        this.showError('Document not found in storage');
-                        return;
-                    }
-                    
-                    let base64;
-                    
-                    // Check if this is a large file with simplified storage
-                    try {
-                        const decrypted = atob(encrypted);
-                        const parsed = JSON.parse(decrypted);
-                        if (parsed.type === 'large_file' || parsed.type === 'large_file_v2') {
-                            base64 = parsed.data;
-                            console.log('Retrieved large file from simplified storage');
-                        } else {
-                            throw new Error('Not a simplified storage format');
-                        }
-                    } catch {
-                        // Normal encrypted file - decrypt it
-                        try {
-                            base64 = await this.decrypt(encrypted, this.encryptionKey);
-                            console.log('Successfully decrypted file');
-                        } catch (decryptError) {
-                            console.error('Decryption error:', decryptError);
-                            this.showError('Failed to decrypt document. The file may be corrupted.');
-                            return;
-                        }
-                    }
-                    
                     // Convert base64 to blob
-                    try {
-                        const byteCharacters = atob(base64);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let i = 0; i < byteCharacters.length; i++) {
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    const byteCharacters = atob(doc.data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    
+                    // Process in chunks for large files to avoid memory issues
+                    const chunkSize = 1024 * 1024; // 1MB chunks
+                    for (let offset = 0; offset < byteCharacters.length; offset += chunkSize) {
+                        const chunk = byteCharacters.slice(offset, offset + chunkSize);
+                        for (let i = 0; i < chunk.length; i++) {
+                            byteNumbers[offset + i] = chunk.charCodeAt(i);
                         }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        
-                        const blob = new Blob([byteArray], { type: doc.type || 'application/octet-stream' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = doc.originalName || doc.name;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        
-                        console.log('File downloaded successfully');
-                        
-                        // Show warning about unencrypted file
-                        this.showSuccess(`✅ Document downloaded!\n\n⚠️ This file is now UNENCRYPTED on your device.\nKeep it secure or delete when done.`);
-                        
-                    } catch (conversionError) {
-                        console.error('Base64 conversion error:', conversionError);
-                        this.showError('Failed to process document data');
                     }
+                    
+                    const byteArray = new Uint8Array(byteNumbers);
+                    
+                    const blob = new Blob([byteArray], { type: doc.type || 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = doc.originalName || doc.name;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    this.showSuccess('Document downloaded successfully!');
                     
                 } catch (error) {
                     console.error('Download error:', error);
@@ -5679,7 +5787,6 @@
                 if (!confirm('Delete this document?')) return;
                 
                 delete this.attachments[id];
-                localStorage.removeItem(`vault_file_${this.instanceId}_${id}`);
                 
                 await this.saveData();
                 this.hasUnsavedChanges = true;
@@ -5691,208 +5798,9 @@
                 document.getElementById('docName').value = '';
                 document.getElementById('fileInput').value = '';
                 document.getElementById('uploadText').innerHTML = 
-                    '📁 Click to select file<br><small>PDF, Images, Documents (Any size - large files may take time)</small>';
+                    '📁 Click to select file<br><small>PDF, Images, Documents (Any size)</small>';
                 document.getElementById('uploadBtn').disabled = true;
                 this.pendingFile = null;
-            }
-            
-            // ==========================================
-            // ENCRYPTION
-            // ==========================================
-            
-            async deriveKey(password, salt) {
-                try {
-                    const encoder = new TextEncoder();
-                    const keyMaterial = await crypto.subtle.importKey(
-                        'raw',
-                        encoder.encode(password),
-                        'PBKDF2',
-                        false,
-                        ['deriveBits', 'deriveKey']
-                    );
-                    
-                    const key = await crypto.subtle.deriveKey(
-                        {
-                            name: 'PBKDF2',
-                            salt: salt,
-                            iterations: 100000,
-                            hash: 'SHA-256'
-                        },
-                        keyMaterial,
-                        { name: 'AES-GCM', length: 256 },
-                        false,
-                        ['encrypt', 'decrypt']
-                    );
-                    
-                    return key;
-                } catch (error) {
-                    console.error('Key derivation error:', error);
-                    throw new Error('Failed to derive encryption key: ' + error.message);
-                }
-            }
-            
-            async encrypt(data, password) {
-                try {
-                    const encoder = new TextEncoder();
-                    const salt = crypto.getRandomValues(new Uint8Array(16));
-                    const iv = crypto.getRandomValues(new Uint8Array(12));
-                    const key = await this.deriveKey(password, salt);
-                    
-                    // Convert data to string if it's not already
-                    const dataString = typeof data === 'string' ? data : JSON.stringify(data);
-                    const dataBytes = encoder.encode(dataString);
-                    
-                    // Check data size
-                    console.log('Encrypting data of size:', (dataBytes.length / 1024).toFixed(2), 'KB');
-                    
-                    const encrypted = await crypto.subtle.encrypt(
-                        { name: 'AES-GCM', iv },
-                        key,
-                        dataBytes
-                    );
-                    
-                    const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
-                    combined.set(salt, 0);
-                    combined.set(iv, salt.length);
-                    combined.set(new Uint8Array(encrypted), salt.length + iv.length);
-                    
-                    // Convert to base64 in chunks to avoid stack overflow
-                    return this.uint8ArrayToBase64(combined);
-                } catch (error) {
-                    console.error('Encryption failed:', error);
-                    throw error;
-                }
-            }
-            
-            // Helper function to convert Uint8Array to base64 without stack overflow
-            uint8ArrayToBase64(uint8Array) {
-                let binary = '';
-                const chunkSize = 8192; // Process 8KB at a time
-                
-                for (let i = 0; i < uint8Array.length; i += chunkSize) {
-                    const chunk = uint8Array.slice(i, Math.min(i + chunkSize, uint8Array.length));
-                    binary += String.fromCharCode.apply(null, chunk);
-                }
-                
-                return btoa(binary);
-            }
-            
-            async decrypt(encryptedData, password) {
-                try {
-                    const encrypted = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-                    
-                    const salt = encrypted.slice(0, 16);
-                    const iv = encrypted.slice(16, 28);
-                    const data = encrypted.slice(28);
-                    
-                    const key = await this.deriveKey(password, salt);
-                    
-                    const decrypted = await crypto.subtle.decrypt(
-                        { name: 'AES-GCM', iv },
-                        key,
-                        data
-                    );
-                    
-                    const decoder = new TextDecoder();
-                    const decryptedString = decoder.decode(decrypted);
-                    
-                    // Try to parse as JSON, if it fails return as string
-                    try {
-                        return JSON.parse(decryptedString);
-                    } catch {
-                        return decryptedString;
-                    }
-                } catch (error) {
-                    console.error('Decryption failed:', error);
-                    throw error;
-                }
-            }
-            
-            // ==========================================
-            // TOTP IMPLEMENTATION
-            // ==========================================
-            
-            generateTOTPSecret() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-                let secret = '';
-                const array = new Uint8Array(20);
-                crypto.getRandomValues(array);
-                
-                for (let i = 0; i < 20; i++) {
-                    secret += chars[array[i] % chars.length];
-                }
-                
-                return secret;
-            }
-            
-            verifyTOTP(inputCode, secret) {
-                // Clean input
-                const code = inputCode.replace(/\s/g, '');
-                
-                // For demo purposes, we'll do basic validation
-                // In production, you'd implement proper TOTP verification
-                
-                // Check format
-                if (!/^\d{6}$/.test(code)) {
-                    return false;
-                }
-                
-                // For testing: accept specific codes
-                if (code === '123456') {
-                    return true;
-                }
-                
-                // Basic time-based validation
-                const time = Math.floor(Date.now() / 30000);
-                const expectedCode = this.generateSimpleTOTP(secret, time);
-                
-                // Check current and adjacent time windows
-                return code === expectedCode ||
-                       code === this.generateSimpleTOTP(secret, time - 1) ||
-                       code === this.generateSimpleTOTP(secret, time + 1);
-            }
-            
-            generateSimpleTOTP(secret, time) {
-                // Simplified TOTP for demo
-                // In production, use proper TOTP algorithm
-                const hash = CryptoJS.HmacSHA1(time.toString(), secret);
-                const hex = hash.toString(CryptoJS.enc.Hex);
-                const code = parseInt(hex.substring(0, 6), 16) % 1000000;
-                return code.toString().padStart(6, '0');
-            }
-            
-            // ==========================================
-            // RECOVERY
-            // ==========================================
-            
-            generateRecoveryCode() {
-                const segments = [];
-                for (let i = 0; i < 3; i++) {
-                    const array = new Uint8Array(2);
-                    crypto.getRandomValues(array);
-                    const num = (array[0] * 256 + array[1]) % 10000;
-                    segments.push(num.toString().padStart(4, '0'));
-                }
-                return segments.join('-');
-            }
-            
-            printRecoveryCard() {
-                window.print();
-            }
-            
-            downloadRecoveryCard() {
-                // In production, you'd generate an actual image
-                // For now, we'll create a text file
-                const card = document.getElementById('recoveryCard');
-                const text = card.innerText;
-                
-                const blob = new Blob([text], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `HealthVault_Recovery_Card_${this.vaultName.replace(/\s+/g, '_')}.txt`;
-                a.click();
-                URL.revokeObjectURL(url);
             }
             
             // ==========================================
@@ -5943,40 +5851,6 @@
             closeModal(modalId) {
                 document.getElementById(modalId).classList.remove('active');
             }
-            
-            showGuide() {
-                alert('Health Vault Guide:\n\n1. Your password encrypts everything\n2. Your phone app provides extra security\n3. Save backups regularly\n4. Keep your recovery card safe\n\nNeed more help? Check our website.');
-            }
-            
-            showDebugInfo() {
-                const embeddedDataElement = document.getElementById('embeddedVaultData');
-                if (embeddedDataElement && embeddedDataElement.textContent.trim()) {
-                    try {
-                        const embeddedData = JSON.parse(embeddedDataElement.textContent);
-                        const info = {
-                            hasData: true,
-                            vaultName: embeddedData.vaultName,
-                            instanceId: embeddedData.instanceId,
-                            vaultGuid: embeddedData.vaultGuid,
-                            hasProfile: !!embeddedData.profile,
-                            hasVaultData: !!embeddedData.data,
-                            savedAt: embeddedData.savedAt,
-                            profileLength: embeddedData.profile?.length || 0,
-                            dataLength: embeddedData.data?.length || 0,
-                            attachmentCount: Object.keys(embeddedData.attachments || {}).length
-                        };
-                        alert('Vault Debug Info:\n\n' + JSON.stringify(info, null, 2));
-                    } catch (e) {
-                        alert('Error reading embedded data: ' + e.message);
-                    }
-                } else {
-                    alert('No embedded data found in this file.');
-                }
-            }
-            
-            showNoPhoneOption() {
-                alert('Alternative 2FA Options:\n\nYou can use any authenticator app on a tablet or computer:\n• Authy Desktop\n• 1Password\n• Bitwarden\n\nOr ask a trusted family member to set it up on their phone.');
-            }
         }
         
         // ============================================
@@ -5985,7 +5859,7 @@
         
         // Wait for DOM to be ready
         function initializeApp() {
-            console.log('Initializing Health Vault App...');
+            console.log('Initializing Simple Health Vault App...');
             
             // Ensure clean initialization
             if (window.app) {
@@ -5993,13 +5867,11 @@
             }
             
             // Create new instance
-            window.app = new HealthVault();
+            window.app = new SimpleHealthVault();
             const app = window.app;
             
             // Global functions for onclick handlers
             window.setupStep1 = function() { app.setupStep1(); }
-            window.setupStep2 = function() { app.setupStep2(); }
-            window.setupStep3 = function() { app.setupStep3(); }
             window.completeSetup = function() { app.completeSetup(); }
             window.login = function() { app.login(); }
             window.lockVault = function() { app.lockVault(); }
@@ -6012,29 +5884,22 @@
             window.uploadDocument = function() { app.uploadDocument(); }
             window.showHelp = function() { app.showHelp(); }
             window.backToLogin = function() { app.backToLogin(); }
-            window.showRecoveryOption = function() { app.showRecoveryOption(); }
-            window.showLostEverything = function() { app.showLostEverything(); }
-            window.verifyRecoveryCode = function() { app.verifyRecoveryCode(); }
-            window.resetPassword = function() { app.resetPassword(); }
             window.startFresh = function() { app.startFresh(); }
-            window.showGuide = function() { app.showGuide(); }
-            window.showNoPhoneOption = function() { app.showNoPhoneOption(); }
-            window.printRecoveryCard = function() { app.printRecoveryCard(); }
-            window.downloadRecoveryCard = function() { app.downloadRecoveryCard(); }
             window.handleBackupSelect = function(event) { app.handleBackupSelect(event); }
             window.openBackupFile = function() { app.openBackupFile(); }
-            window.downloadSelfContained = function() { app.downloadSelfContained(); }
+            window.downloadVault = function() { app.downloadVault(); }
             window.showSaveModal = function() { app.showSaveModal(); }
             window.showExportModal = function() { app.showExportModal(); }
             window.exportAsJSON = function() { app.exportAsJSON(); }
             window.toggleView = function(view) { app.toggleView(view); }
             window.toggleJourney = function(journeyId, element) { app.toggleJourney(journeyId, element); }
+            window.changePassword = function() { app.changePassword(); }
+            window.updatePassword = function() { app.updatePassword(); }
             
             // Missing functions that are called from HTML
             window.showLogin = function() { app.showLogin(); }
             window.showOpenFile = function() { app.showOpenFile(); }
             window.startNewSetup = function() { app.startNewSetup(); }
-            window.showDebugInfo = function() { app.showDebugInfo(); }
             window.previewDocument = function(id) { app.previewDocument(id); }
             window.downloadDocument = function(id) { app.downloadDocument(id); }
             window.deleteDocument = function(id) { app.deleteDocument(id); }
@@ -6063,6 +5928,7 @@
             window.editNote = function(id) { app.editNote(id); }
             window.deleteNote = function(id) { app.deleteNote(id); }
             window.filterNotes = function() { app.filterNotes(); }
+            window.searchNotes = function() { app.searchNotes(); }
             
             // Journey functions
             window.showImportJourney = function() { app.showImportJourney(); }
@@ -6071,6 +5937,116 @@
             window.exportJourney = function(id) { app.exportJourney(id); }
             window.exportJourneyModules = function() { app.exportJourneyModules(); }
             window.regenerateVaultName = function() { app.regenerateVaultName(); }
+            
+            // GAC specific functions
+            window.showGacNoteModal = function() { app.showGacNoteModal(); }
+            window.saveGacNote = function() { app.saveGacNote(); }
+            window.viewGacTimeline = function() { app.viewGacTimeline(); }
+            
+            // Note selector functions
+            window.selectMood = function(n) {
+                document.querySelectorAll('#moodSelector .mood-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+                document.getElementById('noteMood').value = n;
+            }
+            
+            window.selectSeverity = function(n) {
+                document.querySelectorAll('#severitySelector .mood-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+                document.getElementById('noteSeverity').value = n;
+            }
+            
+            window.selectEffectiveness = function(n) {
+                document.querySelectorAll('#effectivenessSelector .mood-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                event.target.classList.add('selected');
+                document.getElementById('noteEffectiveness').value = n;
+            }
+            
+            // List item functions for journey modules
+            window.addListItem = function(journeyId, sectionId, fieldId) {
+                const journey = app.journeyEngine.loadedJourneys[journeyId];
+                if (!journey) return;
+                
+                const field = journey.sections.find(s => s.id === sectionId)?.fields.find(f => f.id === fieldId);
+                if (!field || field.type !== 'list') return;
+                
+                // Create a modal for adding list items
+                const modalHtml = `
+                    <div class="modal active" id="tempListModal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Add ${field.label}</h3>
+                                <button class="close-btn" onclick="document.getElementById('tempListModal').remove()">×</button>
+                            </div>
+                            ${field.listFields.map(lf => `
+                                <div class="form-group">
+                                    <label>${lf.label}</label>
+                                    <input type="${lf.type}" id="temp_${lf.id}" ${lf.type === 'date' ? '' : 'placeholder="' + (lf.placeholder || '') + '"'}>
+                                </div>
+                            `).join('')}
+                            <button class="btn btn-primary btn-block" onclick="saveListItem('${journeyId}', '${sectionId}', '${fieldId}')">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+            }
+            
+            window.saveListItem = function(journeyId, sectionId, fieldId) {
+                const journey = app.journeyEngine.loadedJourneys[journeyId];
+                if (!journey) return;
+                
+                const field = journey.sections.find(s => s.id === sectionId)?.fields.find(f => f.id === fieldId);
+                if (!field || field.type !== 'list') return;
+                
+                // Collect data from temp fields
+                const itemData = {};
+                field.listFields.forEach(lf => {
+                    itemData[lf.id] = document.getElementById(`temp_${lf.id}`)?.value || '';
+                });
+                
+                // Save to journey data
+                if (!app.data.journeyData) app.data.journeyData = {};
+                if (!app.data.journeyData[journeyId]) app.data.journeyData[journeyId] = {};
+                if (!app.data.journeyData[journeyId][`${sectionId}_${fieldId}`]) {
+                    app.data.journeyData[journeyId][`${sectionId}_${fieldId}`] = [];
+                }
+                
+                app.data.journeyData[journeyId][`${sectionId}_${fieldId}`].push(itemData);
+                
+                // Update UI
+                app.journeyEngine.populateListField(journeyId, sectionId, field, app.data.journeyData[journeyId][`${sectionId}_${fieldId}`]);
+                
+                // Remove modal
+                document.getElementById('tempListModal').remove();
+                
+                // Save
+                app.autoSave();
+            }
+            
+            window.removeListItem = function(journeyId, sectionId, fieldId, index) {
+                if (!confirm('Remove this item?')) return;
+                
+                if (app.data.journeyData?.[journeyId]?.[`${sectionId}_${fieldId}`]) {
+                    app.data.journeyData[journeyId][`${sectionId}_${fieldId}`].splice(index, 1);
+                    
+                    const journey = app.journeyEngine.loadedJourneys[journeyId];
+                    const field = journey.sections.find(s => s.id === sectionId)?.fields.find(f => f.id === fieldId);
+                    if (field) {
+                        app.journeyEngine.populateListField(journeyId, sectionId, field, app.data.journeyData[journeyId][`${sectionId}_${fieldId}`]);
+                    }
+                    
+                    app.autoSave();
+                }
+            }
         }
         
         // Initialize when DOM is ready
