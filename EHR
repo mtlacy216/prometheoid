@@ -1598,6 +1598,10 @@
                 <!-- Tabs -->
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('personal')">Personal</button>
+                    <button class="tab" onclick="switchTab('case-notes')">
+                        Case Notes
+                        <span class="note-count" id="noteCount" style="display: none;">0</span>
+                    </button>
                     <div id="dynamicTabs" style="display: contents;">
                         <!-- Dynamic journey tabs will be inserted here -->
                     </div>
@@ -1606,10 +1610,6 @@
                     <button class="tab" onclick="switchTab('medications')">Medications</button>
                     <button class="tab" onclick="switchTab('documents')">Documents</button>
                     <button class="tab" onclick="switchTab('providers')">Providers</button>
-                    <button class="tab" onclick="switchTab('case-notes')">
-                        Case Notes
-                        <span class="note-count" id="noteCount" style="display: none;">0</span>
-                    </button>
                     <button class="tab" onclick="switchTab('contacts')">Contacts</button>
                     <button class="tab" onclick="switchTab('journeys')">Journey Modules</button>
                     <button class="tab" onclick="switchTab('settings')">Settings</button>
