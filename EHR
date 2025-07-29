@@ -2910,6 +2910,8 @@
                 this.attachments = {};
                 this.providers = {};
                 this.caseNotes = [];
+                this.masterPassword = null;
+                this.pendingEncryptedData = null;
                 
                 // Enhanced properties
                 this.journeyEngine = new JourneyEngine(this);
@@ -2956,17 +2958,19 @@
                             this.vaultName = embeddedData.vaultName || 'Unknown Vault';
                             document.getElementById('instanceId').textContent = this.instanceId;
                             
-                            // Restore to localStorage for this session
+                            // Restore profile
                             if (embeddedData.profile) {
                                 localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(embeddedData.profile));
                             }
-                            if (embeddedData.data) {
-                                localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(embeddedData.data));
-                            }
-                            
-                            // Restore attachments
-                            if (embeddedData.attachments) {
-                                localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(embeddedData.attachments));
+                            if (embeddedData.encrypted) {
+                                this.pendingEncryptedData = { iv: embeddedData.iv, cipher: embeddedData.cipher };
+                            } else {
+                                if (embeddedData.data) {
+                                    localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(embeddedData.data));
+                                }
+                                if (embeddedData.attachments) {
+                                    localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(embeddedData.attachments));
+                                }
                             }
                             
                             // Show login screen for this vault with saved date
@@ -3282,8 +3286,9 @@
                 }
                 
                 await this.saveData();
-                
+
                 // Clear temp password
+                this.masterPassword = this.tempPassword;
                 this.tempPassword = null;
                 
                 // Update HTML with instance ID
@@ -3348,7 +3353,24 @@
                     
                     // Success
                     this.passwordHash = hash;
-                    await this.loadData();
+                    this.masterPassword = password;
+                    if (this.pendingEncryptedData) {
+                        try {
+                            const decrypted = await this.decryptText(this.pendingEncryptedData.iv, this.pendingEncryptedData.cipher);
+                            const payload = JSON.parse(decrypted);
+                            this.data = payload.data || {};
+                            this.attachments = payload.attachments || {};
+                            localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(this.attachments));
+                            this.pendingEncryptedData = null;
+                        } catch (e) {
+                            console.error('Decryption error:', e);
+                            this.showError('Unable to decrypt data. Wrong password?');
+                            return;
+                        }
+                    } else {
+                        await this.loadData();
+                    }
                     this.unlock();
                     
                     // Clear login fields
@@ -3533,6 +3555,8 @@
                 this.attachments = {};
                 this.providers = {};
                 this.caseNotes = [];
+                this.masterPassword = null;
+                this.pendingEncryptedData = null;
                 this.journeyEngine.loadedJourneys = {};
                 this.clearSession();
                 
@@ -3850,7 +3874,8 @@ lastName: document.getElementById('lastName')?.value || '',
             
             populateFields() {
                 // Personal (Enhanced)
-                document.getElementById('fullName').value = this.data.personal?.fullName || '';
+                document.getElementById('firstName').value = this.data.personal?.firstName || '';
+                document.getElementById('lastName').value = this.data.personal?.lastName || '';
                 document.getElementById('pronouns').value = this.data.personal?.pronouns || '';
                 document.getElementById('dateOfBirth').value = this.data.personal?.dateOfBirth || '';
                 document.getElementById('genderIdentity').value = this.data.personal?.genderIdentity || '';
@@ -5337,7 +5362,7 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
-                    if (!backupData.profile || !backupData.data) {
+                    if (!backupData.profile || (!backupData.data && !backupData.encrypted)) {
                         this.showError('Vault file is missing required data.\n\nMake sure this is a complete Health Vault file.');
                         return;
                     }
@@ -5352,11 +5377,15 @@ lastName: document.getElementById('lastName')?.value || '',
                     if (backupData.profile) {
                         localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(backupData.profile));
                     }
-                    if (backupData.data) {
-                        localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
-                    }
-                    if (backupData.attachments) {
-                        localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(backupData.attachments));
+                    if (backupData.encrypted) {
+                        this.pendingEncryptedData = { iv: backupData.iv, cipher: backupData.cipher };
+                    } else {
+                        if (backupData.data) {
+                            localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
+                        }
+                        if (backupData.attachments) {
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(backupData.attachments));
+                        }
                     }
                     
                     this.closeModal('openFileModal');
@@ -5409,6 +5438,12 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
+                    if (!this.masterPassword) {
+                        this.showError('Please unlock the vault before saving.');
+                        this.closeModal('saveModal');
+                        return;
+                    }
+
                     // First save current data to ensure everything is up to date
                     await this.saveData();
                     
@@ -5436,13 +5471,17 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
+                    const payload = { data: data, attachments: attachments };
+                    const encData = await this.encryptText(JSON.stringify(payload));
+
                     const embeddedData = {
                         instanceId: this.instanceId,
                         vaultGuid: this.vaultGuid,
                         vaultName: this.vaultName,
                         profile: profile,
-                        data: data,
-                        attachments: attachments,
+                        encrypted: true,
+                        iv: encData.iv,
+                        cipher: encData.cipher,
                         savedAt: new Date().toISOString()
                     };
                     
@@ -5640,15 +5679,16 @@ lastName: document.getElementById('lastName')?.value || '',
                     
                     // Mark as having unsaved changes
                     this.hasUnsavedChanges = true;
-                    
+
+                    // Calculate size text before clearing pendingFile
+                    const sizeText = this.pendingFile.size > 1024 * 1024
+                        ? `${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB`
+                        : `${(this.pendingFile.size / 1024).toFixed(2)} KB`;
+
                     // Update UI
                     this.updateDocumentsList();
                     this.closeModal('uploadModal');
                     this.resetUploadModal();
-                    
-                    const sizeText = this.pendingFile.size > 1024 * 1024 
-                        ? `${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB`
-                        : `${(this.pendingFile.size / 1024).toFixed(2)} KB`;
                     
                     // Show success message with green checkmark
                     const notification = document.createElement('div');
@@ -5793,6 +5833,29 @@ lastName: document.getElementById('lastName')?.value || '',
                 const array = new Uint8Array(16);
                 crypto.getRandomValues(array);
                 return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+            }
+
+            async encryptText(text) {
+                if (!this.masterPassword) throw new Error('Missing password');
+                const enc = new TextEncoder();
+                const keyData = await crypto.subtle.digest('SHA-256', enc.encode(this.masterPassword));
+                const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['encrypt']);
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const cipherBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+                const cipher = btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)));
+                const ivStr = btoa(String.fromCharCode(...iv));
+                return { iv: ivStr, cipher };
+            }
+
+            async decryptText(ivStr, cipherStr) {
+                if (!this.masterPassword) throw new Error('Missing password');
+                const enc = new TextEncoder();
+                const keyData = await crypto.subtle.digest('SHA-256', enc.encode(this.masterPassword));
+                const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+                const iv = Uint8Array.from(atob(ivStr), c => c.charCodeAt(0));
+                const data = Uint8Array.from(atob(cipherStr), c => c.charCodeAt(0));
+                const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+                return new TextDecoder().decode(plainBuffer);
             }
             
             showError(message) {
