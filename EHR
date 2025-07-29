@@ -1450,30 +1450,6 @@
                                 <h4>🏳️‍⚧️ Gender Affirming Care</h4>
                                 <p>Track hormone therapy, surgeries, and transition-related care</p>
                             </div>
-                            
-                            <div class="journey-option" onclick="toggleJourney('womens-health', this)">
-                                <input type="checkbox" id="journey_womens-health">
-                                <h4>👩‍⚕️ Women's Health</h4>
-                                <p>Menstrual tracking, pregnancy, menopause, and reproductive health</p>
-                            </div>
-                            
-                            <div class="journey-option" onclick="toggleJourney('mens-health', this)">
-                                <input type="checkbox" id="journey_mens-health">
-                                <h4>👨‍⚕️ Men's Health</h4>
-                                <p>Prostate health, testosterone, fertility, and preventive care</p>
-                            </div>
-                            
-                            <div class="journey-option" onclick="toggleJourney('cancer-care', this)">
-                                <input type="checkbox" id="journey_cancer-care">
-                                <h4>🎗️ Cancer Care</h4>
-                                <p>Treatment tracking, symptom monitoring, and survivorship</p>
-                            </div>
-                            
-                            <div class="journey-option" onclick="toggleJourney('demographic-health', this)">
-                                <input type="checkbox" id="journey_demographic-health">
-                                <h4>🤝 Demographic Health</h4>
-                                <p>Social determinants, cultural considerations, and health equity</p>
-                            </div>
                         </div>
                     </div>
                     
