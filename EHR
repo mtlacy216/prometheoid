@@ -2910,6 +2910,8 @@
                 this.attachments = {};
                 this.providers = {};
                 this.caseNotes = [];
+                this.masterPassword = null;
+                this.pendingEncryptedData = null;
                 
                 // Enhanced properties
                 this.journeyEngine = new JourneyEngine(this);
@@ -2945,7 +2947,11 @@
                 const embeddedDataElement = document.getElementById('embeddedVaultData');
                 if (embeddedDataElement && embeddedDataElement.textContent.trim()) {
                     try {
-                        const embeddedData = JSON.parse(embeddedDataElement.textContent);
+                        let raw = embeddedDataElement.textContent.trim();
+                        if (!raw.startsWith('{')) {
+                            raw = atob(raw);
+                        }
+                        const embeddedData = JSON.parse(raw);
                         if (embeddedData && embeddedData.instanceId) {
                             // This HTML file contains vault data
                             console.log('Found embedded vault data');
@@ -2956,17 +2962,19 @@
                             this.vaultName = embeddedData.vaultName || 'Unknown Vault';
                             document.getElementById('instanceId').textContent = this.instanceId;
                             
-                            // Restore to localStorage for this session
+                            // Restore profile
                             if (embeddedData.profile) {
                                 localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(embeddedData.profile));
                             }
-                            if (embeddedData.data) {
-                                localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(embeddedData.data));
-                            }
-                            
-                            // Restore attachments
-                            if (embeddedData.attachments) {
-                                localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(embeddedData.attachments));
+                            if (embeddedData.encrypted) {
+                                this.pendingEncryptedData = { iv: embeddedData.iv, cipher: embeddedData.cipher };
+                            } else {
+                                if (embeddedData.data) {
+                                    localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(embeddedData.data));
+                                }
+                                if (embeddedData.attachments) {
+                                    localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(embeddedData.attachments));
+                                }
                             }
                             
                             // Show login screen for this vault with saved date
@@ -3142,7 +3150,11 @@
                 try {
                     const embeddedDataElement = document.getElementById('embeddedVaultData');
                     if (embeddedDataElement && embeddedDataElement.textContent.trim()) {
-                        const embeddedData = JSON.parse(embeddedDataElement.textContent);
+                        let raw = embeddedDataElement.textContent.trim();
+                        if (!raw.startsWith('{')) {
+                            raw = atob(raw);
+                        }
+                        const embeddedData = JSON.parse(raw);
                         if (embeddedData.savedAt) {
                             const savedDate = new Date(embeddedData.savedAt);
                             vaultInfo = `<div class="info-box tip" style="margin-bottom: 1rem;">
@@ -3282,8 +3294,9 @@
                 }
                 
                 await this.saveData();
-                
+
                 // Clear temp password
+                this.masterPassword = this.tempPassword;
                 this.tempPassword = null;
                 
                 // Update HTML with instance ID
@@ -3348,7 +3361,26 @@
                     
                     // Success
                     this.passwordHash = hash;
-                    await this.loadData();
+                    this.masterPassword = password;
+                    if (this.pendingEncryptedData) {
+                        try {
+                            const decrypted = await this.decryptText(this.pendingEncryptedData.iv, this.pendingEncryptedData.cipher);
+                            const decompressed = await this.decompressText(decrypted);
+                            const payload = JSON.parse(decompressed);
+                            this.data = payload.data || {};
+                            this.attachments = payload.attachments || {};
+                            localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
+                            const compressed = await this.compressText(JSON.stringify(this.attachments));
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
+                            this.pendingEncryptedData = null;
+                        } catch (e) {
+                            console.error('Decryption error:', e);
+                            this.showError('Unable to decrypt data. Wrong password?');
+                            return;
+                        }
+                    } else {
+                        await this.loadData();
+                    }
                     this.unlock();
                     
                     // Clear login fields
@@ -3533,6 +3565,8 @@
                 this.attachments = {};
                 this.providers = {};
                 this.caseNotes = [];
+                this.masterPassword = null;
+                this.pendingEncryptedData = null;
                 this.journeyEngine.loadedJourneys = {};
                 this.clearSession();
                 
@@ -3688,10 +3722,18 @@
                         this.providers = this.data.providers || {};
                         this.caseNotes = this.data.caseNotes || [];
                         
-                        // Load attachments
+                        // Load attachments (decompress if needed)
                         const attachmentsStr = localStorage.getItem(`vault_attachments_${this.instanceId}`);
                         if (attachmentsStr) {
-                            this.attachments = JSON.parse(attachmentsStr);
+                            let attachJSON = attachmentsStr;
+                            if (!attachmentsStr.trim().startsWith('{')) {
+                                try {
+                                    attachJSON = await this.decompressText(attachmentsStr);
+                                } catch (err) {
+                                    console.error('Decompression error:', err);
+                                }
+                            }
+                            this.attachments = JSON.parse(attachJSON);
                         }
                         
                         // Load journeys
@@ -3822,10 +3864,12 @@ lastName: document.getElementById('lastName')?.value || '',
                 
                 // Save data
                 localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
-                
-                // Save attachments separately
+
+                // Save attachments separately (compressed if possible)
                 try {
-                    localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(this.attachments));
+                    const attachStr = JSON.stringify(this.attachments);
+                    const compressed = await this.compressText(attachStr);
+                    localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
                 } catch (e) {
                     console.error('Storage error:', e);
                     if (e.name === 'QuotaExceededError' || e.message.includes('QuotaExceededError')) {
@@ -3850,7 +3894,8 @@ lastName: document.getElementById('lastName')?.value || '',
             
             populateFields() {
                 // Personal (Enhanced)
-                document.getElementById('fullName').value = this.data.personal?.fullName || '';
+                document.getElementById('firstName').value = this.data.personal?.firstName || '';
+                document.getElementById('lastName').value = this.data.personal?.lastName || '';
                 document.getElementById('pronouns').value = this.data.personal?.pronouns || '';
                 document.getElementById('dateOfBirth').value = this.data.personal?.dateOfBirth || '';
                 document.getElementById('genderIdentity').value = this.data.personal?.genderIdentity || '';
@@ -5302,9 +5347,13 @@ lastName: document.getElementById('lastName')?.value || '',
                             this.showError('No vault data found!\n\nThis HTML file doesn\'t contain saved health records.\nMake sure it\'s a file created with "Save to File"');
                             return;
                         }
-                        
+
                         try {
-                            backupData = JSON.parse(match[1]);
+                            let raw = match[1].trim();
+                            if (!raw.startsWith('{')) {
+                                raw = atob(raw);
+                            }
+                            backupData = JSON.parse(raw);
                         } catch (e) {
                             console.error('JSON parse error:', e);
                             this.showError('Invalid data in HTML file.\n\nThe vault data appears to be corrupted.');
@@ -5319,7 +5368,11 @@ lastName: document.getElementById('lastName')?.value || '',
                             return;
                         }
                         try {
-                            backupData = JSON.parse(content);
+                            let raw = content.trim();
+                            if (!raw.startsWith('{')) {
+                                raw = atob(raw);
+                            }
+                            backupData = JSON.parse(raw);
                         } catch (e) {
                             this.showError('Invalid JSON file\n\nThe file doesn\'t contain valid JSON data.');
                             return;
@@ -5337,7 +5390,7 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
-                    if (!backupData.profile || !backupData.data) {
+                    if (!backupData.profile || (!backupData.data && !backupData.encrypted)) {
                         this.showError('Vault file is missing required data.\n\nMake sure this is a complete Health Vault file.');
                         return;
                     }
@@ -5352,11 +5405,16 @@ lastName: document.getElementById('lastName')?.value || '',
                     if (backupData.profile) {
                         localStorage.setItem(`vault_profile_${this.instanceId}`, JSON.stringify(backupData.profile));
                     }
-                    if (backupData.data) {
-                        localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
-                    }
-                    if (backupData.attachments) {
-                        localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(backupData.attachments));
+                    if (backupData.encrypted) {
+                        this.pendingEncryptedData = { iv: backupData.iv, cipher: backupData.cipher };
+                    } else {
+                        if (backupData.data) {
+                            localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
+                        }
+                        if (backupData.attachments) {
+                            const compressed = await this.compressText(JSON.stringify(backupData.attachments));
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
+                        }
                     }
                     
                     this.closeModal('openFileModal');
@@ -5409,6 +5467,12 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
+                    if (!this.masterPassword) {
+                        this.showError('Please unlock the vault before saving.');
+                        this.closeModal('saveModal');
+                        return;
+                    }
+
                     // First save current data to ensure everything is up to date
                     await this.saveData();
                     
@@ -5421,7 +5485,19 @@ lastName: document.getElementById('lastName')?.value || '',
                     // Get the data from localStorage
                     const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}');
                     const data = JSON.parse(localStorage.getItem(`vault_data_${this.instanceId}`) || '{}');
-                    const attachments = JSON.parse(localStorage.getItem(`vault_attachments_${this.instanceId}`) || '{}');
+                    let attachments = {};
+                    const attStr = localStorage.getItem(`vault_attachments_${this.instanceId}`);
+                    if (attStr) {
+                        let attJSON = attStr;
+                        if (!attStr.trim().startsWith('{')) {
+                            try {
+                                attJSON = await this.decompressText(attStr);
+                            } catch (err) {
+                                console.error('Decompression error:', err);
+                            }
+                        }
+                        attachments = JSON.parse(attJSON);
+                    }
                     
                     console.log('Preparing to save:', {
                         hasProfile: !!profile,
@@ -5436,18 +5512,25 @@ lastName: document.getElementById('lastName')?.value || '',
                         return;
                     }
                     
+                    const payload = { data: data, attachments: attachments };
+                    const compressedPayload = await this.compressText(JSON.stringify(payload));
+                    const encData = await this.encryptText(compressedPayload);
+
                     const embeddedData = {
                         instanceId: this.instanceId,
                         vaultGuid: this.vaultGuid,
                         vaultName: this.vaultName,
                         profile: profile,
-                        data: data,
-                        attachments: attachments,
+                        encrypted: true,
+                        iv: encData.iv,
+                        cipher: encData.cipher,
                         savedAt: new Date().toISOString()
                     };
-                    
+
+                    const jsonString = JSON.stringify(embeddedData);
+                    const jsonData = btoa(jsonString);
+
                     // Check total size
-                    const jsonData = JSON.stringify(embeddedData, null, 2);
                     const estimatedSize = jsonData.length;
                     
                     if (estimatedSize > 50 * 1024 * 1024) {
@@ -5465,7 +5548,7 @@ lastName: document.getElementById('lastName')?.value || '',
                         hasProfile: !!embeddedData.profile,
                         hasData: !!embeddedData.data,
                         savedAt: embeddedData.savedAt,
-                        jsonLength: jsonData.length
+                        jsonLength: jsonString.length
                     });
                     
                     // Replace the empty embeddedVaultData script with the actual data
@@ -5640,15 +5723,16 @@ lastName: document.getElementById('lastName')?.value || '',
                     
                     // Mark as having unsaved changes
                     this.hasUnsavedChanges = true;
-                    
+
+                    // Calculate size text before clearing pendingFile
+                    const sizeText = this.pendingFile.size > 1024 * 1024
+                        ? `${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB`
+                        : `${(this.pendingFile.size / 1024).toFixed(2)} KB`;
+
                     // Update UI
                     this.updateDocumentsList();
                     this.closeModal('uploadModal');
                     this.resetUploadModal();
-                    
-                    const sizeText = this.pendingFile.size > 1024 * 1024 
-                        ? `${(this.pendingFile.size / 1024 / 1024).toFixed(2)} MB`
-                        : `${(this.pendingFile.size / 1024).toFixed(2)} KB`;
                     
                     // Show success message with green checkmark
                     const notification = document.createElement('div');
@@ -5793,6 +5877,78 @@ lastName: document.getElementById('lastName')?.value || '',
                 const array = new Uint8Array(16);
                 crypto.getRandomValues(array);
                 return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+            }
+
+            bytesToBase64(bytes) {
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            }
+
+            base64ToBytes(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
+            }
+
+            async compressText(text) {
+                if (typeof CompressionStream !== 'undefined') {
+                    const cs = new CompressionStream('gzip');
+                    const writer = cs.writable.getWriter();
+                    writer.write(new TextEncoder().encode(text));
+                    writer.close();
+                    const buffer = await new Response(cs.readable).arrayBuffer();
+                    return this.bytesToBase64(new Uint8Array(buffer));
+                } else {
+                    return this.bytesToBase64(new TextEncoder().encode(text));
+                }
+            }
+
+            async decompressText(base64) {
+                const data = this.base64ToBytes(base64);
+                if (typeof DecompressionStream !== 'undefined') {
+                    try {
+                        const ds = new DecompressionStream('gzip');
+                        const writer = ds.writable.getWriter();
+                        writer.write(data);
+                        writer.close();
+                        const result = await new Response(ds.readable).arrayBuffer();
+                        return new TextDecoder().decode(result);
+                    } catch (e) {
+                        // Fallback to plain text if input was not compressed
+                        return new TextDecoder().decode(data);
+                    }
+                } else {
+                    return new TextDecoder().decode(data);
+                }
+            }
+
+            async encryptText(text) {
+                if (!this.masterPassword) throw new Error('Missing password');
+                const enc = new TextEncoder();
+                const keyData = await crypto.subtle.digest('SHA-256', enc.encode(this.masterPassword));
+                const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['encrypt']);
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const cipherBuffer = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+                const cipher = this.bytesToBase64(new Uint8Array(cipherBuffer));
+                const ivStr = this.bytesToBase64(iv);
+                return { iv: ivStr, cipher };
+            }
+
+            async decryptText(ivStr, cipherStr) {
+                if (!this.masterPassword) throw new Error('Missing password');
+                const enc = new TextEncoder();
+                const keyData = await crypto.subtle.digest('SHA-256', enc.encode(this.masterPassword));
+                const key = await crypto.subtle.importKey('raw', keyData, { name: 'AES-GCM' }, false, ['decrypt']);
+                const iv = this.base64ToBytes(ivStr);
+                const data = this.base64ToBytes(cipherStr);
+                const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+                return new TextDecoder().decode(plainBuffer);
             }
             
             showError(message) {
