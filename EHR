@@ -3357,11 +3357,13 @@
                     if (this.pendingEncryptedData) {
                         try {
                             const decrypted = await this.decryptText(this.pendingEncryptedData.iv, this.pendingEncryptedData.cipher);
-                            const payload = JSON.parse(decrypted);
+                            const decompressed = await this.decompressText(decrypted);
+                            const payload = JSON.parse(decompressed);
                             this.data = payload.data || {};
                             this.attachments = payload.attachments || {};
                             localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
-                            localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(this.attachments));
+                            const compressed = await this.compressText(JSON.stringify(this.attachments));
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
                             this.pendingEncryptedData = null;
                         } catch (e) {
                             console.error('Decryption error:', e);
@@ -3712,10 +3714,18 @@
                         this.providers = this.data.providers || {};
                         this.caseNotes = this.data.caseNotes || [];
                         
-                        // Load attachments
+                        // Load attachments (decompress if needed)
                         const attachmentsStr = localStorage.getItem(`vault_attachments_${this.instanceId}`);
                         if (attachmentsStr) {
-                            this.attachments = JSON.parse(attachmentsStr);
+                            let attachJSON = attachmentsStr;
+                            if (!attachmentsStr.trim().startsWith('{')) {
+                                try {
+                                    attachJSON = await this.decompressText(attachmentsStr);
+                                } catch (err) {
+                                    console.error('Decompression error:', err);
+                                }
+                            }
+                            this.attachments = JSON.parse(attachJSON);
                         }
                         
                         // Load journeys
@@ -3846,10 +3856,12 @@ lastName: document.getElementById('lastName')?.value || '',
                 
                 // Save data
                 localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(this.data));
-                
-                // Save attachments separately
+
+                // Save attachments separately (compressed if possible)
                 try {
-                    localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(this.attachments));
+                    const attachStr = JSON.stringify(this.attachments);
+                    const compressed = await this.compressText(attachStr);
+                    localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
                 } catch (e) {
                     console.error('Storage error:', e);
                     if (e.name === 'QuotaExceededError' || e.message.includes('QuotaExceededError')) {
@@ -5384,7 +5396,8 @@ lastName: document.getElementById('lastName')?.value || '',
                             localStorage.setItem(`vault_data_${this.instanceId}`, JSON.stringify(backupData.data));
                         }
                         if (backupData.attachments) {
-                            localStorage.setItem(`vault_attachments_${this.instanceId}`, JSON.stringify(backupData.attachments));
+                            const compressed = await this.compressText(JSON.stringify(backupData.attachments));
+                            localStorage.setItem(`vault_attachments_${this.instanceId}`, compressed);
                         }
                     }
                     
@@ -5456,7 +5469,19 @@ lastName: document.getElementById('lastName')?.value || '',
                     // Get the data from localStorage
                     const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}');
                     const data = JSON.parse(localStorage.getItem(`vault_data_${this.instanceId}`) || '{}');
-                    const attachments = JSON.parse(localStorage.getItem(`vault_attachments_${this.instanceId}`) || '{}');
+                    let attachments = {};
+                    const attStr = localStorage.getItem(`vault_attachments_${this.instanceId}`);
+                    if (attStr) {
+                        let attJSON = attStr;
+                        if (!attStr.trim().startsWith('{')) {
+                            try {
+                                attJSON = await this.decompressText(attStr);
+                            } catch (err) {
+                                console.error('Decompression error:', err);
+                            }
+                        }
+                        attachments = JSON.parse(attJSON);
+                    }
                     
                     console.log('Preparing to save:', {
                         hasProfile: !!profile,
@@ -5472,7 +5497,8 @@ lastName: document.getElementById('lastName')?.value || '',
                     }
                     
                     const payload = { data: data, attachments: attachments };
-                    const encData = await this.encryptText(JSON.stringify(payload));
+                    const compressedPayload = await this.compressText(JSON.stringify(payload));
+                    const encData = await this.encryptText(compressedPayload);
 
                     const embeddedData = {
                         instanceId: this.instanceId,
@@ -5833,6 +5859,38 @@ lastName: document.getElementById('lastName')?.value || '',
                 const array = new Uint8Array(16);
                 crypto.getRandomValues(array);
                 return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+            }
+
+            async compressText(text) {
+                if (typeof CompressionStream !== 'undefined') {
+                    const cs = new CompressionStream('gzip');
+                    const writer = cs.writable.getWriter();
+                    writer.write(new TextEncoder().encode(text));
+                    writer.close();
+                    const buffer = await new Response(cs.readable).arrayBuffer();
+                    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                } else {
+                    return btoa(new TextEncoder().encode(text).reduce((s, b) => s + String.fromCharCode(b), ''));
+                }
+            }
+
+            async decompressText(base64) {
+                const data = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+                if (typeof DecompressionStream !== 'undefined') {
+                    try {
+                        const ds = new DecompressionStream('gzip');
+                        const writer = ds.writable.getWriter();
+                        writer.write(data);
+                        writer.close();
+                        const result = await new Response(ds.readable).arrayBuffer();
+                        return new TextDecoder().decode(result);
+                    } catch (e) {
+                        // Fallback to plain text if input was not compressed
+                        return new TextDecoder().decode(data);
+                    }
+                } else {
+                    return new TextDecoder().decode(data);
+                }
             }
 
             async encryptText(text) {
