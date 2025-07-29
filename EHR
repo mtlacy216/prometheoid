@@ -3745,7 +3745,8 @@
             async saveData() {
                 // Collect form data from all fields
                 const personalData = {
-                    fullName: document.getElementById('fullName')?.value || '',
+                    firstName: document.getElementById('firstName')?.value || '',
+lastName: document.getElementById('lastName')?.value || '',
                     pronouns: document.getElementById('pronouns')?.value || '',
                     dateOfBirth: document.getElementById('dateOfBirth')?.value || '',
                     genderIdentity: document.getElementById('genderIdentity')?.value || '',
