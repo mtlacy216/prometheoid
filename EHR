@@ -10,7 +10,7 @@
     
     <!-- For TOTP 2FA -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <!-- For QR Code generation -->
+    <!-- For QR Code generation (keeping for 2FA setup only) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     
     <style>
@@ -102,24 +102,6 @@
             display: flex;
             align-items: center;
             gap: 1rem;
-        }
-
-        /* Provider Mode Indicator */
-        .provider-mode-indicator {
-            display: none;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: #fef3c7;
-            color: #92400e;
-            border-radius: 2rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .provider-mode-indicator.active {
-            display: flex;
-            animation: pulse 2s infinite;
         }
 
         .save-indicator {
@@ -457,11 +439,6 @@
             border-color: #e5e7eb;
         }
 
-        .info-box.provider {
-            background: #fef3c7;
-            border-color: #fde68a;
-        }
-
         /* Help Section */
         .help-section {
             margin-top: 2rem;
@@ -515,6 +492,16 @@
             right: 0;
             height: 2px;
             background: var(--primary);
+        }
+
+        .tab .note-count {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            border-radius: 1rem;
+            padding: 0.125rem 0.5rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
         }
 
         /* Cards */
@@ -620,8 +607,7 @@
         }
 
         .qr-container #qrcode,
-        .qr-container #setupQrCode,
-        .qr-container #providerAccessQr {
+        .qr-container #setupQrCode {
             display: inline-block;
             margin: 1rem auto;
         }
@@ -904,8 +890,8 @@
             margin-bottom: 0.25rem;
         }
 
-        .provider-last-access {
-            font-size: 0.75rem;
+        .provider-phone {
+            font-size: 0.875rem;
             color: var(--text-light);
         }
 
@@ -944,7 +930,7 @@
             align-items: center;
         }
 
-        .case-note-provider {
+        .case-note-author {
             font-weight: 600;
         }
 
@@ -962,12 +948,20 @@
             font-weight: 600;
         }
 
+        .case-note-type.personal {
+            background: var(--success);
+        }
+
         .case-note-content {
             padding: 1rem;
         }
 
         .case-note-section {
             margin-bottom: 1rem;
+        }
+
+        .case-note-section:last-child {
+            margin-bottom: 0;
         }
 
         .case-note-section-title {
@@ -982,121 +976,18 @@
             color: var(--text);
         }
 
-        /* Provider Interface */
-        .provider-interface {
-            background: #fffef5;
-            border: 2px solid #fbbf24;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .provider-interface-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .provider-interface-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #92400e;
-        }
-
-        .access-code-display {
-            background: white;
-            border: 2px solid var(--primary);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .access-code {
-            font-family: monospace;
-            font-size: 2rem;
-            font-weight: 600;
-            letter-spacing: 0.2em;
-            color: var(--primary);
-        }
-
-        /* Note Templates */
-        .template-selector {
-            background: var(--bg);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .template-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-
-        .template-option {
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 0.25rem;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .template-option:hover {
-            border-color: var(--primary);
-            background: #f0f9ff;
-        }
-
-        .template-option.selected {
-            border-color: var(--primary);
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Dynamic Fields */
-        .dynamic-field {
-            margin-bottom: 1rem;
-        }
-
-        .dynamic-field-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .dynamic-field-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: 0.25rem;
-        }
-
-        .best-practice-prompt {
+        /* Note Summary */
+        .note-summary {
             background: #f0f9ff;
             border-left: 3px solid var(--primary);
             padding: 0.75rem;
-            margin-top: 0.5rem;
+            margin-top: 1rem;
             font-size: 0.875rem;
         }
 
-        /* Loading */
-        .loading {
-            display: inline-block;
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        
-        /* Upload button with loading */
-        .btn .loading {
-            margin-right: 0.5rem;
-            vertical-align: middle;
+        .note-summary-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
         }
 
         /* Data Preview */
@@ -1111,6 +1002,47 @@
             overflow: auto;
             white-space: pre-wrap;
             word-break: break-all;
+        }
+
+        /* Insurance Section */
+        .insurance-section {
+            background: var(--bg);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .insurance-header {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Note Form */
+        .note-form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .note-form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Vault ID Display */
+        .vault-id-display {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .vault-guid {
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.5rem;
         }
 
         @keyframes spin {
@@ -1130,6 +1062,17 @@
                 opacity: 1;
                 box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
             }
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
         }
 
         /* Hidden */
@@ -1282,58 +1225,19 @@
           }
         ]
       }
-    ],
-    "noteTemplates": [
-      {
-        "id": "hormone-check",
-        "name": "Hormone Follow-up",
-        "sections": [
-          {
-            "id": "subjective",
-            "name": "Subjective",
-            "prompts": [
-              "Mood changes since last visit?",
-              "Physical changes noticed?",
-              "Side effects or concerns?",
-              "Medication adherence?"
-            ]
-          },
-          {
-            "id": "objective",
-            "name": "Objective",
-            "fields": [
-              {"id": "bp", "type": "text", "label": "Blood Pressure"},
-              {"id": "weight", "type": "number", "label": "Weight"},
-              {"id": "physical_changes", "type": "textarea", "label": "Physical Changes Observed"}
-            ]
-          },
-          {
-            "id": "labs",
-            "name": "Lab Results",
-            "fields": [
-              {"id": "estradiol", "type": "number", "label": "Estradiol (pg/mL)"},
-              {"id": "testosterone", "type": "number", "label": "Testosterone (ng/dL)"},
-              {"id": "notes", "type": "textarea", "label": "Other Labs"}
-            ]
-          },
-          {
-            "id": "plan",
-            "name": "Plan",
-            "prompts": [
-              "Continue current regimen?",
-              "Dose adjustments?",
-              "Next lab date?",
-              "Referrals needed?"
-            ]
-          }
-        ]
-      }
     ]
   }
 }
     </script>
     
     <script>
+        // Ensure DOM is ready before any initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM Content Loaded - waiting for full page load...');
+            });
+        }
+        
         // Force fresh initialization when page loads
         window.addEventListener('load', () => {
             // Clear any cached state
@@ -1361,9 +1265,9 @@
                 
                 <div class="info-box">
                     <strong>Enhanced Features:</strong><br>
-                    • Dynamic health journey modules<br>
-                    • Provider collaboration system<br>
-                    • Structured case notes with best practices<br>
+                    • Comprehensive health insurance tracking<br>
+                    • Personal case notes and health journal<br>
+                    • Provider directory (no remote access)<br>
                     • Everything stays encrypted on your device
                 </div>
                 
@@ -1728,13 +1632,6 @@
                 </div>
                 
                 <div class="status-bar">
-                    <div class="provider-mode-indicator" id="providerModeIndicator">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Provider Mode: <span id="activeProviderName">-</span>
-                    </div>
-                    
                     <div class="view-toggle">
                         <button class="active" onclick="toggleView('normal')">
                             🔓 Normal View
@@ -1775,33 +1672,20 @@
                 <a href="#" onclick="showSaveModal(); return false;"><strong>→ Click "Save to File" to create your updated vault</strong></a>
             </div>
             
-            <!-- Provider Interface (shown when provider is active) -->
-            <div id="providerInterface" class="provider-interface hidden">
-                <div class="provider-interface-header">
-                    <div class="provider-interface-title">👨‍⚕️ Provider Session Active</div>
-                    <button class="btn btn-danger btn-sm" onclick="endProviderSession()">
-                        End Session
-                    </button>
-                </div>
-                <p style="margin-bottom: 1rem;">
-                    You are viewing <strong><span id="providerPatientName">-</span>'s</strong> health records.
-                    You can add case notes and view relevant information.
-                </p>
-                <button class="btn btn-primary" onclick="showAddNoteModal()">
-                    ➕ Add Case Note
-                </button>
-            </div>
-            
             <!-- Normal View -->
             <div id="normalView">
                 <!-- Tabs -->
                 <div class="tabs">
                     <button class="tab active" onclick="switchTab('personal')">Personal</button>
+                    <button class="tab" onclick="switchTab('insurance')">Insurance</button>
                     <button class="tab" onclick="switchTab('medical')">Medical</button>
                     <button class="tab" onclick="switchTab('medications')">Medications</button>
                     <button class="tab" onclick="switchTab('documents')">Documents</button>
                     <button class="tab" onclick="switchTab('providers')">Providers</button>
-                    <button class="tab" onclick="switchTab('case-notes')">Case Notes</button>
+                    <button class="tab" onclick="switchTab('case-notes')">
+                        Case Notes
+                        <span class="note-count" id="noteCount" style="display: none;">0</span>
+                    </button>
                     <button class="tab" onclick="switchTab('contacts')">Contacts</button>
                     <div id="dynamicTabs" style="display: contents;">
                         <!-- Dynamic journey tabs will be inserted here -->
@@ -1854,14 +1738,180 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label>Insurance ID</label>
-                                    <input type="text" id="insuranceId" onchange="autoSave()">
+                                    <label>Social Security Number</label>
+                                    <input type="text" id="ssn" placeholder="XXX-XX-XXXX" onchange="autoSave()">
                                 </div>
                             </div>
                             
                             <div class="form-group">
                                 <label>Address</label>
                                 <textarea id="address" rows="3" onchange="autoSave()"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insurance Tab -->
+                    <div id="insurance-tab" class="tab-content hidden">
+                        <div class="card">
+                            <h3 class="card-title">Primary Insurance</h3>
+                            
+                            <div class="insurance-section">
+                                <div class="grid">
+                                    <div class="form-group">
+                                        <label>Insurance Company</label>
+                                        <input type="text" id="primaryInsuranceCompany" placeholder="e.g., Blue Cross Blue Shield" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Member/Subscriber ID</label>
+                                        <input type="text" id="primaryMemberId" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Group Number</label>
+                                        <input type="text" id="primaryGroupNumber" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Policy Holder Name</label>
+                                        <input type="text" id="primaryPolicyHolder" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Policy Holder DOB</label>
+                                        <input type="date" id="primaryPolicyHolderDOB" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Relationship to Policy Holder</label>
+                                        <select id="primaryRelationship" onchange="autoSave()">
+                                            <option value="">Select...</option>
+                                            <option value="self">Self</option>
+                                            <option value="spouse">Spouse</option>
+                                            <option value="child">Child</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Insurance Phone</label>
+                                        <input type="tel" id="primaryInsurancePhone" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Plan Type</label>
+                                        <select id="primaryPlanType" onchange="autoSave()">
+                                            <option value="">Select...</option>
+                                            <option value="hmo">HMO</option>
+                                            <option value="ppo">PPO</option>
+                                            <option value="pos">POS</option>
+                                            <option value="epo">EPO</option>
+                                            <option value="hdhp">HDHP</option>
+                                            <option value="medicare">Medicare</option>
+                                            <option value="medicaid">Medicaid</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Copay (Primary Care)</label>
+                                        <input type="text" id="primaryCopayCare" placeholder="e.g., $25" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Copay (Specialist)</label>
+                                        <input type="text" id="primaryCopaySpecialist" placeholder="e.g., $50" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Annual Deductible</label>
+                                        <input type="text" id="primaryDeductible" placeholder="e.g., $1,500" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Out-of-Pocket Maximum</label>
+                                        <input type="text" id="primaryOOPMax" placeholder="e.g., $6,000" onchange="autoSave()">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Insurance Address</label>
+                                    <textarea id="primaryInsuranceAddress" rows="3" placeholder="Claims mailing address" onchange="autoSave()"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Coverage Notes</label>
+                                    <textarea id="primaryCoverageNotes" rows="3" placeholder="Prior authorization requirements, covered services, exclusions, etc." onchange="autoSave()"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="card-title">Secondary Insurance</h3>
+                            
+                            <div class="insurance-section">
+                                <div class="grid">
+                                    <div class="form-group">
+                                        <label>Insurance Company</label>
+                                        <input type="text" id="secondaryInsuranceCompany" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Member/Subscriber ID</label>
+                                        <input type="text" id="secondaryMemberId" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Group Number</label>
+                                        <input type="text" id="secondaryGroupNumber" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Policy Holder Name</label>
+                                        <input type="text" id="secondaryPolicyHolder" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Insurance Phone</label>
+                                        <input type="tel" id="secondaryInsurancePhone" onchange="autoSave()">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label>Plan Type</label>
+                                        <select id="secondaryPlanType" onchange="autoSave()">
+                                            <option value="">Select...</option>
+                                            <option value="hmo">HMO</option>
+                                            <option value="ppo">PPO</option>
+                                            <option value="pos">POS</option>
+                                            <option value="epo">EPO</option>
+                                            <option value="hdhp">HDHP</option>
+                                            <option value="medicare">Medicare</option>
+                                            <option value="medicaid">Medicaid</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3 class="card-title">Other Coverage</h3>
+                            
+                            <div class="grid">
+                                <div class="form-group">
+                                    <label>Dental Insurance</label>
+                                    <input type="text" id="dentalInsurance" placeholder="Company and ID" onchange="autoSave()">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Vision Insurance</label>
+                                    <input type="text" id="visionInsurance" placeholder="Company and ID" onchange="autoSave()">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Prescription Coverage</label>
+                                    <input type="text" id="prescriptionCoverage" placeholder="Company and BIN/PCN" onchange="autoSave()">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1875,6 +1925,12 @@
                             </div>
                             <div id="conditionsList" class="item-list">
                                 <p style="text-align: center; color: var(--text-light);">No conditions added yet</p>
+                            </div>
+                            
+                            <!-- Related Notes Section -->
+                            <div id="conditionNotes" class="note-summary hidden">
+                                <div class="note-summary-title">Related Case Notes</div>
+                                <div id="conditionNotesList"></div>
                             </div>
                         </div>
                         
@@ -1905,6 +1961,12 @@
                             </div>
                             <div id="medicationsList" class="item-list">
                                 <p style="text-align: center; color: var(--text-light);">No medications added yet</p>
+                            </div>
+                            
+                            <!-- Related Notes Section -->
+                            <div id="medicationNotes" class="note-summary hidden">
+                                <div class="note-summary-title">Related Case Notes</div>
+                                <div id="medicationNotesList"></div>
                             </div>
                         </div>
                         
@@ -1945,25 +2007,25 @@
                     <div id="providers-tab" class="tab-content hidden">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Healthcare Provider Registry</h3>
-                                <button class="btn btn-primary" onclick="showProviderAccess()">
-                                    👨‍⚕️ Grant Provider Access
+                                <h3 class="card-title">Healthcare Providers</h3>
+                                <button class="btn btn-primary" onclick="showAddProvider()">
+                                    ➕ Add Provider
                                 </button>
                             </div>
                             
                             <div id="providersList" class="provider-list">
                                 <p style="text-align: center; color: var(--text-light); padding: 2rem;">
-                                    No providers registered yet
+                                    No providers added yet
                                 </p>
                             </div>
                         </div>
                         
                         <div class="info-box tip">
-                            <strong>How provider access works:</strong><br>
-                            • Providers scan a QR code or enter an access code during your visit<br>
-                            • They can add structured case notes and view relevant information<br>
-                            • Access is temporary and controlled by you<br>
-                            • All provider actions are logged for your review
+                            <strong>About Providers:</strong><br>
+                            • Keep a directory of all your healthcare providers<br>
+                            • Include contact information and specialties<br>
+                            • Add notes about your visits and treatments<br>
+                            • No remote access - all data stays on your device
                         </div>
                     </div>
 
@@ -1971,12 +2033,15 @@
                     <div id="case-notes-tab" class="tab-content hidden">
                         <div class="card">
                             <div class="card-header">
-                                <h3 class="card-title">Case Notes</h3>
+                                <h3 class="card-title">Case Notes & Health Journal</h3>
                                 <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-primary" onclick="showAddNoteModal()">
+                                        ➕ Add Note
+                                    </button>
                                     <select id="noteFilter" onchange="filterNotes()">
                                         <option value="all">All Notes</option>
-                                        <option value="provider">By Provider</option>
-                                        <option value="type">By Type</option>
+                                        <option value="personal">Personal Notes</option>
+                                        <option value="visit">Visit Notes</option>
                                         <option value="recent">Recent (30 days)</option>
                                     </select>
                                 </div>
@@ -1984,7 +2049,7 @@
                             
                             <div id="caseNotesList" class="case-notes-list">
                                 <p style="text-align: center; color: var(--text-light); padding: 2rem;">
-                                    No case notes yet. Notes will appear here when providers add them during visits.
+                                    No notes yet. Start documenting your health journey!
                                 </p>
                             </div>
                         </div>
@@ -2010,20 +2075,35 @@
                                     <label>Phone Number</label>
                                     <input type="tel" id="emergencyPhone" onchange="autoSave()">
                                 </div>
+                                
+                                <div class="form-group">
+                                    <label>Alternate Phone</label>
+                                    <input type="tel" id="emergencyPhoneAlt" onchange="autoSave()">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Address</label>
+                                <textarea id="emergencyAddress" rows="2" onchange="autoSave()"></textarea>
                             </div>
                         </div>
                         
                         <div class="card">
-                            <h3 class="card-title">Healthcare Providers</h3>
-                            
-                            <div class="form-group">
-                                <label>Primary Doctor</label>
-                                <input type="text" id="primaryDoctor" placeholder="Name and phone number" onchange="autoSave()">
-                            </div>
+                            <h3 class="card-title">Healthcare Preferences</h3>
                             
                             <div class="form-group">
                                 <label>Preferred Hospital</label>
-                                <input type="text" id="hospital" onchange="autoSave()">
+                                <input type="text" id="preferredHospital" onchange="autoSave()">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Medical Power of Attorney</label>
+                                <input type="text" id="medicalPOA" placeholder="Name and contact" onchange="autoSave()">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Advance Directive Notes</label>
+                                <textarea id="advanceDirective" rows="3" placeholder="Document location, preferences, etc." onchange="autoSave()"></textarea>
                             </div>
                         </div>
                     </div>
@@ -2048,7 +2128,7 @@
                         <div class="info-box tip">
                             <strong>About Journey Modules:</strong><br>
                             • Modules add specialized tracking for specific health needs<br>
-                            • Each module includes fields, templates, and best practices<br>
+                            • Each module includes fields and templates<br>
                             • You can import updated modules to get new features<br>
                             • Modules are versioned - your data is preserved during updates
                         </div>
@@ -2057,13 +2137,23 @@
                     <!-- Settings Tab -->
                     <div id="settings-tab" class="tab-content hidden">
                         <div class="card">
-                            <h3 class="card-title">Vault Settings</h3>
+                            <h3 class="card-title">Vault Identity</h3>
                             
-                            <div class="form-group">
-                                <label>Vault Name</label>
-                                <input type="text" id="settingsVaultName" onchange="updateVaultName()">
-                                <small>Give your vault a custom name for easy identification</small>
+                            <div class="vault-id-display">
+                                <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">
+                                    <span id="settingsVaultName">-</span>
+                                </div>
+                                <div class="vault-guid">
+                                    ID: <span id="settingsVaultGuid">-</span>
+                                </div>
                             </div>
+                            
+                            <button class="btn btn-secondary btn-block" onclick="regenerateVaultName()">
+                                🎲 Generate New Random Name
+                            </button>
+                            <p style="margin-top: 0.5rem; text-align: center; color: var(--text-light); font-size: 0.875rem;">
+                                Your vault ID stays the same, only the friendly name changes
+                            </p>
                         </div>
                         
                         <div class="card">
@@ -2174,12 +2264,13 @@
                 <strong>What's included in JSON export:</strong>
                 <ul style="margin: 0.5rem 0 0 1.5rem;">
                     <li>Personal information</li>
+                    <li>Insurance details</li>
                     <li>Medical history</li>
                     <li>Medications and allergies</li>
+                    <li>Provider directory</li>
+                    <li>All case notes</li>
                     <li>Contact information</li>
                     <li>Journey module data</li>
-                    <li>Provider registry</li>
-                    <li>Case notes</li>
                     <li>Document metadata (not file contents)</li>
                 </ul>
             </div>
@@ -2238,45 +2329,12 @@
         </div>
     </div>
 
-    <!-- Provider Access Modal -->
-    <div id="providerAccessModal" class="modal">
+    <!-- Add Provider Modal -->
+    <div id="addProviderModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">👨‍⚕️ Grant Provider Access</h3>
-                <button class="close-btn" onclick="closeModal('providerAccessModal')">×</button>
-            </div>
-            
-            <div class="info-box provider">
-                <strong>How this works:</strong><br>
-                1. Show this code to your healthcare provider<br>
-                2. They enter it on their device to access your records<br>
-                3. Access expires after <strong>1 hour</strong> or when you end the session
-            </div>
-            
-            <div class="qr-container">
-                <div id="providerAccessQr"></div>
-                <p style="margin-top: 1rem; color: var(--text-light);">
-                    Provider scans this QR code
-                </p>
-            </div>
-            
-            <div class="access-code-display">
-                <div>Access Code:</div>
-                <div class="access-code" id="providerAccessCode">XXXX-XXXX</div>
-            </div>
-            
-            <button class="btn btn-danger btn-block" onclick="closeModal('providerAccessModal')">
-                Cancel Access
-            </button>
-        </div>
-    </div>
-
-    <!-- Provider Registration Modal -->
-    <div id="providerRegistrationModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">👨‍⚕️ Provider Registration</h3>
-                <button class="close-btn" onclick="closeModal('providerRegistrationModal')">×</button>
+                <h3 class="modal-title">➕ Add Healthcare Provider</h3>
+                <button class="close-btn" onclick="closeModal('addProviderModal')">×</button>
             </div>
             
             <div class="form-group">
@@ -2285,27 +2343,47 @@
             </div>
             
             <div class="form-group">
-                <label>Credentials</label>
-                <input type="text" id="providerCredentials" placeholder="MD, Board Certified Endocrinology">
+                <label>Specialty</label>
+                <input type="text" id="providerSpecialty" placeholder="e.g., Primary Care, Endocrinology">
             </div>
             
             <div class="form-group">
-                <label>NPI Number (optional)</label>
+                <label>Phone</label>
+                <input type="tel" id="providerPhone" placeholder="(555) 123-4567">
+            </div>
+            
+            <div class="form-group">
+                <label>Fax</label>
+                <input type="tel" id="providerFax" placeholder="(555) 123-4568">
+            </div>
+            
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="providerEmail" placeholder="doctor@clinic.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Address</label>
+                <textarea id="providerAddress" rows="3" placeholder="123 Medical Center Dr\nSuite 100\nCity, State 12345"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>NPI Number</label>
                 <input type="text" id="providerNPI" placeholder="1234567890">
             </div>
             
             <div class="form-group">
-                <label>Specialties</label>
-                <input type="text" id="providerSpecialties" placeholder="Gender affirming care, Hormone therapy">
+                <label>Notes</label>
+                <textarea id="providerNotes" rows="3" placeholder="Office hours, preferred contact method, etc."></textarea>
             </div>
             
-            <button class="btn btn-primary btn-block" onclick="registerProvider()">
-                Register Provider
+            <button class="btn btn-primary btn-block" onclick="saveProvider()">
+                Save Provider
             </button>
         </div>
     </div>
 
-    <!-- Add Note Modal (for providers) -->
+    <!-- Add Note Modal -->
     <div id="addNoteModal" class="modal">
         <div class="modal-content large">
             <div class="modal-header">
@@ -2313,22 +2391,23 @@
                 <button class="close-btn" onclick="closeModal('addNoteModal')">×</button>
             </div>
             
-            <div class="template-selector">
-                <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Select Note Template:</label>
-                <div class="template-grid" id="templateGrid">
-                    <!-- Templates will be populated based on loaded journeys -->
-                </div>
+            <div class="form-group">
+                <label>Note Type</label>
+                <select id="noteType" onchange="updateNoteForm()">
+                    <option value="personal">Personal Note</option>
+                    <option value="visit">Visit Note</option>
+                    <option value="symptom">Symptom Tracking</option>
+                    <option value="treatment">Treatment Progress</option>
+                    <option value="general">General Note</option>
+                </select>
             </div>
             
             <div id="noteFormContent">
-                <!-- Dynamic form will be populated based on selected template -->
-                <p style="text-align: center; color: var(--text-light); padding: 2rem;">
-                    Select a template above to begin
-                </p>
+                <!-- Dynamic form content based on note type -->
             </div>
             
-            <button class="btn btn-primary btn-block" onclick="saveProviderNote()" id="saveNoteBtn" disabled>
-                Save Case Note
+            <button class="btn btn-primary btn-block" onclick="saveNote()">
+                Save Note
             </button>
         </div>
     </div>
@@ -2697,152 +2776,6 @@
                 
                 return data;
             }
-            
-            getNoteTemplates() {
-                const templates = [];
-                
-                Object.values(this.loadedJourneys).forEach(journey => {
-                    if (journey.noteTemplates) {
-                        journey.noteTemplates.forEach(template => {
-                            templates.push({
-                                ...template,
-                                journeyId: journey.journeyId,
-                                journeyName: journey.name
-                            });
-                        });
-                    }
-                });
-                
-                // Add generic templates
-                templates.push({
-                    id: 'general-note',
-                    name: 'General Note',
-                    sections: [
-                        {
-                            id: 'content',
-                            name: 'Note Content',
-                            fields: [
-                                { id: 'note', type: 'textarea', label: 'Clinical Note' }
-                            ]
-                        }
-                    ]
-                });
-                
-                return templates;
-            }
-        }
-        
-        // ============================================
-        // PROVIDER SESSION CLASS
-        // ============================================
-        
-        class ProviderSession {
-            constructor(app) {
-                this.app = app;
-                this.sessionId = null;
-                this.accessCode = null;
-                this.providerId = null;
-                this.sessionStart = null;
-                this.sessionTimeout = null;
-            }
-            
-            createSession() {
-                this.sessionId = this.app.generateId();
-                this.accessCode = this.generateAccessCode();
-                this.sessionStart = Date.now();
-                
-                // Set 1 hour timeout
-                this.sessionTimeout = setTimeout(() => {
-                    this.endSession();
-                    this.app.showError('Provider session expired');
-                }, 60 * 60 * 1000);
-                
-                return {
-                    sessionId: this.sessionId,
-                    accessCode: this.accessCode,
-                    qrData: this.generateQRData()
-                };
-            }
-            
-            generateAccessCode() {
-                const segments = [];
-                for (let i = 0; i < 2; i++) {
-                    const num = Math.floor(Math.random() * 10000);
-                    segments.push(num.toString().padStart(4, '0'));
-                }
-                return segments.join('-');
-            }
-            
-            generateQRData() {
-                // In a real implementation, this would include connection details
-                return JSON.stringify({
-                    type: 'health_vault_provider_access',
-                    sessionId: this.sessionId,
-                    accessCode: this.accessCode,
-                    patientName: this.app.data.personal?.fullName || 'Patient',
-                    timestamp: Date.now()
-                });
-            }
-            
-            validateAccess(accessCode) {
-                return accessCode === this.accessCode && this.sessionId;
-            }
-            
-            startProviderMode(providerId) {
-                this.providerId = providerId;
-                
-                // Update UI
-                document.getElementById('providerModeIndicator').classList.add('active');
-                document.getElementById('activeProviderName').textContent = 
-                    this.app.providers[providerId]?.name || 'Unknown Provider';
-                document.getElementById('providerInterface').classList.remove('hidden');
-                
-                // Update patient name in provider interface
-                const patientName = this.app.data.personal?.fullName || 
-                                  this.app.data.journeyData?.['gender-affirming-care']?.identity_chosen_name ||
-                                  'Patient';
-                document.getElementById('providerPatientName').textContent = patientName;
-                
-                // Log access
-                this.logProviderAccess(providerId);
-            }
-            
-            logProviderAccess(providerId) {
-                if (!this.app.providerAccessLog) {
-                    this.app.providerAccessLog = [];
-                }
-                
-                this.app.providerAccessLog.push({
-                    providerId: providerId,
-                    timestamp: new Date().toISOString(),
-                    action: 'session_start'
-                });
-                
-                this.app.autoSave();
-            }
-            
-            endSession() {
-                if (this.sessionTimeout) {
-                    clearTimeout(this.sessionTimeout);
-                }
-                
-                if (this.providerId) {
-                    this.logProviderAccess(this.providerId, 'session_end');
-                }
-                
-                // Reset state
-                this.sessionId = null;
-                this.accessCode = null;
-                this.providerId = null;
-                this.sessionStart = null;
-                
-                // Update UI
-                document.getElementById('providerModeIndicator').classList.remove('active');
-                document.getElementById('providerInterface').classList.add('hidden');
-                
-                // Close provider access modal if open
-                this.app.closeModal('providerAccessModal');
-            }
         }
         
         // ============================================
@@ -2853,6 +2786,7 @@
             constructor() {
                 // Core properties
                 this.instanceId = null;
+                this.vaultGuid = null;
                 this.vaultName = null;
                 this.encryptionKey = null;
                 this.totpSecret = null;
@@ -2861,11 +2795,9 @@
                 this.attachments = {};
                 this.providers = {};
                 this.caseNotes = [];
-                this.providerAccessLog = [];
                 
                 // Enhanced properties
                 this.journeyEngine = new JourneyEngine(this);
-                this.providerSession = new ProviderSession(this);
                 
                 // State
                 this.isLocked = true;
@@ -2880,6 +2812,7 @@
             async init() {
                 // Always clear any existing instance data first to ensure clean state
                 this.instanceId = null;
+                this.vaultGuid = null;
                 this.vaultName = null;
                 this.encryptionKey = null;
                 this.totpSecret = null;
@@ -2908,6 +2841,7 @@
                             
                             // Set the instance ID and vault name from embedded data
                             this.instanceId = embeddedData.instanceId;
+                            this.vaultGuid = embeddedData.vaultGuid || this.instanceId;
                             this.vaultName = embeddedData.vaultName || 'Unknown Vault';
                             document.getElementById('instanceId').textContent = this.instanceId;
                             
@@ -3029,6 +2963,9 @@
                 
                 // Clear dynamic tabs
                 document.getElementById('dynamicTabs').innerHTML = '';
+                
+                // Update note form
+                this.updateNoteForm();
             }
             
             clearAllFormData() {
@@ -3062,6 +2999,15 @@
                 return `${adjective} ${noun}`;
             }
             
+            generateGuid() {
+                // Generate a proper GUID
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
             showNewUser() {
                 const container = document.getElementById('newOrExisting');
                 container.innerHTML = `
@@ -3092,7 +3038,7 @@
                 
                 // Update login screen with vault info
                 document.getElementById('loginVaultName').textContent = this.vaultName || 'Unknown Vault';
-                document.getElementById('loginVaultId').textContent = this.instanceId;
+                document.getElementById('loginVaultId').textContent = this.vaultGuid || this.instanceId;
                 
                 // Check if we have saved date information
                 let vaultInfo = '';
@@ -3105,7 +3051,7 @@
                             vaultInfo = `<div class="info-box tip" style="margin-bottom: 1rem;">
                                 <strong>📅 Vault Information:</strong><br>
                                 <strong>${this.vaultName}</strong><br>
-                                <small style="font-family: monospace;">${this.instanceId}</small><br>
+                                <small style="font-family: monospace;">${this.vaultGuid || this.instanceId}</small><br>
                                 Saved on ${savedDate.toLocaleDateString()} at ${savedDate.toLocaleTimeString()}
                             </div>`;
                         }
@@ -3183,8 +3129,9 @@
                     return;
                 }
                 
-                // Generate instance ID, vault name, and TOTP secret
+                // Generate instance ID, GUID, vault name, and TOTP secret
                 this.instanceId = this.generateId();
+                this.vaultGuid = this.generateGuid();
                 this.vaultName = this.generateVaultName();
                 this.totpSecret = this.generateTOTPSecret();
                 
@@ -3231,7 +3178,7 @@
                 this.recoveryCode = this.generateRecoveryCode();
                 document.getElementById('recoveryCodeDisplay').textContent = this.recoveryCode;
                 document.getElementById('recoveryVaultName').textContent = this.vaultName;
-                document.getElementById('recoveryVaultId').textContent = this.instanceId;
+                document.getElementById('recoveryVaultId').textContent = this.vaultGuid;
                 
                 // Move to step 4 (recovery card)
                 document.getElementById('setupStep3').classList.add('hidden');
@@ -3250,6 +3197,7 @@
                     salt: btoa(String.fromCharCode(...salt)),
                     created: new Date().toISOString(),
                     instanceId: this.instanceId,
+                    vaultGuid: this.vaultGuid,
                     vaultName: this.vaultName
                 };
                 
@@ -3272,7 +3220,11 @@
                     journeyData: {},
                     providers: {},
                     caseNotes: [],
-                    providerAccessLog: []
+                    insurance: {},
+                    metadata: {
+                        vaultGuid: this.vaultGuid,
+                        vaultName: this.vaultName
+                    }
                 };
                 this.attachments = {};
                 this.providers = {};
@@ -3339,8 +3291,9 @@
                     
                     const profile = JSON.parse(profileStr);
                     
-                    // Get vault name from profile
+                    // Get vault name and GUID from profile
                     this.vaultName = profile.vaultName || 'Unknown Vault';
+                    this.vaultGuid = profile.vaultGuid || this.instanceId;
                     
                     // Verify password
                     await this.decrypt(profile.verifier, password);
@@ -3442,6 +3395,7 @@
                 if (confirm('Create a new vault in this file?\n\nThe current vault data will remain in this file but be inaccessible.')) {
                     // Clear old instance
                     this.instanceId = null;
+                    this.vaultGuid = null;
                     this.vaultName = null;
                     document.getElementById('instanceId').textContent = '';
                     
@@ -3468,7 +3422,7 @@
                 
                 // Update header with vault name
                 document.getElementById('headerVaultName').textContent = this.vaultName;
-                document.getElementById('headerVaultId').textContent = this.instanceId;
+                document.getElementById('headerVaultId').textContent = this.vaultGuid || this.instanceId;
                 
                 // Update version info
                 const moduleCount = Object.keys(this.journeyEngine.loadedJourneys).length;
@@ -3480,7 +3434,7 @@
                 // Populate fields first to load data
                 this.populateFields();
                 
-                // Update provider list
+                // Update providers list
                 this.updateProvidersList();
                 
                 // Update case notes list
@@ -3488,6 +3442,9 @@
                 
                 // Update journey modules list
                 this.updateJourneyModulesList();
+                
+                // Update note count
+                this.updateNoteCount();
                 
                 // Show success message
                 this.showSuccess(`✅ ${this.vaultName} unlocked!\n\nYou can now edit your data.\nRemember to save to file when done!`);
@@ -3507,7 +3464,8 @@
                 });
                 
                 // Update settings display
-                document.getElementById('settingsVaultName').value = this.vaultName;
+                document.getElementById('settingsVaultName').textContent = this.vaultName;
+                document.getElementById('settingsVaultGuid').textContent = this.vaultGuid || this.instanceId;
                 
                 const profile = JSON.parse(localStorage.getItem(`vault_profile_${this.instanceId}`) || '{}');
                 document.getElementById('settingsCreated').textContent = 
@@ -3522,11 +3480,6 @@
             }
             
             lockVault() {
-                // End any active provider session
-                if (this.providerSession.sessionId) {
-                    this.providerSession.endSession();
-                }
-                
                 // Clear all sensitive data from memory
                 this.isLocked = true;
                 this.hasUnsavedChanges = false;
@@ -3664,6 +3617,7 @@
                     "🔐 Health Vault Encrypted Data": {
                         "vaultName": this.vaultName,
                         "instanceId": this.instanceId,
+                        "vaultGuid": this.vaultGuid,
                         "profile": profile ? {
                             "created": JSON.parse(profile).created,
                             "salt": "*** encrypted ***",
@@ -3711,7 +3665,6 @@
                         this.attachments = this.data.attachments || {};
                         this.providers = this.data.providers || {};
                         this.caseNotes = this.data.caseNotes || [];
-                        this.providerAccessLog = this.data.providerAccessLog || [];
                         
                         // Load journeys
                         if (this.data.journeys) {
@@ -3746,7 +3699,37 @@
                     phone: document.getElementById('phone')?.value || '',
                     email: document.getElementById('email')?.value || '',
                     address: document.getElementById('address')?.value || '',
-                    insuranceId: document.getElementById('insuranceId')?.value || ''
+                    ssn: document.getElementById('ssn')?.value || ''
+                };
+                
+                const insuranceData = {
+                    primary: {
+                        company: document.getElementById('primaryInsuranceCompany')?.value || '',
+                        memberId: document.getElementById('primaryMemberId')?.value || '',
+                        groupNumber: document.getElementById('primaryGroupNumber')?.value || '',
+                        policyHolder: document.getElementById('primaryPolicyHolder')?.value || '',
+                        policyHolderDOB: document.getElementById('primaryPolicyHolderDOB')?.value || '',
+                        relationship: document.getElementById('primaryRelationship')?.value || '',
+                        phone: document.getElementById('primaryInsurancePhone')?.value || '',
+                        planType: document.getElementById('primaryPlanType')?.value || '',
+                        copayCare: document.getElementById('primaryCopayCare')?.value || '',
+                        copaySpecialist: document.getElementById('primaryCopaySpecialist')?.value || '',
+                        deductible: document.getElementById('primaryDeductible')?.value || '',
+                        oopMax: document.getElementById('primaryOOPMax')?.value || '',
+                        address: document.getElementById('primaryInsuranceAddress')?.value || '',
+                        coverageNotes: document.getElementById('primaryCoverageNotes')?.value || ''
+                    },
+                    secondary: {
+                        company: document.getElementById('secondaryInsuranceCompany')?.value || '',
+                        memberId: document.getElementById('secondaryMemberId')?.value || '',
+                        groupNumber: document.getElementById('secondaryGroupNumber')?.value || '',
+                        policyHolder: document.getElementById('secondaryPolicyHolder')?.value || '',
+                        phone: document.getElementById('secondaryInsurancePhone')?.value || '',
+                        planType: document.getElementById('secondaryPlanType')?.value || ''
+                    },
+                    dental: document.getElementById('dentalInsurance')?.value || '',
+                    vision: document.getElementById('visionInsurance')?.value || '',
+                    prescription: document.getElementById('prescriptionCoverage')?.value || ''
                 };
                 
                 const medicalData = {
@@ -3765,8 +3748,11 @@
                     emergencyName: document.getElementById('emergencyName')?.value || '',
                     emergencyRelation: document.getElementById('emergencyRelation')?.value || '',
                     emergencyPhone: document.getElementById('emergencyPhone')?.value || '',
-                    primaryDoctor: document.getElementById('primaryDoctor')?.value || '',
-                    hospital: document.getElementById('hospital')?.value || ''
+                    emergencyPhoneAlt: document.getElementById('emergencyPhoneAlt')?.value || '',
+                    emergencyAddress: document.getElementById('emergencyAddress')?.value || '',
+                    preferredHospital: document.getElementById('preferredHospital')?.value || '',
+                    medicalPOA: document.getElementById('medicalPOA')?.value || '',
+                    advanceDirective: document.getElementById('advanceDirective')?.value || ''
                 };
                 
                 // Collect journey-specific data
@@ -3783,6 +3769,7 @@
                 
                 this.data = {
                     personal: personalData,
+                    insurance: insuranceData,
                     medical: medicalData,
                     medications: medicationsData,
                     contacts: contactsData,
@@ -3792,11 +3779,11 @@
                     attachments: this.attachments,
                     providers: this.providers,
                     caseNotes: this.caseNotes,
-                    providerAccessLog: this.providerAccessLog,
                     metadata: {
                         lastModified: new Date().toISOString(),
                         version: '3.0.0',
-                        vaultName: this.vaultName
+                        vaultName: this.vaultName,
+                        vaultGuid: this.vaultGuid
                     }
                 };
                 
@@ -3807,6 +3794,7 @@
                 console.log('Data saved:', {
                     instanceId: this.instanceId,
                     vaultName: this.vaultName,
+                    vaultGuid: this.vaultGuid,
                     hasData: !!encrypted,
                     dataLength: encrypted?.length,
                     journeys: Object.keys(enabledJourneys)
@@ -3821,7 +3809,43 @@
                 document.getElementById('phone').value = this.data.personal?.phone || '';
                 document.getElementById('email').value = this.data.personal?.email || '';
                 document.getElementById('address').value = this.data.personal?.address || '';
-                document.getElementById('insuranceId').value = this.data.personal?.insuranceId || '';
+                document.getElementById('ssn').value = this.data.personal?.ssn || '';
+                
+                // Insurance
+                if (this.data.insurance) {
+                    // Primary Insurance
+                    if (this.data.insurance.primary) {
+                        document.getElementById('primaryInsuranceCompany').value = this.data.insurance.primary.company || '';
+                        document.getElementById('primaryMemberId').value = this.data.insurance.primary.memberId || '';
+                        document.getElementById('primaryGroupNumber').value = this.data.insurance.primary.groupNumber || '';
+                        document.getElementById('primaryPolicyHolder').value = this.data.insurance.primary.policyHolder || '';
+                        document.getElementById('primaryPolicyHolderDOB').value = this.data.insurance.primary.policyHolderDOB || '';
+                        document.getElementById('primaryRelationship').value = this.data.insurance.primary.relationship || '';
+                        document.getElementById('primaryInsurancePhone').value = this.data.insurance.primary.phone || '';
+                        document.getElementById('primaryPlanType').value = this.data.insurance.primary.planType || '';
+                        document.getElementById('primaryCopayCare').value = this.data.insurance.primary.copayCare || '';
+                        document.getElementById('primaryCopaySpecialist').value = this.data.insurance.primary.copaySpecialist || '';
+                        document.getElementById('primaryDeductible').value = this.data.insurance.primary.deductible || '';
+                        document.getElementById('primaryOOPMax').value = this.data.insurance.primary.oopMax || '';
+                        document.getElementById('primaryInsuranceAddress').value = this.data.insurance.primary.address || '';
+                        document.getElementById('primaryCoverageNotes').value = this.data.insurance.primary.coverageNotes || '';
+                    }
+                    
+                    // Secondary Insurance
+                    if (this.data.insurance.secondary) {
+                        document.getElementById('secondaryInsuranceCompany').value = this.data.insurance.secondary.company || '';
+                        document.getElementById('secondaryMemberId').value = this.data.insurance.secondary.memberId || '';
+                        document.getElementById('secondaryGroupNumber').value = this.data.insurance.secondary.groupNumber || '';
+                        document.getElementById('secondaryPolicyHolder').value = this.data.insurance.secondary.policyHolder || '';
+                        document.getElementById('secondaryInsurancePhone').value = this.data.insurance.secondary.phone || '';
+                        document.getElementById('secondaryPlanType').value = this.data.insurance.secondary.planType || '';
+                    }
+                    
+                    // Other Coverage
+                    document.getElementById('dentalInsurance').value = this.data.insurance.dental || '';
+                    document.getElementById('visionInsurance').value = this.data.insurance.vision || '';
+                    document.getElementById('prescriptionCoverage').value = this.data.insurance.prescription || '';
+                }
                 
                 // Medical - populate lists
                 this.updateConditionsList();
@@ -3837,8 +3861,11 @@
                 document.getElementById('emergencyName').value = this.data.contacts?.emergencyName || '';
                 document.getElementById('emergencyRelation').value = this.data.contacts?.emergencyRelation || '';
                 document.getElementById('emergencyPhone').value = this.data.contacts?.emergencyPhone || '';
-                document.getElementById('primaryDoctor').value = this.data.contacts?.primaryDoctor || '';
-                document.getElementById('hospital').value = this.data.contacts?.hospital || '';
+                document.getElementById('emergencyPhoneAlt').value = this.data.contacts?.emergencyPhoneAlt || '';
+                document.getElementById('emergencyAddress').value = this.data.contacts?.emergencyAddress || '';
+                document.getElementById('preferredHospital').value = this.data.contacts?.preferredHospital || '';
+                document.getElementById('medicalPOA').value = this.data.contacts?.medicalPOA || '';
+                document.getElementById('advanceDirective').value = this.data.contacts?.advanceDirective || '';
                 
                 // Update documents list
                 this.updateDocumentsList();
@@ -3868,82 +3895,91 @@
                 if (tabButton) {
                     tabButton.classList.add('active');
                 }
+                
+                // Update related notes sections when switching tabs
+                if (tabName === 'medical') {
+                    this.updateRelatedNotes('condition');
+                } else if (tabName === 'medications') {
+                    this.updateRelatedNotes('medication');
+                }
+            }
+            
+            regenerateVaultName() {
+                const newName = this.generateVaultName();
+                this.vaultName = newName;
+                
+                // Update all displays
+                document.getElementById('headerVaultName').textContent = newName;
+                document.getElementById('settingsVaultName').textContent = newName;
+                document.title = `${newName} - Health Vault`;
+                
+                // Save the change
+                this.autoSave();
+                this.showSuccess(`Vault renamed to: ${newName}`);
             }
             
             // ==========================================
             // PROVIDER MANAGEMENT
             // ==========================================
             
-            showProviderAccess() {
-                const session = this.providerSession.createSession();
-                
-                // Update modal with access code
-                document.getElementById('providerAccessCode').textContent = session.accessCode;
-                
-                // Generate QR code
-                const qrContainer = document.getElementById('providerAccessQr');
-                qrContainer.innerHTML = ''; // Clear existing
-                
-                new QRCode(qrContainer, {
-                    text: session.qrData,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#1e293b",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-                
-                document.getElementById('providerAccessModal').classList.add('active');
-                
-                // Simulate provider connecting (in real app, this would be via network)
-                this.simulateProviderConnection(session.accessCode);
+            showAddProvider() {
+                document.getElementById('addProviderModal').classList.add('active');
+                // Clear form
+                document.getElementById('providerName').value = '';
+                document.getElementById('providerSpecialty').value = '';
+                document.getElementById('providerPhone').value = '';
+                document.getElementById('providerFax').value = '';
+                document.getElementById('providerEmail').value = '';
+                document.getElementById('providerAddress').value = '';
+                document.getElementById('providerNPI').value = '';
+                document.getElementById('providerNotes').value = '';
+                this.editingProviderId = null;
             }
             
-            simulateProviderConnection(accessCode) {
-                // In a real implementation, this would be handled by the provider's device
-                // For demo, we'll auto-connect after a delay
-                setTimeout(() => {
-                    if (this.providerSession.validateAccess(accessCode)) {
-                        this.closeModal('providerAccessModal');
-                        
-                        // Show provider registration
-                        document.getElementById('providerRegistrationModal').classList.add('active');
-                    }
-                }, 3000);
-            }
-            
-            registerProvider() {
+            saveProvider() {
                 const name = document.getElementById('providerName').value;
-                const credentials = document.getElementById('providerCredentials').value;
-                const npi = document.getElementById('providerNPI').value;
-                const specialties = document.getElementById('providerSpecialties').value;
-                
                 if (!name) {
                     this.showError('Please enter provider name');
                     return;
                 }
                 
-                const providerId = 'provider_' + this.generateId();
-                
-                this.providers[providerId] = {
-                    id: providerId,
+                const provider = {
+                    id: this.editingProviderId || 'provider_' + this.generateId(),
                     name: name,
-                    credentials: credentials,
-                    npi: npi,
-                    specialties: specialties.split(',').map(s => s.trim()),
-                    registeredAt: new Date().toISOString(),
-                    lastAccess: new Date().toISOString()
+                    specialty: document.getElementById('providerSpecialty').value,
+                    phone: document.getElementById('providerPhone').value,
+                    fax: document.getElementById('providerFax').value,
+                    email: document.getElementById('providerEmail').value,
+                    address: document.getElementById('providerAddress').value,
+                    npi: document.getElementById('providerNPI').value,
+                    notes: document.getElementById('providerNotes').value,
+                    addedAt: this.providers[this.editingProviderId]?.addedAt || new Date().toISOString()
                 };
                 
-                // Save and update UI
+                this.providers[provider.id] = provider;
                 this.autoSave();
                 this.updateProvidersList();
-                this.closeModal('providerRegistrationModal');
+                this.closeModal('addProviderModal');
                 
-                // Start provider session
-                this.providerSession.startProviderMode(providerId);
+                this.showSuccess(`Provider ${name} ${this.editingProviderId ? 'updated' : 'added'}`);
+            }
+            
+            editProvider(providerId) {
+                const provider = this.providers[providerId];
+                if (!provider) return;
                 
-                this.showSuccess(`Provider ${name} registered and granted access`);
+                this.editingProviderId = providerId;
+                
+                document.getElementById('providerName').value = provider.name || '';
+                document.getElementById('providerSpecialty').value = provider.specialty || '';
+                document.getElementById('providerPhone').value = provider.phone || '';
+                document.getElementById('providerFax').value = provider.fax || '';
+                document.getElementById('providerEmail').value = provider.email || '';
+                document.getElementById('providerAddress').value = provider.address || '';
+                document.getElementById('providerNPI').value = provider.npi || '';
+                document.getElementById('providerNotes').value = provider.notes || '';
+                
+                document.getElementById('addProviderModal').classList.add('active');
             }
             
             updateProvidersList() {
@@ -3951,7 +3987,7 @@
                 container.innerHTML = '';
                 
                 if (Object.keys(this.providers).length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No providers registered yet</p>';
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No providers added yet</p>';
                     return;
                 }
                 
@@ -3959,16 +3995,17 @@
                     const item = document.createElement('div');
                     item.className = 'provider-item';
                     
-                    const lastAccess = new Date(provider.lastAccess);
-                    
                     item.innerHTML = `
                         <div class="provider-info">
                             <div class="provider-name">${provider.name}</div>
-                            <div class="provider-credentials">${provider.credentials || 'No credentials listed'}</div>
-                            ${provider.npi ? `<div class="provider-credentials">NPI: ${provider.npi}</div>` : ''}
-                            <div class="provider-last-access">Last access: ${lastAccess.toLocaleDateString()}</div>
+                            <div class="provider-credentials">${provider.specialty || 'No specialty listed'}</div>
+                            ${provider.phone ? `<div class="provider-phone">📞 ${provider.phone}</div>` : ''}
+                            ${provider.email ? `<div class="provider-phone">✉️ ${provider.email}</div>` : ''}
                         </div>
                         <div class="provider-actions">
+                            <button class="btn btn-secondary btn-sm" onclick="editProvider('${provider.id}')">
+                                Edit
+                            </button>
                             <button class="btn btn-danger btn-sm" onclick="removeProvider('${provider.id}')">
                                 Remove
                             </button>
@@ -3980,170 +4017,234 @@
             }
             
             removeProvider(providerId) {
-                if (confirm('Remove this provider? They will no longer have access to add notes.')) {
+                if (confirm('Remove this provider?')) {
                     delete this.providers[providerId];
                     this.autoSave();
                     this.updateProvidersList();
                 }
             }
             
-            endProviderSession() {
-                this.providerSession.endSession();
-                this.showSuccess('Provider session ended');
-            }
-            
             // ==========================================
             // CASE NOTES
             // ==========================================
             
-            showAddNoteModal() {
-                if (!this.providerSession.providerId) {
-                    this.showError('No active provider session');
-                    return;
-                }
-                
-                // Populate template grid
-                const templateGrid = document.getElementById('templateGrid');
-                const templates = this.journeyEngine.getNoteTemplates();
-                
-                templateGrid.innerHTML = '';
-                
-                templates.forEach(template => {
-                    const templateOption = document.createElement('div');
-                    templateOption.className = 'template-option';
-                    templateOption.innerHTML = `
-                        <strong>${template.name}</strong>
-                        ${template.journeyName ? `<br><small>${template.journeyName}</small>` : ''}
-                    `;
-                    templateOption.onclick = () => this.selectNoteTemplate(template, templateOption);
-                    
-                    templateGrid.appendChild(templateOption);
-                });
-                
-                document.getElementById('addNoteModal').classList.add('active');
-            }
-            
-            selectNoteTemplate(template, element) {
-                // Update UI
-                document.querySelectorAll('.template-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                element.classList.add('selected');
-                
-                // Build form
+            updateNoteForm() {
+                const noteType = document.getElementById('noteType')?.value || 'personal';
                 const formContent = document.getElementById('noteFormContent');
+                if (!formContent) return;
+                
                 let html = '';
                 
-                template.sections.forEach(section => {
-                    html += `<div class="card" style="margin-bottom: 1rem;">`;
-                    html += `<h4 style="margin-bottom: 0.75rem; color: var(--primary);">${section.name}</h4>`;
-                    
-                    if (section.prompts) {
-                        html += '<div class="best-practice-prompt">';
-                        html += '<strong>Consider addressing:</strong><ul style="margin: 0.5rem 0 0 1.5rem;">';
-                        section.prompts.forEach(prompt => {
-                            html += `<li>${prompt}</li>`;
-                        });
-                        html += '</ul></div>';
-                    }
-                    
-                    if (section.fields) {
-                        section.fields.forEach(field => {
-                            html += `
-                                <div class="dynamic-field">
-                                    <label class="dynamic-field-label">${field.label}</label>
-                                    ${this.renderNoteField(section.id, field)}
-                                </div>
-                            `;
-                        });
-                    } else {
-                        html += `
-                            <div class="dynamic-field">
-                                <textarea class="dynamic-field-input" id="note_${section.id}" rows="4" placeholder="Enter ${section.name.toLowerCase()}..."></textarea>
+                switch (noteType) {
+                    case 'personal':
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Title</label>
+                                <input type="text" id="noteTitle" placeholder="e.g., Feeling better today">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Content</label>
+                                <textarea id="noteContent" rows="6" placeholder="How are you feeling? What happened today?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Mood (1-10)</label>
+                                <input type="number" id="noteMood" min="1" max="10" placeholder="1 = Very bad, 10 = Excellent">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Tags (optional)</label>
+                                <input type="text" id="noteTags" placeholder="e.g., anxiety, pain, improvement">
                             </div>
                         `;
-                    }
-                    
-                    html += '</div>';
-                });
+                        break;
+                        
+                    case 'visit':
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Provider Visited</label>
+                                <select id="noteProvider">
+                                    <option value="">Select provider...</option>
+                                    ${Object.values(this.providers).map(p => 
+                                        `<option value="${p.id}">${p.name} - ${p.specialty || 'General'}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Visit Date</label>
+                                <input type="date" id="noteVisitDate" value="${new Date().toISOString().split('T')[0]}">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Reason for Visit</label>
+                                <textarea id="noteReason" rows="2" placeholder="Why did you visit?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">What Happened</label>
+                                <textarea id="noteDiscussion" rows="4" placeholder="What was discussed? Tests ordered? Diagnosis?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Follow-up Actions</label>
+                                <textarea id="noteFollowup" rows="3" placeholder="Next steps, prescriptions, referrals, etc."></textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'symptom':
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Symptom</label>
+                                <input type="text" id="noteSymptom" placeholder="e.g., Headache, Fatigue">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Severity (1-10)</label>
+                                <input type="number" id="noteSeverity" min="1" max="10" placeholder="1 = Mild, 10 = Severe">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Started When</label>
+                                <input type="datetime-local" id="noteSymptomStart">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Triggers</label>
+                                <textarea id="noteTriggers" rows="2" placeholder="What might have caused this?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">What Helps</label>
+                                <textarea id="noteHelps" rows="2" placeholder="What makes it better?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Additional Notes</label>
+                                <textarea id="noteAdditional" rows="3"></textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'treatment':
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Treatment/Medication</label>
+                                <input type="text" id="noteTreatment" placeholder="What treatment or medication?">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Started Date</label>
+                                <input type="date" id="noteTreatmentStart">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Effectiveness (1-10)</label>
+                                <input type="number" id="noteEffectiveness" min="1" max="10" placeholder="1 = Not working, 10 = Very effective">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Side Effects</label>
+                                <textarea id="noteSideEffects" rows="3" placeholder="Any side effects experienced?"></textarea>
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Notes</label>
+                                <textarea id="noteTreatmentNotes" rows="3" placeholder="Other observations"></textarea>
+                            </div>
+                        `;
+                        break;
+                        
+                    default:
+                        html = `
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Title</label>
+                                <input type="text" id="noteTitle" placeholder="Title your note">
+                            </div>
+                            
+                            <div class="note-form-section">
+                                <label class="note-form-label">Note Content</label>
+                                <textarea id="noteContent" rows="8" placeholder="Write your note here..."></textarea>
+                            </div>
+                        `;
+                }
                 
                 formContent.innerHTML = html;
-                
-                // Store selected template
-                this.selectedNoteTemplate = template;
-                
-                // Enable save button
-                document.getElementById('saveNoteBtn').disabled = false;
             }
             
-            renderNoteField(sectionId, field) {
-                const fieldId = `note_${sectionId}_${field.id}`;
-                
-                switch (field.type) {
-                    case 'textarea':
-                        return `<textarea class="dynamic-field-input" id="${fieldId}" rows="3" placeholder="${field.placeholder || ''}"></textarea>`;
-                    case 'number':
-                        return `<input type="number" class="dynamic-field-input" id="${fieldId}" placeholder="${field.placeholder || ''}">`;
-                    default:
-                        return `<input type="text" class="dynamic-field-input" id="${fieldId}" placeholder="${field.placeholder || ''}">`;
-                }
+            showAddNoteModal() {
+                document.getElementById('addNoteModal').classList.add('active');
+                document.getElementById('noteType').value = 'personal';
+                this.updateNoteForm();
+                this.editingNoteId = null;
             }
             
-            saveProviderNote() {
-                if (!this.selectedNoteTemplate || !this.providerSession.providerId) {
-                    this.showError('Invalid note configuration');
-                    return;
-                }
-                
-                const provider = this.providers[this.providerSession.providerId];
-                if (!provider) {
-                    this.showError('Provider not found');
-                    return;
-                }
-                
-                // Collect note data
+            saveNote() {
+                const noteType = document.getElementById('noteType').value;
                 const noteData = {
-                    sections: {}
-                };
-                
-                this.selectedNoteTemplate.sections.forEach(section => {
-                    if (section.fields) {
-                        noteData.sections[section.id] = {};
-                        section.fields.forEach(field => {
-                            const fieldId = `note_${section.id}_${field.id}`;
-                            const value = document.getElementById(fieldId)?.value;
-                            if (value) {
-                                noteData.sections[section.id][field.id] = value;
-                            }
-                        });
-                    } else {
-                        const value = document.getElementById(`note_${section.id}`)?.value;
-                        if (value) {
-                            noteData.sections[section.id] = value;
-                        }
-                    }
-                });
-                
-                // Create case note
-                const caseNote = {
-                    id: 'note_' + this.generateId(),
+                    id: this.editingNoteId || 'note_' + this.generateId(),
+                    type: noteType,
                     timestamp: new Date().toISOString(),
-                    providerId: provider.id,
-                    providerName: provider.name,
-                    templateId: this.selectedNoteTemplate.id,
-                    templateName: this.selectedNoteTemplate.name,
-                    data: noteData
+                    author: 'You'
                 };
                 
-                // Add to notes
-                this.caseNotes.push(caseNote);
+                // Collect data based on note type
+                switch (noteType) {
+                    case 'personal':
+                        noteData.title = document.getElementById('noteTitle').value;
+                        noteData.content = document.getElementById('noteContent').value;
+                        noteData.mood = document.getElementById('noteMood').value;
+                        noteData.tags = document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(t => t);
+                        break;
+                        
+                    case 'visit':
+                        noteData.providerId = document.getElementById('noteProvider').value;
+                        noteData.visitDate = document.getElementById('noteVisitDate').value;
+                        noteData.reason = document.getElementById('noteReason').value;
+                        noteData.discussion = document.getElementById('noteDiscussion').value;
+                        noteData.followup = document.getElementById('noteFollowup').value;
+                        break;
+                        
+                    case 'symptom':
+                        noteData.symptom = document.getElementById('noteSymptom').value;
+                        noteData.severity = document.getElementById('noteSeverity').value;
+                        noteData.startTime = document.getElementById('noteSymptomStart').value;
+                        noteData.triggers = document.getElementById('noteTriggers').value;
+                        noteData.helps = document.getElementById('noteHelps').value;
+                        noteData.additional = document.getElementById('noteAdditional').value;
+                        break;
+                        
+                    case 'treatment':
+                        noteData.treatment = document.getElementById('noteTreatment').value;
+                        noteData.startDate = document.getElementById('noteTreatmentStart').value;
+                        noteData.effectiveness = document.getElementById('noteEffectiveness').value;
+                        noteData.sideEffects = document.getElementById('noteSideEffects').value;
+                        noteData.notes = document.getElementById('noteTreatmentNotes').value;
+                        break;
+                        
+                    default:
+                        noteData.title = document.getElementById('noteTitle').value;
+                        noteData.content = document.getElementById('noteContent').value;
+                }
                 
-                // Save and update
+                // Add or update note
+                if (this.editingNoteId) {
+                    const index = this.caseNotes.findIndex(n => n.id === this.editingNoteId);
+                    if (index !== -1) {
+                        this.caseNotes[index] = noteData;
+                    }
+                } else {
+                    this.caseNotes.push(noteData);
+                }
+                
                 this.autoSave();
                 this.updateCaseNotesList();
+                this.updateNoteCount();
                 this.closeModal('addNoteModal');
                 
-                this.showSuccess('Case note added successfully');
+                this.showSuccess('Note saved successfully');
             }
             
             updateCaseNotesList() {
@@ -4151,7 +4252,7 @@
                 container.innerHTML = '';
                 
                 if (this.caseNotes.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No case notes yet. Notes will appear here when providers add them during visits.</p>';
+                    container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No notes yet. Start documenting your health journey!</p>';
                     return;
                 }
                 
@@ -4160,43 +4261,163 @@
                     new Date(b.timestamp) - new Date(a.timestamp)
                 );
                 
-                sortedNotes.forEach(note => {
+                // Apply filter
+                const filterValue = document.getElementById('noteFilter')?.value || 'all';
+                const filteredNotes = sortedNotes.filter(note => {
+                    switch (filterValue) {
+                        case 'personal':
+                            return note.type === 'personal';
+                        case 'visit':
+                            return note.type === 'visit';
+                        case 'recent':
+                            const thirtyDaysAgo = new Date();
+                            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                            return new Date(note.timestamp) > thirtyDaysAgo;
+                        default:
+                            return true;
+                    }
+                });
+                
+                filteredNotes.forEach(note => {
                     const noteElement = document.createElement('div');
                     noteElement.className = 'case-note';
                     
                     const noteDate = new Date(note.timestamp);
+                    const typeLabel = {
+                        'personal': 'Personal Note',
+                        'visit': 'Visit Note',
+                        'symptom': 'Symptom Tracking',
+                        'treatment': 'Treatment Progress',
+                        'general': 'General Note'
+                    }[note.type] || 'Note';
                     
                     let contentHtml = '';
-                    Object.entries(note.data.sections).forEach(([sectionId, sectionData]) => {
-                        const sectionName = this.getSectionName(note.templateId, sectionId);
-                        contentHtml += `
-                            <div class="case-note-section">
-                                <div class="case-note-section-title">${sectionName}</div>
-                                <div class="case-note-section-content">
-                        `;
-                        
-                        if (typeof sectionData === 'string') {
-                            contentHtml += sectionData;
-                        } else {
-                            Object.entries(sectionData).forEach(([fieldId, value]) => {
-                                const fieldLabel = this.getFieldLabel(note.templateId, sectionId, fieldId);
-                                contentHtml += `<strong>${fieldLabel}:</strong> ${value}<br>`;
-                            });
-                        }
-                        
-                        contentHtml += `
-                                </div>
-                            </div>
-                        `;
-                    });
+                    
+                    // Render content based on note type
+                    switch (note.type) {
+                        case 'personal':
+                            contentHtml = `
+                                ${note.title ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Title</div>
+                                    <div class="case-note-section-content">${note.title}</div>
+                                </div>` : ''}
+                                ${note.content ? `<div class="case-note-section">
+                                    <div class="case-note-section-content">${note.content.replace(/\n/g, '<br>')}</div>
+                                </div>` : ''}
+                                ${note.mood ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Mood</div>
+                                    <div class="case-note-section-content">${note.mood}/10</div>
+                                </div>` : ''}
+                                ${note.tags && note.tags.length ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Tags</div>
+                                    <div class="case-note-section-content">${note.tags.join(', ')}</div>
+                                </div>` : ''}
+                            `;
+                            break;
+                            
+                        case 'visit':
+                            const provider = note.providerId ? this.providers[note.providerId] : null;
+                            contentHtml = `
+                                ${provider ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Provider</div>
+                                    <div class="case-note-section-content">${provider.name} - ${provider.specialty || 'General'}</div>
+                                </div>` : ''}
+                                ${note.visitDate ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Visit Date</div>
+                                    <div class="case-note-section-content">${new Date(note.visitDate).toLocaleDateString()}</div>
+                                </div>` : ''}
+                                ${note.reason ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Reason for Visit</div>
+                                    <div class="case-note-section-content">${note.reason}</div>
+                                </div>` : ''}
+                                ${note.discussion ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">What Happened</div>
+                                    <div class="case-note-section-content">${note.discussion.replace(/\n/g, '<br>')}</div>
+                                </div>` : ''}
+                                ${note.followup ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Follow-up Actions</div>
+                                    <div class="case-note-section-content">${note.followup.replace(/\n/g, '<br>')}</div>
+                                </div>` : ''}
+                            `;
+                            break;
+                            
+                        case 'symptom':
+                            contentHtml = `
+                                ${note.symptom ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Symptom</div>
+                                    <div class="case-note-section-content">${note.symptom}</div>
+                                </div>` : ''}
+                                ${note.severity ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Severity</div>
+                                    <div class="case-note-section-content">${note.severity}/10</div>
+                                </div>` : ''}
+                                ${note.startTime ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Started</div>
+                                    <div class="case-note-section-content">${new Date(note.startTime).toLocaleString()}</div>
+                                </div>` : ''}
+                                ${note.triggers ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Triggers</div>
+                                    <div class="case-note-section-content">${note.triggers}</div>
+                                </div>` : ''}
+                                ${note.helps ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">What Helps</div>
+                                    <div class="case-note-section-content">${note.helps}</div>
+                                </div>` : ''}
+                                ${note.additional ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Additional Notes</div>
+                                    <div class="case-note-section-content">${note.additional}</div>
+                                </div>` : ''}
+                            `;
+                            break;
+                            
+                        case 'treatment':
+                            contentHtml = `
+                                ${note.treatment ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Treatment/Medication</div>
+                                    <div class="case-note-section-content">${note.treatment}</div>
+                                </div>` : ''}
+                                ${note.startDate ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Started</div>
+                                    <div class="case-note-section-content">${new Date(note.startDate).toLocaleDateString()}</div>
+                                </div>` : ''}
+                                ${note.effectiveness ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Effectiveness</div>
+                                    <div class="case-note-section-content">${note.effectiveness}/10</div>
+                                </div>` : ''}
+                                ${note.sideEffects ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Side Effects</div>
+                                    <div class="case-note-section-content">${note.sideEffects}</div>
+                                </div>` : ''}
+                                ${note.notes ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Notes</div>
+                                    <div class="case-note-section-content">${note.notes}</div>
+                                </div>` : ''}
+                            `;
+                            break;
+                            
+                        default:
+                            contentHtml = `
+                                ${note.title ? `<div class="case-note-section">
+                                    <div class="case-note-section-title">Title</div>
+                                    <div class="case-note-section-content">${note.title}</div>
+                                </div>` : ''}
+                                ${note.content ? `<div class="case-note-section">
+                                    <div class="case-note-section-content">${note.content.replace(/\n/g, '<br>')}</div>
+                                </div>` : ''}
+                            `;
+                    }
                     
                     noteElement.innerHTML = `
                         <div class="case-note-header">
                             <div class="case-note-meta">
-                                <div class="case-note-provider">${note.providerName}</div>
+                                <div class="case-note-author">${note.author}</div>
                                 <div class="case-note-date">${noteDate.toLocaleString()}</div>
                             </div>
-                            <div class="case-note-type">${note.templateName}</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <div class="case-note-type ${note.type === 'personal' ? 'personal' : ''}">${typeLabel}</div>
+                                <button class="btn btn-secondary btn-sm" onclick="editNote('${note.id}')">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteNote('${note.id}')">Delete</button>
+                            </div>
                         </div>
                         <div class="case-note-content">
                             ${contentHtml}
@@ -4207,36 +4428,115 @@
                 });
             }
             
-            getSectionName(templateId, sectionId) {
-                // Find section name from template
-                const templates = this.journeyEngine.getNoteTemplates();
-                const template = templates.find(t => t.id === templateId);
-                if (template) {
-                    const section = template.sections.find(s => s.id === sectionId);
-                    if (section) return section.name;
-                }
-                return sectionId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            editNote(noteId) {
+                const note = this.caseNotes.find(n => n.id === noteId);
+                if (!note) return;
+                
+                this.editingNoteId = noteId;
+                document.getElementById('noteType').value = note.type;
+                this.updateNoteForm();
+                
+                // Populate form based on note type
+                setTimeout(() => {
+                    switch (note.type) {
+                        case 'personal':
+                            if (document.getElementById('noteTitle')) document.getElementById('noteTitle').value = note.title || '';
+                            if (document.getElementById('noteContent')) document.getElementById('noteContent').value = note.content || '';
+                            if (document.getElementById('noteMood')) document.getElementById('noteMood').value = note.mood || '';
+                            if (document.getElementById('noteTags')) document.getElementById('noteTags').value = (note.tags || []).join(', ');
+                            break;
+                            
+                        case 'visit':
+                            if (document.getElementById('noteProvider')) document.getElementById('noteProvider').value = note.providerId || '';
+                            if (document.getElementById('noteVisitDate')) document.getElementById('noteVisitDate').value = note.visitDate || '';
+                            if (document.getElementById('noteReason')) document.getElementById('noteReason').value = note.reason || '';
+                            if (document.getElementById('noteDiscussion')) document.getElementById('noteDiscussion').value = note.discussion || '';
+                            if (document.getElementById('noteFollowup')) document.getElementById('noteFollowup').value = note.followup || '';
+                            break;
+                            
+                        case 'symptom':
+                            if (document.getElementById('noteSymptom')) document.getElementById('noteSymptom').value = note.symptom || '';
+                            if (document.getElementById('noteSeverity')) document.getElementById('noteSeverity').value = note.severity || '';
+                            if (document.getElementById('noteSymptomStart')) document.getElementById('noteSymptomStart').value = note.startTime || '';
+                            if (document.getElementById('noteTriggers')) document.getElementById('noteTriggers').value = note.triggers || '';
+                            if (document.getElementById('noteHelps')) document.getElementById('noteHelps').value = note.helps || '';
+                            if (document.getElementById('noteAdditional')) document.getElementById('noteAdditional').value = note.additional || '';
+                            break;
+                            
+                        case 'treatment':
+                            if (document.getElementById('noteTreatment')) document.getElementById('noteTreatment').value = note.treatment || '';
+                            if (document.getElementById('noteTreatmentStart')) document.getElementById('noteTreatmentStart').value = note.startDate || '';
+                            if (document.getElementById('noteEffectiveness')) document.getElementById('noteEffectiveness').value = note.effectiveness || '';
+                            if (document.getElementById('noteSideEffects')) document.getElementById('noteSideEffects').value = note.sideEffects || '';
+                            if (document.getElementById('noteTreatmentNotes')) document.getElementById('noteTreatmentNotes').value = note.notes || '';
+                            break;
+                            
+                        default:
+                            if (document.getElementById('noteTitle')) document.getElementById('noteTitle').value = note.title || '';
+                            if (document.getElementById('noteContent')) document.getElementById('noteContent').value = note.content || '';
+                    }
+                }, 100);
+                
+                document.getElementById('addNoteModal').classList.add('active');
             }
             
-            getFieldLabel(templateId, sectionId, fieldId) {
-                // Find field label from template
-                const templates = this.journeyEngine.getNoteTemplates();
-                const template = templates.find(t => t.id === templateId);
-                if (template) {
-                    const section = template.sections.find(s => s.id === sectionId);
-                    if (section && section.fields) {
-                        const field = section.fields.find(f => f.id === fieldId);
-                        if (field) return field.label;
-                    }
+            deleteNote(noteId) {
+                if (confirm('Delete this note?')) {
+                    this.caseNotes = this.caseNotes.filter(n => n.id !== noteId);
+                    this.autoSave();
+                    this.updateCaseNotesList();
+                    this.updateNoteCount();
                 }
-                return fieldId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            }
+            
+            updateNoteCount() {
+                const noteCount = this.caseNotes.length;
+                const noteCountElement = document.getElementById('noteCount');
+                if (noteCount > 0) {
+                    noteCountElement.textContent = noteCount;
+                    noteCountElement.style.display = 'inline-block';
+                } else {
+                    noteCountElement.style.display = 'none';
+                }
             }
             
             filterNotes() {
-                // Implementation for note filtering
-                const filter = document.getElementById('noteFilter').value;
-                console.log('Filter notes by:', filter);
-                // This would filter the displayed notes
+                this.updateCaseNotesList();
+            }
+            
+            updateRelatedNotes(type) {
+                // This would show notes related to conditions or medications
+                // For now, just a placeholder
+                const conditionNotesEl = document.getElementById('conditionNotes');
+                const medicationNotesEl = document.getElementById('medicationNotes');
+                
+                if (type === 'condition' && conditionNotesEl) {
+                    const relatedNotes = this.caseNotes.filter(note => 
+                        note.type === 'visit' || (note.content && note.content.toLowerCase().includes('condition'))
+                    );
+                    
+                    if (relatedNotes.length > 0) {
+                        conditionNotesEl.classList.remove('hidden');
+                        document.getElementById('conditionNotesList').innerHTML = 
+                            `${relatedNotes.length} related notes found`;
+                    } else {
+                        conditionNotesEl.classList.add('hidden');
+                    }
+                }
+                
+                if (type === 'medication' && medicationNotesEl) {
+                    const relatedNotes = this.caseNotes.filter(note => 
+                        note.type === 'treatment' || (note.content && note.content.toLowerCase().includes('medication'))
+                    );
+                    
+                    if (relatedNotes.length > 0) {
+                        medicationNotesEl.classList.remove('hidden');
+                        document.getElementById('medicationNotesList').innerHTML = 
+                            `${relatedNotes.length} related notes found`;
+                    } else {
+                        medicationNotesEl.classList.add('hidden');
+                    }
+                }
             }
             
             // ==========================================
@@ -4371,17 +4671,6 @@
                 URL.revokeObjectURL(url);
                 
                 this.showSuccess('All journey modules exported');
-            }
-            
-            updateVaultName() {
-                const newName = document.getElementById('settingsVaultName').value;
-                if (newName && newName !== this.vaultName) {
-                    this.vaultName = newName;
-                    document.getElementById('headerVaultName').textContent = newName;
-                    document.title = `${newName} - Health Vault`;
-                    this.autoSave();
-                    this.showSuccess('Vault name updated');
-                }
             }
             
             // ==========================================
@@ -4645,7 +4934,9 @@
                         exportDate: new Date().toISOString(),
                         vaultName: this.vaultName,
                         vaultId: this.instanceId,
+                        vaultGuid: this.vaultGuid,
                         personal: this.data.personal || {},
+                        insurance: this.data.insurance || {},
                         medical: this.data.medical || {},
                         medications: this.data.medications || {},
                         contacts: this.data.contacts || {},
@@ -4791,8 +5082,9 @@
                         return;
                     }
                     
-                    // Set instance ID and vault name from backup
+                    // Set instance ID, GUID and vault name from backup
                     this.instanceId = backupData.instanceId;
+                    this.vaultGuid = backupData.vaultGuid || backupData.instanceId;
                     this.vaultName = backupData.vaultName || 'Imported Vault';
                     document.getElementById('instanceId').textContent = this.instanceId;
                     
@@ -4868,6 +5160,7 @@
                         hasData: !!data,
                         instanceId: this.instanceId,
                         vaultName: this.vaultName,
+                        vaultGuid: this.vaultGuid,
                         dataLength: data?.length
                     });
                     
@@ -4878,6 +5171,7 @@
                     
                     const embeddedData = {
                         instanceId: this.instanceId,
+                        vaultGuid: this.vaultGuid,
                         vaultName: this.vaultName,
                         profile: profile,
                         data: data,
@@ -4912,6 +5206,7 @@
                     
                     console.log('Embedded data preview:', {
                         instanceId: embeddedData.instanceId,
+                        vaultGuid: embeddedData.vaultGuid,
                         vaultName: embeddedData.vaultName,
                         hasProfile: !!embeddedData.profile,
                         hasData: !!embeddedData.data,
@@ -5662,6 +5957,7 @@
                             hasData: true,
                             vaultName: embeddedData.vaultName,
                             instanceId: embeddedData.instanceId,
+                            vaultGuid: embeddedData.vaultGuid,
                             hasProfile: !!embeddedData.profile,
                             hasVaultData: !!embeddedData.data,
                             savedAt: embeddedData.savedAt,
@@ -5687,84 +5983,103 @@
         // INITIALIZE APP
         // ============================================
         
-        // Ensure clean initialization
-        if (window.app) {
-            window.app = null;
+        // Wait for DOM to be ready
+        function initializeApp() {
+            console.log('Initializing Health Vault App...');
+            
+            // Ensure clean initialization
+            if (window.app) {
+                window.app = null;
+            }
+            
+            // Create new instance
+            window.app = new HealthVault();
+            const app = window.app;
+            
+            // Global functions for onclick handlers
+            window.setupStep1 = function() { app.setupStep1(); }
+            window.setupStep2 = function() { app.setupStep2(); }
+            window.setupStep3 = function() { app.setupStep3(); }
+            window.completeSetup = function() { app.completeSetup(); }
+            window.login = function() { app.login(); }
+            window.lockVault = function() { app.lockVault(); }
+            window.autoSave = function() { app.autoSave(); }
+            window.extendTime = function() { app.extendTime(); }
+            window.switchTab = function(tab) { app.switchTab(tab); }
+            window.showUploadModal = function() { app.showUploadModal(); }
+            window.closeModal = function(id) { app.closeModal(id); }
+            window.handleFileSelect = function(event) { app.handleFileSelect(event); }
+            window.uploadDocument = function() { app.uploadDocument(); }
+            window.showHelp = function() { app.showHelp(); }
+            window.backToLogin = function() { app.backToLogin(); }
+            window.showRecoveryOption = function() { app.showRecoveryOption(); }
+            window.showLostEverything = function() { app.showLostEverything(); }
+            window.verifyRecoveryCode = function() { app.verifyRecoveryCode(); }
+            window.resetPassword = function() { app.resetPassword(); }
+            window.startFresh = function() { app.startFresh(); }
+            window.showGuide = function() { app.showGuide(); }
+            window.showNoPhoneOption = function() { app.showNoPhoneOption(); }
+            window.printRecoveryCard = function() { app.printRecoveryCard(); }
+            window.downloadRecoveryCard = function() { app.downloadRecoveryCard(); }
+            window.handleBackupSelect = function(event) { app.handleBackupSelect(event); }
+            window.openBackupFile = function() { app.openBackupFile(); }
+            window.downloadSelfContained = function() { app.downloadSelfContained(); }
+            window.showSaveModal = function() { app.showSaveModal(); }
+            window.showExportModal = function() { app.showExportModal(); }
+            window.exportAsJSON = function() { app.exportAsJSON(); }
+            window.toggleView = function(view) { app.toggleView(view); }
+            window.toggleJourney = function(journeyId, element) { app.toggleJourney(journeyId, element); }
+            
+            // Missing functions that are called from HTML
+            window.showLogin = function() { app.showLogin(); }
+            window.showOpenFile = function() { app.showOpenFile(); }
+            window.startNewSetup = function() { app.startNewSetup(); }
+            window.showDebugInfo = function() { app.showDebugInfo(); }
+            window.previewDocument = function(id) { app.previewDocument(id); }
+            window.downloadDocument = function(id) { app.downloadDocument(id); }
+            window.deleteDocument = function(id) { app.deleteDocument(id); }
+            
+            // List management functions
+            window.addCondition = function() { app.addCondition(); }
+            window.saveCondition = function() { app.saveCondition(); }
+            window.removeCondition = function(index) { app.removeCondition(index); }
+            window.addSurgery = function() { app.addSurgery(); }
+            window.saveSurgery = function() { app.saveSurgery(); }
+            window.removeSurgery = function(index) { app.removeSurgery(index); }
+            window.addMedication = function() { app.addMedication(); }
+            window.saveMedication = function() { app.saveMedication(); }
+            window.removeMedication = function(index) { app.removeMedication(index); }
+            
+            // Provider functions
+            window.showAddProvider = function() { app.showAddProvider(); }
+            window.saveProvider = function() { app.saveProvider(); }
+            window.editProvider = function(id) { app.editProvider(id); }
+            window.removeProvider = function(id) { app.removeProvider(id); }
+            
+            // Case note functions
+            window.showAddNoteModal = function() { app.showAddNoteModal(); }
+            window.updateNoteForm = function() { app.updateNoteForm(); }
+            window.saveNote = function() { app.saveNote(); }
+            window.editNote = function(id) { app.editNote(id); }
+            window.deleteNote = function(id) { app.deleteNote(id); }
+            window.filterNotes = function() { app.filterNotes(); }
+            
+            // Journey functions
+            window.showImportJourney = function() { app.showImportJourney(); }
+            window.handleJourneyFileSelect = function(event) { app.handleJourneyFileSelect(event); }
+            window.importJourneyFile = function() { app.importJourneyFile(); }
+            window.exportJourney = function(id) { app.exportJourney(id); }
+            window.exportJourneyModules = function() { app.exportJourneyModules(); }
+            window.regenerateVaultName = function() { app.regenerateVaultName(); }
         }
         
-        // Create new instance
-        window.app = new HealthVault();
-        const app = window.app;
-        
-        // Global functions for onclick handlers
-        function setupStep1() { app.setupStep1(); }
-        function setupStep2() { app.setupStep2(); }
-        function setupStep3() { app.setupStep3(); }
-        function completeSetup() { app.completeSetup(); }
-        function login() { app.login(); }
-        function lockVault() { app.lockVault(); }
-        function autoSave() { app.autoSave(); }
-        function extendTime() { app.extendTime(); }
-        function switchTab(tab) { app.switchTab(tab); }
-        function showUploadModal() { app.showUploadModal(); }
-        function closeModal(id) { app.closeModal(id); }
-        function handleFileSelect(event) { app.handleFileSelect(event); }
-        function uploadDocument() { app.uploadDocument(); }
-        function showHelp() { app.showHelp(); }
-        function backToLogin() { app.backToLogin(); }
-        function showRecoveryOption() { app.showRecoveryOption(); }
-        function showLostEverything() { app.showLostEverything(); }
-        function verifyRecoveryCode() { app.verifyRecoveryCode(); }
-        function startFresh() { app.startFresh(); }
-        function showGuide() { app.showGuide(); }
-        function showNoPhoneOption() { app.showNoPhoneOption(); }
-        function printRecoveryCard() { app.printRecoveryCard(); }
-        function downloadRecoveryCard() { app.downloadRecoveryCard(); }
-        function handleBackupSelect(event) { app.handleBackupSelect(event); }
-        function openBackupFile() { app.openBackupFile(); }
-        function downloadSelfContained() { app.downloadSelfContained(); }
-        function showSaveModal() { app.showSaveModal(); }
-        function showExportModal() { app.showExportModal(); }
-        function exportAsJSON() { app.exportAsJSON(); }
-        function toggleView(view) { app.toggleView(view); }
-        function toggleJourney(journeyId, element) { app.toggleJourney(journeyId, element); }
-        
-        // Missing functions that are called from HTML
-        function showLogin() { app.showLogin(); }
-        function showOpenFile() { app.showOpenFile(); }
-        function startNewSetup() { app.startNewSetup(); }
-        function showDebugInfo() { app.showDebugInfo(); }
-        function previewDocument(id) { app.previewDocument(id); }
-        function downloadDocument(id) { app.downloadDocument(id); }
-        function deleteDocument(id) { app.deleteDocument(id); }
-        
-        // List management functions
-        function addCondition() { app.addCondition(); }
-        function saveCondition() { app.saveCondition(); }
-        function removeCondition(index) { app.removeCondition(index); }
-        function addSurgery() { app.addSurgery(); }
-        function saveSurgery() { app.saveSurgery(); }
-        function removeSurgery(index) { app.removeSurgery(index); }
-        function addMedication() { app.addMedication(); }
-        function saveMedication() { app.saveMedication(); }
-        function removeMedication(index) { app.removeMedication(index); }
-        
-        // Provider functions
-        function showProviderAccess() { app.showProviderAccess(); }
-        function registerProvider() { app.registerProvider(); }
-        function removeProvider(id) { app.removeProvider(id); }
-        function endProviderSession() { app.endProviderSession(); }
-        function showAddNoteModal() { app.showAddNoteModal(); }
-        function saveProviderNote() { app.saveProviderNote(); }
-        function filterNotes() { app.filterNotes(); }
-        
-        // Journey functions
-        function showImportJourney() { app.showImportJourney(); }
-        function handleJourneyFileSelect(event) { app.handleJourneyFileSelect(event); }
-        function importJourneyFile() { app.importJourneyFile(); }
-        function exportJourney(id) { app.exportJourney(id); }
-        function exportJourneyModules() { app.exportJourneyModules(); }
-        function updateVaultName() { app.updateVaultName(); }
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            // DOM is already ready
+            initializeApp();
+        }
     </script>
 </body>
 </html>
