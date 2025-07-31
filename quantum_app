@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Sandbox – Node-Based Editor</title>
+<style>
+  /* Layout */
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    height: 100vh;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+  
+  #sidebar {
+    width: 220px;
+    background: #2a2a2a;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #444;
+  }
+  
+  #sidebar-header {
+    padding: 16px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #444;
+  }
+  
+  #sidebar-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+  
+  #sidebar-header p {
+    margin: 0;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.4;
+  }
+  
+  #entities {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  /* Custom scrollbar for entities */
+  #entities::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  #entities::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  #entities::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+  }
+  
+  #entities::-webkit-scrollbar-thumb:hover {
+    background: #666;
+  }
+  
+  .section-title {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  
+  #canvas {
+    flex: 1;
+    position: relative;
+    background: #0d0d0d;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    overflow: hidden;
+  }
+  
+  /* Entity Templates */
+  .entity-template {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: #3a3a3a;
+    border: 2px solid #555;
+    border-radius: 8px;
+    cursor: grab;
+    color: #fff;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .entity-template:hover {
+    background: #444;
+    border-color: #666;
+    transform: translateX(4px);
+  }
+  
+  .entity-template.dragging {
+    opacity: 0.5;
+  }
+  
+  .entity-template .glyph {
+    font-size: 24px;
+  }
+  
+  .entity-template .info {
+    flex: 1;
+  }
+  
+  .entity-template .name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .entity-template .role {
+    font-size: 11px;
+    color: #888;
+    margin-top: 2px;
+  }
+  
+  /* Nodes */
+  .node {
+    position: absolute;
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    user-select: none;
+    transition: all 0.2s;
+    z-index: 10;
+  }
+  
+  .node:hover {
+    border-color: #666;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+    transform: translateY(-1px);
+  }
+  
+  .node.selected {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+  }
+  
+  .node-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: move;
+    border-bottom: 1px solid #444;
+  }
+  
+  .node-header .glyph {
+    font-size: 28px;
+  }
+  
+  .node-header .label {
+    flex: 1;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .node-header .role {
+    font-size: 10px;
+    color: #888;
+    background: #1a1a1a;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  
+  .node-body {
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #888;
+  }
+  
+  /* Connection Handles */
+  .handle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #666;
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: crosshair;
+    transition: all 0.2s;
+    z-index: 100;
+  }
+  
+  .handle:hover {
+    background: #4CAF50;
+    border-color: #4CAF50;
+    transform: scale(1.2);
+  }
+  
+  .handle.input {
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .handle.output {
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .handle.connecting {
+    background: #4CAF50;
+    border-color: #4CAF50;
+  }
+  
+  /* Connections */
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .connection {
+    fill: none;
+    stroke: #666;
+    stroke-width: 3;
+    pointer-events: stroke;
+    transition: stroke 0.2s;
+  }
+  
+  .connection:hover {
+    stroke: #888;
+    stroke-width: 4;
+  }
+  
+  .connection-temp {
+    stroke: #4CAF50;
+    stroke-dasharray: 5, 5;
+    stroke-width: 3;
+    animation: dash 0.5s linear infinite;
+  }
+  
+  @keyframes dash {
+    to { stroke-dashoffset: -10; }
+  }
+  
+  .connection-label {
+    fill: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+  
+  .connection-label-bg {
+    fill: #2a2a2a;
+    stroke: #666;
+    stroke-width: 1;
+    rx: 4;
+  }
+  
+  /* Operator Selector */
+  #operator-selector {
+    position: absolute;
+    background: #2a2a2a;
+    border: 2px solid #666;
+    border-radius: 8px;
+    padding: 0;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+    z-index: 1000;
+    min-width: 180px;
+  }
+  
+  #operator-selector-header {
+    padding: 8px 12px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #444;
+    border-radius: 6px 6px 0 0;
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  #operator-selector-content {
+    padding: 8px;
+  }
+  
+  #operator-selector.show {
+    display: block;
+  }
+  
+  .op-option {
+    padding: 8px 12px;
+    margin: 2px 0;
+    background: #3a3a3a;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    transition: all 0.1s;
+    border: 1px solid transparent;
+  }
+  
+  .op-option:hover {
+    background: #4a4a4a;
+    transform: translateX(2px);
+  }
+  
+  .op-option[style*="opacity: 0.3"] {
+    cursor: not-allowed !important;
+    border-color: #555;
+  }
+  
+  .op-option[style*="opacity: 0.3"]:hover {
+    background: #3a3a3a;
+    transform: none;
+  }
+  
+  .op-option .symbol {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+  }
+  
+  .op-option .name {
+    font-size: 14px;
+  }
+  
+  /* Info */
+  #info {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2000;
+  }
+  
+  #info.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h2>🌌 QUANTUM LAB</h2>
+      <p>Drag entities to canvas.<br>Connect output → input.<br>Choose quantum operator.</p>
+    </div>
+    <div id="entities">
+      <div class="section-title">Quantum Entities</div>
+    </div>
+  </div>
+  
+  <!-- Canvas -->
+  <div id="canvas">
+    <svg id="connections"></svg>
+  </div>
+  
+  <!-- Operator Selector -->
+  <div id="operator-selector">
+    <div id="operator-selector-header">Choose Operator</div>
+    <div id="operator-selector-content"></div>
+  </div>
+  
+  <div id="info"></div>
+
+<script>
+// ===================================================
+// Quantum Sandbox – Node-Based Editor
+// ===================================================
+
+// 1. Expanded Entity Types
+const ENTITIES = {
+  // Original trinity
+  measured_qubit:    {role: 'holon',    glyph: '⚛️', label: 'Measured Qubit',    phase: {identity: '+1', space: '+1', time: '-1'}},
+  entangled_pair:    {role: 'protogon', glyph: '🔄', label: 'Entangled Pair',    phase: {identity: 'μ',  space: '-1', time: '-1'}},
+  quantum_field:     {role: 'emanon',   glyph: '👻', label: 'Quantum Field',     phase: {identity: '-1', space: '-1', time: '+1'}},
+  
+  // Additional quantum entities
+  superposition:     {role: 'protogon', glyph: '🌊', label: 'Superposition',     phase: {identity: 'μ',  space: 'μ',  time: '-1'}},
+  vacuum_state:      {role: 'emanon',   glyph: '⚫', label: 'Vacuum State',      phase: {identity: '-1', space: '-1', time: '0'}},
+  coherent_state:    {role: 'holon',    glyph: '💫', label: 'Coherent State',    phase: {identity: '+1', space: '+1', time: '+1'}},
+  squeezed_state:    {role: 'protogon', glyph: '🔷', label: 'Squeezed State',    phase: {identity: 'μ',  space: '√2', time: '-1'}},
+  bell_state:        {role: 'protogon', glyph: '🔔', label: 'Bell State',        phase: {identity: 'μ',  space: '-1', time: 'τ'}},
+  ghz_state:         {role: 'protogon', glyph: '⚡', label: 'GHZ State',         phase: {identity: 'μ',  space: '-1', time: '-1'}},
+  fock_state:        {role: 'holon',    glyph: '🎯', label: 'Fock State',        phase: {identity: '+1', space: '+1', time: '0'}},
+  thermal_state:     {role: 'emanon',   glyph: '🔥', label: 'Thermal State',     phase: {identity: '-1', space: 'τ',  time: '+1'}},
+  cat_state:         {role: 'protogon', glyph: '🐱', label: 'Cat State',         phase: {identity: 'μ',  space: 'μ',  time: 'μ'}}
+};
+
+// 2. Nine operators
+const OPERATORS = {
+  INS: {symbol: '△', name: 'Prepare',     targets: ['emanon', 'protogon'],          spawns: 'protogon'},
+  DES: {symbol: '⊡', name: 'Collapse',    targets: ['holon', 'protogon'],           spawns: 'emanon'},
+  ENT: {symbol: '⇆', name: 'Entangle',    targets: ['holon', 'emanon'],             spawns: null},
+  DIS: {symbol: '↯', name: 'Disentangle', targets: ['protogon'],                    spawns: 'holon'},
+  FLP: {symbol: '¬', name: 'Flip',        targets: ['holon'],                       spawns: null},
+  SWP: {symbol: '⇄', name: 'Swap',        targets: ['holon', 'protogon', 'emanon'], spawns: null},
+  PHZ: {symbol: '●', name: 'Phase',       targets: ['holon', 'protogon', 'emanon'], spawns: null},
+  MES: {symbol: '✜', name: 'Measure',     targets: ['protogon', 'emanon'],          spawns: 'holon'},
+  RST: {symbol: '⊙', name: 'Reset',       targets: ['holon', 'protogon', 'emanon'], spawns: 'holon'}
+};
+
+// 3. Runtime state
+const nodes = {};
+const connections = [];
+let nodeSeq = 0;
+let connectionSeq = 0;
+let draggedNode = null;
+let connectionStart = null;
+let tempConnection = null;
+let selectedOp = null;
+
+// 4. Build entity templates
+const entitiesDiv = document.getElementById('entities');
+for (const [key, entity] of Object.entries(ENTITIES)) {
+  const template = document.createElement('div');
+  template.className = 'entity-template';
+  template.draggable = true;
+  template.dataset.entity = key;
+  template.innerHTML = `
+    <div class="glyph">${entity.glyph}</div>
+    <div class="info">
+      <div class="name">${entity.label}</div>
+      <div class="role">${entity.role}</div>
+    </div>
+  `;
+  
+  template.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('entity', key);
+    template.classList.add('dragging');
+  });
+  
+  template.addEventListener('dragend', () => {
+    template.classList.remove('dragging');
+  });
+  
+  entitiesDiv.appendChild(template);
+}
+
+// 5. Build operator selector
+const opSelector = document.getElementById('operator-selector');
+for (const [key, op] of Object.entries(OPERATORS)) {
+  const option = document.createElement('div');
+  option.className = 'op-option';
+  option.dataset.op = key;
+  option.innerHTML = `
+    <span class="symbol">${op.symbol}</span>
+    <span class="name">${op.name}</span>
+  `;
+  
+  option.addEventListener('click', () => {
+    if (option.style.pointerEvents !== 'none') {
+      selectedOp = key;
+      completeConnection();
+    }
+  });
+  
+  opSelector.appendChild(option);
+}
+
+// 6. Canvas setup
+const canvas = document.getElementById('canvas');
+const svg = document.getElementById('connections');
+
+canvas.addEventListener('dragover', e => e.preventDefault());
+canvas.addEventListener('drop', handleCanvasDrop);
+canvas.addEventListener('mousemove', handleMouseMove);
+canvas.addEventListener('click', (e) => {
+  if (e.target === canvas) {
+    hideOperatorSelector();
+    cancelConnection();
+  }
+});
+
+function handleCanvasDrop(e) {
+  e.preventDefault();
+  const entityKey = e.dataTransfer.getData('entity');
+  if (entityKey) {
+    const rect = canvas.getBoundingClientRect();
+    placeNode(entityKey, e.clientX - rect.left - 90, e.clientY - rect.top - 40);
+  }
+}
+
+// 7. Node creation
+function placeNode(entityKey, x, y) {
+  const id = 'node_' + (++nodeSeq);
+  const entity = ENTITIES[entityKey];
+  
+  const node = document.createElement('div');
+  node.className = 'node';
+  node.id = id;
+  node.style.left = x + 'px';
+  node.style.top = y + 'px';
+  node.innerHTML = `
+    <div class="handle input"></div>
+    <div class="handle output"></div>
+    <div class="node-header">
+      <div class="glyph">${entity.glyph}</div>
+      <div class="label">${entity.label}</div>
+      <div class="role">${entity.role}</div>
+    </div>
+    <div class="node-body">
+      Phase: [${entity.phase.identity}, ${entity.phase.space}, ${entity.phase.time}]
+    </div>
+  `;
+  
+  canvas.appendChild(node);
+  
+  nodes[id] = {
+    id: id,
+    entity: entityKey,
+    role: entity.role,
+    phase: {...entity.phase},
+    x: x + 90,  // Center of node
+    y: y + 50,  // Center of node (adjusted for actual height)
+    el: node
+  };
+  
+  // Make node draggable
+  const header = node.querySelector('.node-header');
+  header.addEventListener('mousedown', startNodeDrag);
+  
+  // Handle connections
+  const outputHandle = node.querySelector('.handle.output');
+  const inputHandle = node.querySelector('.handle.input');
+  
+  outputHandle.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    startConnection(id, 'output', e);
+  });
+  
+  inputHandle.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    // Don't start connection from input if we're already connecting
+    if (!connectionStart) {
+      startConnection(id, 'input', e);
+    }
+  });
+  
+  outputHandle.addEventListener('mouseenter', (e) => {
+    if (connectionStart && connectionStart.nodeId !== id && connectionStart.handleType === 'input') {
+      e.target.classList.add('hover');
+    }
+  });
+  
+  outputHandle.addEventListener('mouseleave', (e) => {
+    e.target.classList.remove('hover');
+  });
+  
+  inputHandle.addEventListener('mouseenter', (e) => {
+    if (connectionStart && connectionStart.nodeId !== id && connectionStart.handleType === 'output') {
+      e.target.classList.add('hover');
+    }
+  });
+  
+  inputHandle.addEventListener('mouseleave', (e) => {
+    e.target.classList.remove('hover');
+  });
+}
+
+// 8. Node dragging
+function startNodeDrag(e) {
+  const node = e.target.closest('.node');
+  draggedNode = nodes[node.id];
+  
+  const rect = node.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  
+  draggedNode.offsetX = e.clientX - rect.left;
+  draggedNode.offsetY = e.clientY - rect.top;
+  
+  document.addEventListener('mousemove', dragNode);
+  document.addEventListener('mouseup', stopNodeDrag);
+}
+
+function dragNode(e) {
+  if (!draggedNode) return;
+  
+  const canvasRect = canvas.getBoundingClientRect();
+  const x = e.clientX - canvasRect.left - draggedNode.offsetX;
+  const y = e.clientY - canvasRect.top - draggedNode.offsetY;
+  
+  draggedNode.el.style.left = x + 'px';
+  draggedNode.el.style.top = y + 'px';
+  draggedNode.x = x + 90;
+  draggedNode.y = y + 50;
+  
+  updateConnections();
+}
+
+function stopNodeDrag() {
+  draggedNode = null;
+  document.removeEventListener('mousemove', dragNode);
+  document.removeEventListener('mouseup', stopNodeDrag);
+}
+
+// 9. Connection handling
+function startConnection(nodeId, handleType, e) {
+  connectionStart = {
+    nodeId: nodeId,
+    handleType: handleType
+  };
+  
+  const handle = e.target;
+  handle.classList.add('connecting');
+  
+  // Show feedback
+  showInfo(`Step 2: Connecting from ${handleType} - drag to ${handleType === 'output' ? 'input' : 'output'} handle`);
+  
+  // Create temporary connection line
+  tempConnection = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  tempConnection.setAttribute('class', 'connection connection-temp');
+  svg.appendChild(tempConnection);
+  
+  // Add event listeners
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleGlobalMouseUp);
+  
+  // Update temp connection immediately
+  handleMouseMove(e);
+}
+
+function handleGlobalMouseUp(e) {
+  if (!connectionStart) return;
+  
+  // Check if we're over a valid handle
+  const element = document.elementFromPoint(e.clientX, e.clientY);
+  if (element && element.classList.contains('handle')) {
+    const node = element.closest('.node');
+    const nodeId = node.id;
+    const handleType = element.classList.contains('input') ? 'input' : 'output';
+    
+    // Validate connection
+    if (nodeId !== connectionStart.nodeId && handleType !== connectionStart.handleType) {
+      endConnection(nodeId, handleType);
+      return;
+    }
+  }
+  
+  // Otherwise cancel the connection
+  cancelConnection();
+}
+
+function handleMouseMove(e) {
+  if (!connectionStart || !tempConnection) return;
+  
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  const startNode = nodes[connectionStart.nodeId];
+  const startX = startNode.x + (connectionStart.handleType === 'output' ? 90 : -90);
+  const startY = startNode.y;
+  
+  const path = generatePath(startX, startY, x, y);
+  tempConnection.setAttribute('d', path);
+}
+
+function endConnection(targetNodeId, targetHandleType) {
+  if (!connectionStart) return;
+  
+  // Validate connection direction
+  if (connectionStart.handleType === targetHandleType) {
+    showInfo('Connect output to input');
+    cancelConnection();
+    return;
+  }
+  
+  // Keep connection start data for operator selection
+  connectionStart.targetId = targetNodeId;
+  
+  // Remove temp connection but keep the connection start data
+  if (tempConnection) {
+    tempConnection.remove();
+    tempConnection = null;
+  }
+  
+  // Remove mouse event listeners
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleGlobalMouseUp);
+  
+  // Show operator selector
+  showOperatorSelector(targetNodeId);
+  showInfo('Step 3: Select an operator or click outside to cancel');
+}
+
+function showOperatorSelector(targetNodeId) {
+  if (!connectionStart) return;
+  
+  const sourceNode = nodes[connectionStart.nodeId];
+  const targetNode = nodes[targetNodeId];
+  
+  // Position selector at midpoint between nodes
+  const midX = (sourceNode.x + targetNode.x) / 2;
+  const midY = (sourceNode.y + targetNode.y) / 2;
+  
+  const selector = document.getElementById('operator-selector');
+  selector.style.left = (midX - 90) + 'px';
+  selector.style.top = (midY - 100) + 'px';
+  selector.classList.add('show');
+  selector.dataset.target = targetNodeId;
+  
+  // Filter operators based on target node role
+  const targetRole = targetNode.role;
+  opSelectorContent.querySelectorAll('.op-option').forEach(option => {
+    const op = OPERATORS[option.dataset.op];
+    if (op.targets.includes(targetRole)) {
+      option.style.display = 'flex';
+      option.style.opacity = '1';
+    } else {
+      option.style.display = 'flex';
+      option.style.opacity = '0.3';
+      option.style.pointerEvents = 'none';
+    }
+  });
+}
+
+function hideOperatorSelector() {
+  const selector = document.getElementById('operator-selector');
+  selector.classList.remove('show');
+  
+  // Reset all options
+  const opSelectorContent = document.getElementById('operator-selector-content');
+  opSelectorContent.querySelectorAll('.op-option').forEach(option => {
+    option.style.display = 'flex';
+    option.style.opacity = '1';
+    option.style.pointerEvents = 'auto';
+  });
+}
+
+function completeConnection() {
+  if (!connectionStart || !selectedOp) return;
+  
+  const targetNodeId = document.getElementById('operator-selector').dataset.target;
+  const sourceId = connectionStart.handleType === 'output' ? connectionStart.nodeId : targetNodeId;
+  const targetId = connectionStart.handleType === 'output' ? targetNodeId : connectionStart.nodeId;
+  
+  // Apply operator rules
+  const rule = OPERATORS[selectedOp];
+  const targetNode = nodes[targetId];
+  
+  if (!rule.targets.includes(targetNode.role)) {
+    showInfo(`Cannot apply ${rule.name} to ${targetNode.role}`);
+    hideOperatorSelector();
+    setTimeout(() => cancelConnection(), 100);
+    return;
+  }
+  
+  // Create connection
+  const connectionId = 'conn_' + (++connectionSeq);
+  connections.push({
+    id: connectionId,
+    source: sourceId,
+    target: targetId,
+    operator: selectedOp
+  });
+  
+  // Apply transformation
+  if (rule.spawns) {
+    const oldRole = targetNode.role;
+    targetNode.role = rule.spawns;
+    targetNode.entity = Object.keys(ENTITIES).find(k => ENTITIES[k].role === rule.spawns);
+    updateNodeDisplay(targetId);
+    showInfo(`${rule.name}: ${oldRole} → ${rule.spawns}`);
+  } else {
+    showInfo(`Applied ${rule.name}`);
+  }
+  
+  // Draw permanent connection
+  drawConnection(sourceId, targetId, selectedOp);
+  
+  hideOperatorSelector();
+  setTimeout(() => cancelConnection(), 100);
+}
+
+function cancelConnection() {
+  if (connectionStart) {
+    const selector = `#${connectionStart.nodeId} .handle.connecting`;
+    const handle = document.querySelector(selector);
+    if (handle) handle.classList.remove('connecting');
+  }
+  
+  if (tempConnection) {
+    tempConnection.remove();
+    tempConnection = null;
+  }
+  
+  // Remove all hover states
+  document.querySelectorAll('.handle.hover').forEach(h => h.classList.remove('hover'));
+  
+  connectionStart = null;
+  selectedOp = null;
+  
+  // Remove event listeners
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleGlobalMouseUp);
+}
+
+// 10. Visual updates
+function updateNodeDisplay(nodeId) {
+  const node = nodes[nodeId];
+  const entity = ENTITIES[node.entity];
+  
+  node.el.querySelector('.glyph').textContent = entity.glyph;
+  node.el.querySelector('.label').textContent = entity.label;
+  node.el.querySelector('.role').textContent = entity.role;
+  node.el.querySelector('.node-body').textContent = 
+    `Phase: [${entity.phase.identity}, ${entity.phase.space}, ${entity.phase.time}]`;
+  
+  // Animation
+  node.el.style.transform = 'scale(1.1)';
+  setTimeout(() => {
+    node.el.style.transform = 'scale(1)';
+  }, 300);
+}
+
+function drawConnection(sourceId, targetId, operator) {
+  const source = nodes[sourceId];
+  const target = nodes[targetId];
+  const op = OPERATORS[operator];
+  
+  // Create connection group
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  
+  // Create path
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('class', 'connection');
+  path.setAttribute('data-source', sourceId);
+  path.setAttribute('data-target', targetId);
+  
+  const startX = source.x + 90;
+  const startY = source.y;
+  const endX = target.x - 90;
+  const endY = target.y;
+  
+  path.setAttribute('d', generatePath(startX, startY, endX, endY));
+  
+  // Create label background
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('class', 'connection-label-bg');
+  rect.setAttribute('x', midX - 20);
+  rect.setAttribute('y', midY - 12);
+  rect.setAttribute('width', '40');
+  rect.setAttribute('height', '24');
+  
+  // Create label
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('class', 'connection-label');
+  text.setAttribute('x', midX);
+  text.setAttribute('y', midY + 4);
+  text.textContent = op.symbol;
+  
+  g.appendChild(path);
+  g.appendChild(rect);
+  g.appendChild(text);
+  svg.appendChild(g);
+}
+
+function generatePath(x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const controlOffset = Math.min(distance * 0.4, 120);
+  
+  return `M ${x1} ${y1} C ${x1 + controlOffset} ${y1}, ${x2 - controlOffset} ${y2}, ${x2} ${y2}`;
+}
+
+function updateConnections() {
+  // Update all connection paths when nodes move
+  svg.querySelectorAll('.connection').forEach(path => {
+    const sourceId = path.dataset.source;
+    const targetId = path.dataset.target;
+    
+    if (nodes[sourceId] && nodes[targetId]) {
+      const source = nodes[sourceId];
+      const target = nodes[targetId];
+      
+      const startX = source.x + 90;
+      const startY = source.y;
+      const endX = target.x - 90;
+      const endY = target.y;
+      
+      path.setAttribute('d', generatePath(startX, startY, endX, endY));
+      
+      // Update label position
+      const g = path.parentElement;
+      const rect = g.querySelector('.connection-label-bg');
+      const text = g.querySelector('.connection-label');
+      
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+      
+      rect.setAttribute('x', midX - 20);
+      rect.setAttribute('y', midY - 12);
+      text.setAttribute('x', midX);
+      text.setAttribute('y', midY + 4);
+    }
+  });
+}
+
+// 11. Info display
+function showInfo(msg) {
+  const info = document.getElementById('info');
+  info.textContent = msg;
+  info.classList.add('show');
+  setTimeout(() => info.classList.remove('show'), 3000);
+}
+
+// Initial message
+showInfo('Step 1: Drag entities to canvas | Step 2: Connect output → input | Step 3: Choose operator');
+console.log('Quantum Sandbox loaded. Drag entities from left sidebar to canvas.');
+</script>
+</body>
+</html>
