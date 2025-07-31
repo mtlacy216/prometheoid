@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quantum Node Editor - Operator Connections</title>
+<title>Quantum Node Editor - E.O. Physics</title>
 <style>
   body {
     margin: 0;
@@ -29,7 +29,7 @@
     background: #2a2a2a;
     border: 2px solid #444;
     border-radius: 12px;
-    min-width: 180px;
+    min-width: 200px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     cursor: move;
     transition: all 0.2s;
@@ -38,6 +38,22 @@
   .node:hover {
     border-color: #666;
     box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+  }
+  
+  /* Synthesis glow effects */
+  .node.synthesis-identity {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.6);
+    border-color: #9333ea;
+  }
+  
+  .node.synthesis-space {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+    border-color: #22c55e;
+  }
+  
+  .node.synthesis-time {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+    border-color: #fbbf24;
   }
   
   .node-header {
@@ -72,6 +88,40 @@
     padding: 12px 16px;
     font-size: 12px;
     color: #888;
+  }
+  
+  /* Phasepost badge */
+  .phasepost-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #4a5568;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-family: monospace;
+    border: 2px solid #1a1a1a;
+    z-index: 10;
+  }
+  
+  /* Emergence score indicator */
+  .emergence-indicator {
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  
+  .emergence-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #fbbf24 100%);
+    transition: width 0.3s;
   }
   
   /* jsPlumb endpoints */
@@ -116,7 +166,7 @@
     display: none;
     box-shadow: 0 8px 24px rgba(0,0,0,0.8);
     z-index: 1000;
-    min-width: 200px;
+    min-width: 280px;
   }
   
   #operator-selector.show {
@@ -136,6 +186,8 @@
   
   #operator-selector-content {
     padding: 8px;
+    max-height: 400px;
+    overflow-y: auto;
   }
   
   .op-option {
@@ -168,20 +220,95 @@
     transform: none;
   }
   
+  .op-option.recommended {
+    border-color: #4CAF50;
+    background: #1a3a1a;
+  }
+  
   .op-symbol {
     font-size: 20px;
     width: 24px;
     text-align: center;
   }
   
-  .op-name {
-    font-size: 14px;
+  .op-info {
+    flex: 1;
   }
   
-  .op-desc {
+  .op-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .op-physics {
     font-size: 11px;
     color: #888;
+    margin-top: 2px;
+  }
+  
+  .op-prediction {
+    font-size: 10px;
+    color: #4CAF50;
     margin-left: auto;
+  }
+  
+  /* Reference Table */
+  #reference-panel {
+    position: fixed;
+    right: 20px;
+    top: 80px;
+    width: 400px;
+    max-height: 80vh;
+    background: rgba(26, 26, 26, 0.95);
+    border: 1px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s;
+    z-index: 900;
+  }
+  
+  #reference-panel.collapsed {
+    height: 40px;
+  }
+  
+  #reference-header {
+    padding: 10px 15px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  #reference-content {
+    padding: 15px;
+    overflow-y: auto;
+    max-height: calc(80vh - 40px);
+  }
+  
+  .reference-table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+  }
+  
+  .reference-table th {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 2px solid #444;
+    color: #888;
+    font-weight: 600;
+  }
+  
+  .reference-table td {
+    padding: 8px;
+    border-bottom: 1px solid #333;
+  }
+  
+  .reference-table .op-cell {
+    font-size: 16px;
+    text-align: center;
   }
   
   #info {
@@ -218,6 +345,14 @@
     background: #45a049;
   }
   
+  button.toggle {
+    background: #6366f1;
+  }
+  
+  button.toggle:hover {
+    background: #4f46e5;
+  }
+  
   #status {
     position: fixed;
     bottom: 20px;
@@ -240,17 +375,18 @@
 </head>
 <body>
   <div id="info">
-    <strong>🌌 Quantum Operator Network</strong><br>
-    • Add nodes with buttons<br>
-    • Connect: drag output → input<br>
-    • Select operator when connecting<br>
-    • One-to-many & many-to-one allowed
+    <strong>🌌 Quantum E.O. Physics Editor</strong><br>
+    • Nodes show synthesis proximity<br>
+    • Phasepost badges track position<br>
+    • Operators predict emergence<br>
+    • Reference table for physics mapping
   </div>
   
   <div id="buttons">
     <button onclick="addNode('qubit')">⚛️ Add Qubit</button>
     <button onclick="addNode('entangled')">🔄 Add Entangled</button>
     <button onclick="addNode('field')">👻 Add Field</button>
+    <button class="toggle" onclick="toggleReference()">📊 Reference</button>
   </div>
   
   <div id="canvas"></div>
@@ -259,6 +395,26 @@
   <div id="operator-selector">
     <div id="operator-selector-header">Choose Quantum Operator</div>
     <div id="operator-selector-content"></div>
+  </div>
+  
+  <!-- Reference Panel -->
+  <div id="reference-panel" class="collapsed">
+    <div id="reference-header" onclick="toggleReference()">
+      <span>E.O. ↔ Quantum Physics Reference</span>
+      <span id="toggle-icon">▼</span>
+    </div>
+    <div id="reference-content">
+      <table class="reference-table">
+        <thead>
+          <tr>
+            <th>Op</th>
+            <th>E.O. Name</th>
+            <th>Quantum Equivalent</th>
+          </tr>
+        </thead>
+        <tbody id="reference-tbody"></tbody>
+      </table>
+    </div>
   </div>
   
   <div id="status"></div>
@@ -270,33 +426,108 @@ const NODE_TYPES = {
     glyph: '⚛️',
     title: 'Measured Qubit',
     type: 'holon',
-    phase: '[+1, +1, -1]'
+    phasepost: '[+1, +1, -1]',
+    emergence: 0.3
   },
   entangled: {
     glyph: '🔄',
     title: 'Entangled Pair',
     type: 'protogon',
-    phase: '[μ, -1, -1]'
+    phasepost: '[μ, -1, -1]',
+    emergence: 0.6
   },
   field: {
     glyph: '👻',
     title: 'Quantum Field',
     type: 'emanon',
-    phase: '[-1, -1, +1]'
+    phasepost: '[-1, -1, +1]',
+    emergence: 0.2
   }
 };
 
-// Quantum Operators
+// Updated operators with quantum physics mappings
 const OPERATORS = {
-  INS: {symbol: '△', name: 'Prepare',     targets: ['emanon', 'protogon'],          spawns: 'protogon', color: '#4CAF50'},
-  DES: {symbol: '⊡', name: 'Collapse',    targets: ['holon', 'protogon'],           spawns: 'emanon',   color: '#F44336'},
-  ENT: {symbol: '⇆', name: 'Entangle',    targets: ['holon', 'emanon'],             spawns: null,       color: '#2196F3'},
-  DIS: {symbol: '↯', name: 'Disentangle', targets: ['protogon'],                    spawns: 'holon',    color: '#FF9800'},
-  FLP: {symbol: '¬', name: 'Flip',        targets: ['holon'],                       spawns: null,       color: '#9C27B0'},
-  SWP: {symbol: '⇄', name: 'Swap',        targets: ['holon', 'protogon', 'emanon'], spawns: null,       color: '#00BCD4'},
-  PHZ: {symbol: '●', name: 'Phase',       targets: ['holon', 'protogon', 'emanon'], spawns: null,       color: '#FFEB3B'},
-  MES: {symbol: '✜', name: 'Measure',     targets: ['protogon', 'emanon'],          spawns: 'holon',    color: '#795548'},
-  RST: {symbol: '⊙', name: 'Reset',       targets: ['holon', 'protogon', 'emanon'], spawns: 'holon',    color: '#607D8B'}
+  INS: {
+    symbol: '△', 
+    name: 'Instance',
+    physics: 'Wave-Particle Duality',
+    targets: ['emanon', 'protogon'],
+    spawns: 'protogon',
+    color: '#4CAF50',
+    cascade: '→ Pattern recognition'
+  },
+  DES: {
+    symbol: '⊡',
+    name: 'Designation',
+    physics: 'Measurement/Projection',
+    targets: ['holon', 'protogon'],
+    spawns: 'emanon',
+    color: '#F44336',
+    cascade: '→ Wave collapse'
+  },
+  REC: {
+    symbol: '⟳',
+    name: 'Recursion',
+    physics: 'Ladder Operators',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: null,
+    color: '#E91E63',
+    cascade: '→ μ synthesis'
+  },
+  SEG: {
+    symbol: '|',
+    name: 'Segmentation',
+    physics: 'Spectrum Transitions',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: null,
+    color: '#9C27B0',
+    cascade: '→ Discrete states'
+  },
+  NUL: {
+    symbol: '∅',
+    name: 'Nullification',
+    physics: 'Annihilation Operators',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: 'emanon',
+    color: '#673AB7',
+    cascade: '→ Vacuum state'
+  },
+  SYN: {
+    symbol: '*',
+    name: 'Synthesis',
+    physics: 'Composite Systems',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: null,
+    color: '#3F51B5',
+    cascade: '→ √2 emergence'
+  },
+  ALT: {
+    symbol: '∿',
+    name: 'Alternation',
+    physics: 'Non-commuting Observables',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: null,
+    color: '#2196F3',
+    cascade: '→ Uncertainty rhythm'
+  },
+  SUP: {
+    symbol: '※',
+    name: 'Superposition',
+    physics: 'Quantum Superposition',
+    targets: ['protogon', 'emanon'],
+    spawns: 'holon',
+    color: '#00BCD4',
+    cascade: '→ Multiple states'
+  },
+  CON: {
+    symbol: '☯',
+    name: 'Constitution',
+    physics: 'Quantum Entanglement',
+    targets: ['holon', 'protogon', 'emanon'],
+    spawns: null,
+    color: '#009688',
+    cascade: '→ τ continuity'
+  }
 };
 
 let nodeCount = 0;
@@ -329,36 +560,34 @@ jsPlumb.ready(() => {
     }
   });
   
-  // Set container
   jsPlumbInstance.setContainer(document.getElementById('canvas'));
   
   // Build operator selector
   buildOperatorSelector();
   
+  // Build reference table
+  buildReferenceTable();
+  
   // Handle connections
   jsPlumbInstance.bind('beforeDrop', (info) => {
-    // Store pending connection info
     pendingConnection = {
       source: info.sourceId,
       target: info.targetId,
       connection: info.connection
     };
     
-    // Show operator selector
     showOperatorSelector();
-    
-    // Return false to prevent immediate connection
     return false;
   });
   
-  // Handle clicks outside to close selector
+  // Handle clicks outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#operator-selector') && !e.target.closest('.endpoint')) {
       hideOperatorSelector();
     }
   });
   
-  // Add some initial nodes
+  // Add initial nodes
   setTimeout(() => {
     addNode('qubit', 100, 200);
     addNode('entangled', 400, 100);
@@ -366,7 +595,7 @@ jsPlumb.ready(() => {
   }, 100);
 });
 
-// Build operator selector options
+// Build operator selector with predictions
 function buildOperatorSelector() {
   const content = document.getElementById('operator-selector-content');
   
@@ -376,8 +605,11 @@ function buildOperatorSelector() {
     option.dataset.op = key;
     option.innerHTML = `
       <span class="op-symbol">${op.symbol}</span>
-      <span class="op-name">${op.name}</span>
-      <span class="op-desc">${op.spawns ? `→ ${op.spawns}` : 'transform'}</span>
+      <div class="op-info">
+        <div class="op-name">${op.name}</div>
+        <div class="op-physics">${op.physics}</div>
+      </div>
+      <span class="op-prediction">${op.cascade}</span>
     `;
     
     option.addEventListener('click', () => selectOperator(key));
@@ -385,26 +617,61 @@ function buildOperatorSelector() {
   }
 }
 
-// Show operator selector
+// Build reference table
+function buildReferenceTable() {
+  const tbody = document.getElementById('reference-tbody');
+  
+  for (const [key, op] of Object.entries(OPERATORS)) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td class="op-cell">${op.symbol}</td>
+      <td>${op.name}</td>
+      <td>${op.physics}</td>
+    `;
+    tbody.appendChild(row);
+  }
+}
+
+// Toggle reference panel
+function toggleReference() {
+  const panel = document.getElementById('reference-panel');
+  const icon = document.getElementById('toggle-icon');
+  
+  if (panel.classList.contains('collapsed')) {
+    panel.classList.remove('collapsed');
+    icon.textContent = '▲';
+  } else {
+    panel.classList.add('collapsed');
+    icon.textContent = '▼';
+  }
+}
+
+// Show operator selector with recommendations
 function showOperatorSelector() {
   if (!pendingConnection) return;
   
   const selector = document.getElementById('operator-selector');
   const targetNode = nodes[pendingConnection.target];
+  const sourceNode = nodes[pendingConnection.source];
   const targetType = targetNode.type;
   
-  // Update operator availability based on target node type
+  // Update operator availability and recommendations
   const options = selector.querySelectorAll('.op-option');
   options.forEach(option => {
     const op = OPERATORS[option.dataset.op];
+    option.classList.remove('recommended', 'disabled');
+    
     if (op.targets.includes(targetType)) {
-      option.classList.remove('disabled');
+      // Check if this operator leads to emergence
+      if (isEmergenceOperator(sourceNode, targetNode, op)) {
+        option.classList.add('recommended');
+      }
     } else {
       option.classList.add('disabled');
     }
   });
   
-  // Position selector near the connection midpoint
+  // Position selector
   const sourceEl = document.getElementById(pendingConnection.source);
   const targetEl = document.getElementById(pendingConnection.target);
   const sourceRect = sourceEl.getBoundingClientRect();
@@ -416,6 +683,17 @@ function showOperatorSelector() {
   selector.style.left = midX + 'px';
   selector.style.top = midY + 'px';
   selector.classList.add('show');
+}
+
+// Check if operator leads to emergence
+function isEmergenceOperator(source, target, operator) {
+  // Simple heuristic: REC, SYN, and CON often lead to synthesis
+  if (['REC', 'SYN', 'CON'].includes(Object.keys(OPERATORS).find(k => OPERATORS[k] === operator))) {
+    return true;
+  }
+  
+  // Check if nodes are near synthesis
+  return source.emergence > 0.5 || target.emergence > 0.5;
 }
 
 // Hide operator selector
@@ -431,14 +709,13 @@ function selectOperator(operatorKey) {
   const op = OPERATORS[operatorKey];
   const targetNode = nodes[pendingConnection.target];
   
-  // Check if operator is valid for target
   if (!op.targets.includes(targetNode.type)) {
     showStatus(`Cannot apply ${op.name} to ${targetNode.type}`, '#F44336');
     hideOperatorSelector();
     return;
   }
   
-  // Create the connection with custom styling
+  // Create connection
   const connection = jsPlumbInstance.connect({
     source: pendingConnection.source,
     target: pendingConnection.target,
@@ -450,8 +727,7 @@ function selectOperator(operatorKey) {
       ['Label', {
         label: op.symbol,
         location: 0.5,
-        cssClass: 'connection-label',
-        id: 'label'
+        cssClass: 'connection-label'
       }],
       ['Arrow', {
         location: 1,
@@ -462,15 +738,16 @@ function selectOperator(operatorKey) {
     ]
   });
   
-  // Store operator data
   connection.operator = operatorKey;
   
-  // Apply transformation if needed
+  // Update node states
+  updateNodeEmergence(targetNode, op);
+  
+  // Apply transformation
   if (op.spawns) {
     const oldType = targetNode.type;
     targetNode.type = op.spawns;
     
-    // Find matching node config
     for (const [key, config] of Object.entries(NODE_TYPES)) {
       if (config.type === op.spawns) {
         targetNode.config = config;
@@ -479,15 +756,32 @@ function selectOperator(operatorKey) {
       }
     }
     
-    showStatus(`${op.name}: ${oldType} → ${op.spawns}`, op.color);
+    showStatus(`${op.name}: ${oldType} → ${op.spawns} | ${op.physics}`, op.color);
   } else {
-    showStatus(`Applied ${op.name}`, op.color);
+    showStatus(`Applied ${op.name} | ${op.physics}`, op.color);
   }
   
   hideOperatorSelector();
 }
 
-// Add a new node
+// Update node emergence scores
+function updateNodeEmergence(node, operator) {
+  // Increase emergence score based on operator
+  const emergenceBoost = {
+    'REC': 0.3,
+    'SYN': 0.25,
+    'CON': 0.2,
+    'SUP': 0.15
+  };
+  
+  const boost = emergenceBoost[Object.keys(OPERATORS).find(k => OPERATORS[k] === operator)] || 0.1;
+  node.emergence = Math.min(1, node.emergence + boost);
+  
+  // Update visual indicators
+  updateNodeIndicators(node.id);
+}
+
+// Add a new node with E.O. features
 function addNode(type, x, y) {
   const config = NODE_TYPES[type];
   if (!config) return;
@@ -495,7 +789,6 @@ function addNode(type, x, y) {
   nodeCount++;
   const nodeId = `node-${nodeCount}`;
   
-  // Random position if not specified
   if (x === undefined) {
     x = Math.random() * (window.innerWidth - 300) + 100;
     y = Math.random() * (window.innerHeight - 200) + 100;
@@ -508,13 +801,17 @@ function addNode(type, x, y) {
   node.style.left = x + 'px';
   node.style.top = y + 'px';
   node.innerHTML = `
+    <div class="phasepost-badge">${config.phasepost}</div>
     <div class="node-header">
       <div class="node-glyph">${config.glyph}</div>
       <div class="node-title">${config.title}</div>
       <div class="node-type">${config.type}</div>
     </div>
     <div class="node-body">
-      Phase: ${config.phase}
+      E.O. Type: ${config.type}
+    </div>
+    <div class="emergence-indicator">
+      <div class="emergence-bar" style="width: ${config.emergence * 100}%"></div>
     </div>
   `;
   
@@ -524,46 +821,81 @@ function addNode(type, x, y) {
   nodes[nodeId] = {
     id: nodeId,
     type: config.type,
-    config: config
+    config: config,
+    emergence: config.emergence,
+    phasepost: config.phasepost
   };
   
-  // Make it draggable
+  // Make draggable
   jsPlumbInstance.draggable(node, {
     grid: [10, 10]
   });
   
-  // Add source endpoint (output - right side)
+  // Add endpoints
   jsPlumbInstance.addEndpoint(node, {
     anchor: 'Right',
     isSource: true,
-    maxConnections: -1,  // Allow multiple outgoing connections
+    maxConnections: -1,
     cssClass: 'endpoint'
   });
   
-  // Add target endpoint (input - left side)  
   jsPlumbInstance.addEndpoint(node, {
     anchor: 'Left',
     isTarget: true,
-    maxConnections: -1,  // Allow multiple incoming connections
+    maxConnections: -1,
     cssClass: 'endpoint'
   });
   
-  showStatus(`Added ${config.title}`, '#4CAF50');
+  // Update indicators
+  updateNodeIndicators(nodeId);
+  
+  showStatus(`Added ${config.title} | Emergence: ${(config.emergence * 100).toFixed(0)}%`, '#4CAF50');
 }
 
-// Update node display after transformation
+// Update node display
 function updateNodeDisplay(nodeId, config) {
   const node = document.getElementById(nodeId);
+  const nodeData = nodes[nodeId];
+  
   node.querySelector('.node-glyph').textContent = config.glyph;
   node.querySelector('.node-title').textContent = config.title;
   node.querySelector('.node-type').textContent = config.type;
-  node.querySelector('.node-body').innerHTML = `Phase: ${config.phase}`;
+  node.querySelector('.phasepost-badge').textContent = config.phasepost;
   
-  // Animate the change
+  nodeData.phasepost = config.phasepost;
+  
+  // Animate change
   node.style.transform = 'scale(1.1)';
   setTimeout(() => {
     node.style.transform = 'scale(1)';
   }, 300);
+  
+  updateNodeIndicators(nodeId);
+}
+
+// Update node visual indicators
+function updateNodeIndicators(nodeId) {
+  const node = document.getElementById(nodeId);
+  const nodeData = nodes[nodeId];
+  
+  // Update emergence bar
+  const bar = node.querySelector('.emergence-bar');
+  bar.style.width = (nodeData.emergence * 100) + '%';
+  
+  // Update synthesis glow
+  node.classList.remove('synthesis-identity', 'synthesis-space', 'synthesis-time');
+  
+  // Parse phasepost for synthesis values
+  const phasepost = nodeData.phasepost;
+  if (phasepost.includes('μ')) {
+    node.classList.add('synthesis-identity');
+  }
+  if (phasepost.includes('√2')) {
+    node.classList.add('synthesis-space');
+  }
+  if (phasepost.includes('τ')) {
+    node.classList.add('synthesis-time');
+  }
 }
 
 // Show status message
@@ -576,21 +908,6 @@ function showStatus(message, color = '#4CAF50') {
   setTimeout(() => {
     status.classList.remove('show');
   }, 3000);
-}
-
-// Remove all connections
-function clearConnections() {
-  jsPlumbInstance.deleteEveryConnection();
-  showStatus('Cleared all connections', '#FF9800');
-}
-
-// Remove all nodes
-function clearAll() {
-  jsPlumbInstance.reset();
-  document.getElementById('canvas').innerHTML = '';
-  nodeCount = 0;
-  nodes = {};
-  showStatus('Cleared everything', '#F44336');
 }
 </script>
 </body>
