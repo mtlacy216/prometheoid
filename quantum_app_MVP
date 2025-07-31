@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Node Editor - Operator Connections</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #1a1a1a;
+    color: white;
+    overflow: hidden;
+  }
+  
+  #canvas {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    background: #0d0d0d;
+    background-image: 
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  
+  .node {
+    position: absolute;
+    background: #2a2a2a;
+    border: 2px solid #444;
+    border-radius: 12px;
+    min-width: 180px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    cursor: move;
+    transition: all 0.2s;
+  }
+  
+  .node:hover {
+    border-color: #666;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+  }
+  
+  .node-header {
+    padding: 12px 16px;
+    background: #1a1a1a;
+    border-radius: 10px 10px 0 0;
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .node-glyph {
+    font-size: 24px;
+  }
+  
+  .node-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .node-type {
+    font-size: 10px;
+    color: #888;
+    background: #0a0a0a;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  
+  .node-body {
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #888;
+  }
+  
+  /* jsPlumb endpoints */
+  .endpoint {
+    width: 16px;
+    height: 16px;
+    background: #666;
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: crosshair;
+  }
+  
+  .endpoint:hover {
+    background: #4CAF50;
+    border-color: #4CAF50;
+  }
+  
+  /* Connection labels */
+  .connection-label {
+    background: #2a2a2a;
+    border: 1px solid #666;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .connection-label:hover {
+    background: #3a3a3a;
+    border-color: #888;
+  }
+  
+  /* Operator Selector */
+  #operator-selector {
+    position: absolute;
+    background: #2a2a2a;
+    border: 2px solid #666;
+    border-radius: 8px;
+    padding: 0;
+    display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+    z-index: 1000;
+    min-width: 200px;
+  }
+  
+  #operator-selector.show {
+    display: block;
+  }
+  
+  #operator-selector-header {
+    padding: 10px 15px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #444;
+    border-radius: 6px 6px 0 0;
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  #operator-selector-content {
+    padding: 8px;
+  }
+  
+  .op-option {
+    padding: 10px 15px;
+    margin: 2px 0;
+    background: #3a3a3a;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    transition: all 0.1s;
+    border: 1px solid transparent;
+  }
+  
+  .op-option:hover {
+    background: #4a4a4a;
+    transform: translateX(2px);
+  }
+  
+  .op-option.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: #555;
+  }
+  
+  .op-option.disabled:hover {
+    background: #3a3a3a;
+    transform: none;
+  }
+  
+  .op-symbol {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+  }
+  
+  .op-name {
+    font-size: 14px;
+  }
+  
+  .op-desc {
+    font-size: 11px;
+    color: #888;
+    margin-left: auto;
+  }
+  
+  #info {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.9);
+    padding: 15px 20px;
+    border-radius: 8px;
+    z-index: 1000;
+    max-width: 300px;
+  }
+  
+  #buttons {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background: #4CAF50;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  button:hover {
+    background: #45a049;
+  }
+  
+  #status {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  #status.show {
+    opacity: 1;
+  }
+</style>
+<!-- jsPlumb -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js"></script>
+</head>
+<body>
+  <div id="info">
+    <strong>🌌 Quantum Operator Network</strong><br>
+    • Add nodes with buttons<br>
+    • Connect: drag output → input<br>
+    • Select operator when connecting<br>
+    • One-to-many & many-to-one allowed
+  </div>
+  
+  <div id="buttons">
+    <button onclick="addNode('qubit')">⚛️ Add Qubit</button>
+    <button onclick="addNode('entangled')">🔄 Add Entangled</button>
+    <button onclick="addNode('field')">👻 Add Field</button>
+  </div>
+  
+  <div id="canvas"></div>
+  
+  <!-- Operator Selector -->
+  <div id="operator-selector">
+    <div id="operator-selector-header">Choose Quantum Operator</div>
+    <div id="operator-selector-content"></div>
+  </div>
+  
+  <div id="status"></div>
+
+<script>
+// Node types configuration
+const NODE_TYPES = {
+  qubit: {
+    glyph: '⚛️',
+    title: 'Measured Qubit',
+    type: 'holon',
+    phase: '[+1, +1, -1]'
+  },
+  entangled: {
+    glyph: '🔄',
+    title: 'Entangled Pair',
+    type: 'protogon',
+    phase: '[μ, -1, -1]'
+  },
+  field: {
+    glyph: '👻',
+    title: 'Quantum Field',
+    type: 'emanon',
+    phase: '[-1, -1, +1]'
+  }
+};
+
+// Quantum Operators
+const OPERATORS = {
+  INS: {symbol: '△', name: 'Prepare',     targets: ['emanon', 'protogon'],          spawns: 'protogon', color: '#4CAF50'},
+  DES: {symbol: '⊡', name: 'Collapse',    targets: ['holon', 'protogon'],           spawns: 'emanon',   color: '#F44336'},
+  ENT: {symbol: '⇆', name: 'Entangle',    targets: ['holon', 'emanon'],             spawns: null,       color: '#2196F3'},
+  DIS: {symbol: '↯', name: 'Disentangle', targets: ['protogon'],                    spawns: 'holon',    color: '#FF9800'},
+  FLP: {symbol: '¬', name: 'Flip',        targets: ['holon'],                       spawns: null,       color: '#9C27B0'},
+  SWP: {symbol: '⇄', name: 'Swap',        targets: ['holon', 'protogon', 'emanon'], spawns: null,       color: '#00BCD4'},
+  PHZ: {symbol: '●', name: 'Phase',       targets: ['holon', 'protogon', 'emanon'], spawns: null,       color: '#FFEB3B'},
+  MES: {symbol: '✜', name: 'Measure',     targets: ['protogon', 'emanon'],          spawns: 'holon',    color: '#795548'},
+  RST: {symbol: '⊙', name: 'Reset',       targets: ['holon', 'protogon', 'emanon'], spawns: 'holon',    color: '#607D8B'}
+};
+
+let nodeCount = 0;
+let jsPlumbInstance = null;
+let pendingConnection = null;
+let nodes = {};
+
+// Initialize jsPlumb
+jsPlumb.ready(() => {
+  jsPlumbInstance = jsPlumb.getInstance({
+    Container: 'canvas',
+    Connector: ['Bezier', { curviness: 80 }],
+    PaintStyle: {
+      stroke: '#666',
+      strokeWidth: 3
+    },
+    HoverPaintStyle: {
+      stroke: '#888',
+      strokeWidth: 4
+    },
+    EndpointStyle: {
+      fill: '#666',
+      stroke: '#333',
+      strokeWidth: 2,
+      radius: 8
+    },
+    EndpointHoverStyle: {
+      fill: '#4CAF50',
+      stroke: '#4CAF50'
+    }
+  });
+  
+  // Set container
+  jsPlumbInstance.setContainer(document.getElementById('canvas'));
+  
+  // Build operator selector
+  buildOperatorSelector();
+  
+  // Handle connections
+  jsPlumbInstance.bind('beforeDrop', (info) => {
+    // Store pending connection info
+    pendingConnection = {
+      source: info.sourceId,
+      target: info.targetId,
+      connection: info.connection
+    };
+    
+    // Show operator selector
+    showOperatorSelector();
+    
+    // Return false to prevent immediate connection
+    return false;
+  });
+  
+  // Handle clicks outside to close selector
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#operator-selector') && !e.target.closest('.endpoint')) {
+      hideOperatorSelector();
+    }
+  });
+  
+  // Add some initial nodes
+  setTimeout(() => {
+    addNode('qubit', 100, 200);
+    addNode('entangled', 400, 100);
+    addNode('field', 400, 300);
+  }, 100);
+});
+
+// Build operator selector options
+function buildOperatorSelector() {
+  const content = document.getElementById('operator-selector-content');
+  
+  for (const [key, op] of Object.entries(OPERATORS)) {
+    const option = document.createElement('div');
+    option.className = 'op-option';
+    option.dataset.op = key;
+    option.innerHTML = `
+      <span class="op-symbol">${op.symbol}</span>
+      <span class="op-name">${op.name}</span>
+      <span class="op-desc">${op.spawns ? `→ ${op.spawns}` : 'transform'}</span>
+    `;
+    
+    option.addEventListener('click', () => selectOperator(key));
+    content.appendChild(option);
+  }
+}
+
+// Show operator selector
+function showOperatorSelector() {
+  if (!pendingConnection) return;
+  
+  const selector = document.getElementById('operator-selector');
+  const targetNode = nodes[pendingConnection.target];
+  const targetType = targetNode.type;
+  
+  // Update operator availability based on target node type
+  const options = selector.querySelectorAll('.op-option');
+  options.forEach(option => {
+    const op = OPERATORS[option.dataset.op];
+    if (op.targets.includes(targetType)) {
+      option.classList.remove('disabled');
+    } else {
+      option.classList.add('disabled');
+    }
+  });
+  
+  // Position selector near the connection midpoint
+  const sourceEl = document.getElementById(pendingConnection.source);
+  const targetEl = document.getElementById(pendingConnection.target);
+  const sourceRect = sourceEl.getBoundingClientRect();
+  const targetRect = targetEl.getBoundingClientRect();
+  
+  const midX = (sourceRect.right + targetRect.left) / 2;
+  const midY = (sourceRect.top + targetRect.top) / 2;
+  
+  selector.style.left = midX + 'px';
+  selector.style.top = midY + 'px';
+  selector.classList.add('show');
+}
+
+// Hide operator selector
+function hideOperatorSelector() {
+  document.getElementById('operator-selector').classList.remove('show');
+  pendingConnection = null;
+}
+
+// Select an operator
+function selectOperator(operatorKey) {
+  if (!pendingConnection) return;
+  
+  const op = OPERATORS[operatorKey];
+  const targetNode = nodes[pendingConnection.target];
+  
+  // Check if operator is valid for target
+  if (!op.targets.includes(targetNode.type)) {
+    showStatus(`Cannot apply ${op.name} to ${targetNode.type}`, '#F44336');
+    hideOperatorSelector();
+    return;
+  }
+  
+  // Create the connection with custom styling
+  const connection = jsPlumbInstance.connect({
+    source: pendingConnection.source,
+    target: pendingConnection.target,
+    paintStyle: {
+      stroke: op.color || '#666',
+      strokeWidth: 3
+    },
+    overlays: [
+      ['Label', {
+        label: op.symbol,
+        location: 0.5,
+        cssClass: 'connection-label',
+        id: 'label'
+      }],
+      ['Arrow', {
+        location: 1,
+        width: 12,
+        length: 12,
+        foldback: 0.8
+      }]
+    ]
+  });
+  
+  // Store operator data
+  connection.operator = operatorKey;
+  
+  // Apply transformation if needed
+  if (op.spawns) {
+    const oldType = targetNode.type;
+    targetNode.type = op.spawns;
+    
+    // Find matching node config
+    for (const [key, config] of Object.entries(NODE_TYPES)) {
+      if (config.type === op.spawns) {
+        targetNode.config = config;
+        updateNodeDisplay(pendingConnection.target, config);
+        break;
+      }
+    }
+    
+    showStatus(`${op.name}: ${oldType} → ${op.spawns}`, op.color);
+  } else {
+    showStatus(`Applied ${op.name}`, op.color);
+  }
+  
+  hideOperatorSelector();
+}
+
+// Add a new node
+function addNode(type, x, y) {
+  const config = NODE_TYPES[type];
+  if (!config) return;
+  
+  nodeCount++;
+  const nodeId = `node-${nodeCount}`;
+  
+  // Random position if not specified
+  if (x === undefined) {
+    x = Math.random() * (window.innerWidth - 300) + 100;
+    y = Math.random() * (window.innerHeight - 200) + 100;
+  }
+  
+  // Create node element
+  const node = document.createElement('div');
+  node.className = 'node';
+  node.id = nodeId;
+  node.style.left = x + 'px';
+  node.style.top = y + 'px';
+  node.innerHTML = `
+    <div class="node-header">
+      <div class="node-glyph">${config.glyph}</div>
+      <div class="node-title">${config.title}</div>
+      <div class="node-type">${config.type}</div>
+    </div>
+    <div class="node-body">
+      Phase: ${config.phase}
+    </div>
+  `;
+  
+  document.getElementById('canvas').appendChild(node);
+  
+  // Store node data
+  nodes[nodeId] = {
+    id: nodeId,
+    type: config.type,
+    config: config
+  };
+  
+  // Make it draggable
+  jsPlumbInstance.draggable(node, {
+    grid: [10, 10]
+  });
+  
+  // Add source endpoint (output - right side)
+  jsPlumbInstance.addEndpoint(node, {
+    anchor: 'Right',
+    isSource: true,
+    maxConnections: -1,  // Allow multiple outgoing connections
+    cssClass: 'endpoint'
+  });
+  
+  // Add target endpoint (input - left side)  
+  jsPlumbInstance.addEndpoint(node, {
+    anchor: 'Left',
+    isTarget: true,
+    maxConnections: -1,  // Allow multiple incoming connections
+    cssClass: 'endpoint'
+  });
+  
+  showStatus(`Added ${config.title}`, '#4CAF50');
+}
+
+// Update node display after transformation
+function updateNodeDisplay(nodeId, config) {
+  const node = document.getElementById(nodeId);
+  node.querySelector('.node-glyph').textContent = config.glyph;
+  node.querySelector('.node-title').textContent = config.title;
+  node.querySelector('.node-type').textContent = config.type;
+  node.querySelector('.node-body').innerHTML = `Phase: ${config.phase}`;
+  
+  // Animate the change
+  node.style.transform = 'scale(1.1)';
+  setTimeout(() => {
+    node.style.transform = 'scale(1)';
+  }, 300);
+}
+
+// Show status message
+function showStatus(message, color = '#4CAF50') {
+  const status = document.getElementById('status');
+  status.textContent = message;
+  status.style.background = color;
+  status.classList.add('show');
+  
+  setTimeout(() => {
+    status.classList.remove('show');
+  }, 3000);
+}
+
+// Remove all connections
+function clearConnections() {
+  jsPlumbInstance.deleteEveryConnection();
+  showStatus('Cleared all connections', '#FF9800');
+}
+
+// Remove all nodes
+function clearAll() {
+  jsPlumbInstance.reset();
+  document.getElementById('canvas').innerHTML = '';
+  nodeCount = 0;
+  nodes = {};
+  showStatus('Cleared everything', '#F44336');
+}
+</script>
+</body>
+</html>
