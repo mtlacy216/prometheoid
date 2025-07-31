@@ -471,6 +471,7 @@ for (const [key, entity] of Object.entries(ENTITIES)) {
 
 // 5. Build operator selector
 const opSelector = document.getElementById('operator-selector');
+const opSelectorContent = document.getElementById('operator-selector-content');
 for (const [key, op] of Object.entries(OPERATORS)) {
   const option = document.createElement('div');
   option.className = 'op-option';
@@ -487,7 +488,7 @@ for (const [key, op] of Object.entries(OPERATORS)) {
     }
   });
   
-  opSelector.appendChild(option);
+  opSelectorContent.appendChild(option);
 }
 
 // 6. Canvas setup
@@ -754,7 +755,6 @@ function hideOperatorSelector() {
   selector.classList.remove('show');
   
   // Reset all options
-  const opSelectorContent = document.getElementById('operator-selector-content');
   opSelectorContent.querySelectorAll('.op-option').forEach(option => {
     option.style.display = 'flex';
     option.style.opacity = '1';
