@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Change Log // Nashville — Commit #000</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --paper:#fbfbfb;--ink:#161616;--audit:#e5e7eb;--flag:#ef4444;--warn:#fbbf24;--glitch:#2563eb;--mint:#10b981; }
+    body{background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+    .stamp{font-family:'JetBrains Mono',monospace;letter-spacing:.5px;background:var(--flag);color:#fff;padding:2px 8px;border-radius:4px;font-size:.7rem;user-select:none;box-shadow:0 2px 6px rgba(239,68,68,.25)}
+    .diff-code{counter-reset:line;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.65;white-space:pre-wrap;}
+    .diff-code span{display:block;padding-left:4rem;position:relative;border-left:3px solid transparent;}
+    .diff-code span::before{counter-increment:line;content:counter(line);position:absolute;left:0;width:3rem;text-align:right;color:rgba(255,255,255,.35);} 
+    .diff-del{background:rgba(239,68,68,.15);border-color:var(--flag);color:#fecaca;}
+    .diff-add{background:rgba(16,185,129,.18);border-color:var(--mint);color:#bbf7d0;}
+    .scanlines::before{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(180deg,transparent 0 2px,rgba(0,0,0,.04) 2px 4px);pointer-events:none}
+    .glitch:hover{animation:glitch .7s infinite}
+    @keyframes glitch{0%,100%{text-shadow:0 0}20%{text-shadow:2px 0 var(--glitch),-2px 0 var(--flag)}40%{text-shadow:-1px 0 var(--glitch),1px 0 var(--flag)}60%{text-shadow:1px 0 var(--glitch),-1px 0 var(--flag)}80%{text-shadow:-2px 0 var(--glitch),2px 0 var(--flag)}}
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+  <!-- HERO -->
+  <section class="relative pt-28 pb-20 px-6 md:px-24 border-b border-dashed border-[var(--audit)] bg-gradient-to-br from-white via-[#fafafa] to-[#f6f6ff] overflow-hidden">
+    <div class="max-w-4xl mx-auto relative z-10">
+      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight font-mono glitch">CHANGE LOG <span class="text-[var(--glitch)]">// NASHVILLE</span></h1>
+      <p class="text-sm md:text-base mt-2 opacity-70 font-mono">Commit #000 — Initial dump</p>
+      <p class="mt-6 max-w-xl text-lg leading-relaxed">We log institutional change — <span class="font-semibold">because the city forgets</span>.</p>
+      <p class="mt-4"><span class="stamp">UPDATE DEFERRED (Remind Us Never)</span></p>
+    </div>
+    <div class="absolute inset-0 scanlines"></div>
+  </section>
+  <!-- SIGN‑UP -->
+  <section class="py-16 px-6 md:px-24 bg-gradient-to-b from-white to-[#f9fafb]">
+    <div class="max-w-3xl mx-auto bg-white/70 backdrop-blur-sm shadow-xl border border-[var(--audit)] rounded-2xl p-8">
+      <h2 class="text-2xl font-semibold mb-1">watch --log --follow</h2>
+      <p class="text-sm mb-6 opacity-80">Get diffs, patches & flagged issues before they're memory‑holed.</p>
+      <form class="flex flex-col sm:flex-row gap-4">
+        <input type="email" placeholder="you@example.com" class="flex-1 border border-[var(--audit)] p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--glitch)]" />
+        <button class="bg-[var(--glitch)] text-white px-6 py-3 rounded-md font-medium hover:bg-blue-700 transition">Subscribe</button>
+      </form>
+    </div>
+  </section>
+  <!-- DIFF VIEWER -->
+  <section class="px-6 md:px-24 py-20 border-y border-dashed border-[var(--audit)] bg-white">
+    <h3 class="font-semibold text-xl mb-8">Diff Viewer — Ordinance 98‑1037 <small class="text-sm opacity-60">1999 ↔ 2025</small></h3>
+    <div class="relative rounded-3xl shadow-2xl overflow-hidden bg-[#0e1119] ring-1 ring-black/5">
+      <div class="flex items-center gap-2 px-4 py-2 bg-[#161b22]">
+        <span class="w-3 h-3 rounded-full bg-red-400"></span><span class="w-3 h-3 rounded-full bg-amber-400"></span><span class="w-3 h-3 rounded-full bg-green-500"></span>
+        <span class="ml-4 text-xs font-mono text-white/60 tracking-wide">/legislation/ordinance-98-1037.diff</span>
+      </div>
+      <pre class="diff-code px-6 py-6 text-white/90 overflow-x-auto">
+<span class="diff-del">- The District Management Corporation <b>shall</b> submit its budget annually.</span>
+<span class="diff-add">+ The District Management Corporation <i>may</i> submit its budget at its discretion.</span>
+<span class="text-white/60">  # Section 4.3 revised July 2004 — no council record found.</span>
+      </pre>
+    </div>
+  </section>
+  <!-- ISSUE TRACKER -->
+  <section class="px-6 md:px-24 py-20 bg-gradient-to-b from-[#ffffff] via-[#fafafa] to-[#f5f5ff]">
+    <h3 class="text-xl font-semibold mb-8">Issue Tracker</h3>
+    <div class="grid md:grid-cols-3 gap-8">
+      <div>
+        <h4 class="mb-3 font-medium">Known Issues (Open)</h4>
+        <div class="space-y-3">
+          <div class="bg-white border border-[var(--audit)] shadow-sm rounded-xl p-4 flex justify-between items-start hover:shadow-md transition"><span>Budgets missing 2005‑2024</span><span class="text-[var(--flag)] text-xs font-mono">6,314 d</span></div>
+          <div class="bg-white border border-[var(--audit)] shadow-sm rounded-xl p-4 flex justify-between items-start hover:shadow-md transition"><span>Unauthorized parking‑garage demolition</span><span class="text-[var(--flag)] text-xs font-mono">147 d</span></div>
+        </div>
+      </div>
+      <div>
+        <h4 class="mb-3 font-medium">Patch Proposed</h4>
+        <div class="space-y-3"><div class="bg-white border border-[var(--audit)] shadow-sm rounded-xl p-4 flex justify-between items-start hover:shadow-md transition"><span>Council audit motion BL2025‑846</span><span class="text-[var(--warn)] text-xs font-mono">vote 7/15</span></div></div>
+      </div>
+      <div>
+        <h4 class="mb-3 font-medium">Resolved / Recurring</h4>
+        <div class="space-y-3"><div class="bg-white border border-[var(--audit)] shadow-sm rounded-xl p-4 flex justify-between items-start hover:shadow-md transition"><span>FOIA backlog 2024</span><span class="text-[var(--mint)] text-xs font-mono">closed</span></div></div>
+      </div>
+    </div>
+  </section>
+  <!-- FOOTER -->
+  <footer class="mt-auto bg-[var(--ink)] text-white py-12 px-6 md:px-24 text-sm"><div class="flex flex-col sm:flex-row justify-between gap-4"><p>Logged, flagged, looping. Close the ticket if you dare.</p><p>&copy; 2025 Change Log // Nashville — CC‑BY 4.0</p></div></footer>
+</body>
+</html>
