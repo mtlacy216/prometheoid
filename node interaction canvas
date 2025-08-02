@@ -1079,6 +1079,7 @@
                 <button onclick="App.zoomIn()" title="Zoom in">+</button>
                 <button onclick="App.resetZoom()" title="Reset to 100%">100%</button>
                 <button onclick="App.fitToContent()" title="Fit all content">Fit</button>
+                <button onclick="App.autoLayout()" title="Auto-arrange flows">Tidy</button>
             </div>
         </div>
         
@@ -1162,6 +1163,7 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
     <script>
         // Create App namespace
         window.App = {};
@@ -2470,6 +2472,40 @@
             
             updateCanvasTransform();
             updateZoomDisplay();
+        };
+
+        App.autoLayout = function() {
+            if (state.flows.length === 0) return;
+
+            const g = new dagre.graphlib.Graph();
+            g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 100 });
+            g.setDefaultEdgeLabel(() => ({}));
+
+            state.flows.forEach(flow => {
+                const width = flow.element.offsetWidth;
+                const height = flow.element.offsetHeight;
+                g.setNode(flow.id, { width, height });
+            });
+
+            state.connections.forEach(conn => {
+                if (conn.outputOwner && conn.inputOwner) {
+                    g.setEdge(conn.outputOwner.id, conn.inputOwner.id);
+                }
+            });
+
+            dagre.layout(g);
+
+            g.nodes().forEach(id => {
+                const node = g.node(id);
+                const flow = state.flows.find(f => f.id === id);
+                if (flow) {
+                    flow.element.style.left = (node.x - node.width / 2) + 'px';
+                    flow.element.style.top = (node.y - node.height / 2) + 'px';
+                }
+            });
+
+            scheduleUpdate(() => updateAllConnections());
+            App.fitToContent();
         };
         
         App.toggleFlow = function(flowId) {
