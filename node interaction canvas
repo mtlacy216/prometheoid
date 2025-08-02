@@ -2175,6 +2175,7 @@
                         }
                         return true;
                     });
+                    // Remove any visible connections tied to this flow
                     state.visibleConnections = state.visibleConnections.filter(conn => conn.outputOwner !== item && conn.inputOwner !== item);
 
                     item.element.remove();
