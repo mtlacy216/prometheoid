@@ -949,9 +949,9 @@
         }
 
         /* Role Filter Bar */
+        .group-filter-bar,
         .role-filter-bar {
             position: absolute;
-            top: 20px;
             right: 20px;
             background: rgba(26, 26, 26, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -964,6 +964,14 @@
             z-index: 1000;
         }
 
+        .group-filter-bar {
+            top: 20px;
+        }
+
+        .role-filter-bar {
+            top: 70px;
+        }
+
         .filter-label {
             font-size: 12px;
             color: #888;
@@ -971,14 +979,16 @@
             letter-spacing: 0.5px;
         }
 
-        .role-chips {
+        .role-chips,
+        .group-chips {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             max-width: 600px;
         }
 
-        .role-chip {
+        .role-chip,
+        .group-chip {
             background: #2a2a2a;
             border: 1px solid #3a3a3a;
             border-radius: 16px;
@@ -990,18 +1000,21 @@
             white-space: nowrap;
         }
 
-        .role-chip:hover {
+        .role-chip:hover,
+        .group-chip:hover {
             background: #3a3a3a;
             border-color: #4a4a4a;
         }
 
-        .role-chip.active {
+        .role-chip.active,
+        .group-chip.active {
             background: #4a9eff;
             border-color: #3a8eef;
             color: #fff;
         }
 
-        .role-chip.active:hover {
+        .role-chip.active:hover,
+        .group-chip.active:hover {
             background: #3a8eef;
             border-color: #2a7edf;
         }
@@ -1112,6 +1125,15 @@
             <div class="minimap-viewport"></div>
         </div>
 
+        <div class="group-filter-bar">
+            <div class="filter-label">Filter by group:</div>
+            <div class="group-chips">
+                <div class="group-chip active" data-group="all" onclick="App.toggleGroupFilter('all')">
+                    All Groups
+                </div>
+            </div>
+        </div>
+
         <div class="role-filter-bar">
             <div class="filter-label">Filter by role:</div>
             <div class="role-chips">
@@ -1132,7 +1154,7 @@
             • Connect: drag from ▶ to ◀<br>
             • Change type: click operator symbol<br>
             • Rename: double-click label or click ✎<br>
-            • Filter by role to focus view<br>
+            • Filter by role or group to focus view<br>
             <hr>
             <strong>Shortcuts:</strong> [F] Fit • [R] Reset filter • [Delete] Remove
         </div>
@@ -1246,6 +1268,9 @@
             activeRoles: new Set(['all']),
             filterMode: 'highlight',
             availableRoles: new Set(),
+            // Group filtering
+            activeGroups: new Set(['all']),
+            availableGroups: new Set(),
         };
         
         // Sample data
@@ -1322,8 +1347,9 @@
             updateFlowIcon(flow3);
             updateRoleDisplay(flow3.nodes[0]);
             
-            // Update role filter after creating flows
+            // Update filters after creating flows
             updateAvailableRoles();
+            updateAvailableGroups();
             
             // Create a demo connection
             setTimeout(() => {
@@ -1784,6 +1810,7 @@
             
             // Update available roles when flow is populated
             updateAvailableRoles();
+            updateAvailableGroups();
         }
         
         function createNodeInFlow(flow, type, data) {
@@ -2376,6 +2403,14 @@
                         return true;
                     });
 
+                    if (state.groups.includes(item)) {
+                        item.items.forEach(it => {
+                            if (state.flows.includes(it) && it.groupId === item.id) {
+                                delete it.groupId;
+                            }
+                        });
+                    }
+
                     item.element.remove();
                     state.flows = state.flows.filter(f => f !== item);
                     state.groups = state.groups.filter(g => g !== item);
@@ -2384,6 +2419,7 @@
 
             state.selectedItems.clear();
             updateAvailableRoles(); // Update roles after deletion
+            updateAvailableGroups();
         }
 
         function serializeFlow(flow) {
@@ -2442,6 +2478,7 @@
                 updateFlowGrammar(flow);
             });
             updateAvailableRoles();
+            updateAvailableGroups();
         }
         
         // Modal
@@ -2580,6 +2617,28 @@
                 roleChips.appendChild(chip);
             });
         }
+
+        function updateAvailableGroups() {
+            state.availableGroups.clear();
+
+            const groupChips = document.querySelector('.group-chips');
+            if (!groupChips) return;
+
+            const allChip = groupChips.querySelector('[data-group="all"]');
+            groupChips.innerHTML = '';
+            groupChips.appendChild(allChip);
+
+            state.groups.forEach(group => {
+                state.availableGroups.add(group.id);
+                const chip = document.createElement('div');
+                chip.className = 'group-chip';
+                chip.setAttribute('data-group', group.id);
+                const header = group.element.querySelector('.group-header');
+                chip.textContent = header ? header.textContent.trim() : group.id;
+                chip.onclick = () => App.toggleGroupFilter(group.id);
+                groupChips.appendChild(chip);
+            });
+        }
         
         function getFlowRoles(flow) {
             const roles = new Set();
@@ -2657,6 +2716,81 @@
                 }
             }
         }
+
+        function applyGroupFilter() {
+            const statusEl = document.querySelector('.filter-status');
+
+            if (state.activeGroups.has('all')) {
+                state.flows.forEach(flow => {
+                    flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
+                });
+                state.groups.forEach(group => {
+                    group.element.classList.remove('dimmed', 'hidden', 'highlighted');
+                });
+                state.connections.forEach(conn => {
+                    conn.group.classList.remove('dimmed', 'hidden');
+                });
+                if (statusEl) statusEl.textContent = '';
+                return;
+            }
+
+            let visibleCount = 0;
+            let totalCount = state.groups.length;
+
+            state.flows.forEach(flow => {
+                const inGroup = state.activeGroups.has(flow.groupId);
+                flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
+
+                if (inGroup) {
+                    flow.element.classList.add('highlighted');
+                } else {
+                    if (state.filterMode === 'hide') {
+                        flow.element.classList.add('hidden');
+                    } else {
+                        flow.element.classList.add('dimmed');
+                    }
+                }
+            });
+
+            state.groups.forEach(group => {
+                const isActive = state.activeGroups.has(group.id);
+                group.element.classList.remove('dimmed', 'hidden', 'highlighted');
+                if (isActive) {
+                    group.element.classList.add('highlighted');
+                    visibleCount++;
+                } else {
+                    if (state.filterMode === 'hide') {
+                        group.element.classList.add('hidden');
+                    } else {
+                        group.element.classList.add('dimmed');
+                        visibleCount++;
+                    }
+                }
+            });
+
+            state.connections.forEach(conn => {
+                const outputVisible = !conn.outputOwner.element.classList.contains('hidden');
+                const inputVisible = !conn.inputOwner.element.classList.contains('hidden');
+                const outputDimmed = conn.outputOwner.element.classList.contains('dimmed');
+                const inputDimmed = conn.inputOwner.element.classList.contains('dimmed');
+
+                conn.group.classList.remove('dimmed', 'hidden');
+
+                if (!outputVisible || !inputVisible) {
+                    conn.group.classList.add('hidden');
+                } else if (outputDimmed && inputDimmed) {
+                    conn.group.classList.add('dimmed');
+                }
+            });
+
+            if (statusEl) {
+                if (state.filterMode === 'hide') {
+                    statusEl.textContent = `Showing ${visibleCount} of ${totalCount} groups`;
+                } else {
+                    statusEl.textContent = `${visibleCount} relevant groups`;
+                }
+            }
+        }
         
         // Export public functions
         App.createNewFlow = function() {
@@ -2691,6 +2825,7 @@
             populateFlow(flow);
             updateFlowIcon(flow);
             updateAvailableRoles(); // Update role filter when new flow is created
+            updateAvailableGroups();
             
             return flow;
         };
@@ -2832,6 +2967,7 @@
                 let itemRoles;
                 if (state.flows.includes(item)) {
                     itemRoles = getFlowRoles(item);
+                    item.groupId = group.id;
                 } else if (state.groups.includes(item)) {
                     itemRoles = new Set(item.roles);
                 } else {
@@ -2868,6 +3004,8 @@
 
             state.selectedItems.clear();
             document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+
+            updateAvailableGroups();
         };
         
         App.exportAsText = function() {
@@ -2946,6 +3084,47 @@
             App.closeModal();
         };
         
+        App.toggleGroupFilter = function(groupId) {
+            const chip = document.querySelector(`[data-group="${groupId}"]`);
+            if (!chip) return;
+
+            if (groupId === 'all') {
+                state.activeGroups.clear();
+                state.activeGroups.add('all');
+                document.querySelectorAll('.group-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            } else {
+                if (state.activeGroups.has('all')) {
+                    state.activeGroups.clear();
+                }
+
+                if (state.activeGroups.has(groupId)) {
+                    state.activeGroups.delete(groupId);
+                    chip.classList.remove('active');
+                } else {
+                    state.activeGroups.add(groupId);
+                    chip.classList.add('active');
+                }
+
+                if (state.activeGroups.size === 0) {
+                    state.activeGroups.add('all');
+                    document.querySelector('[data-group="all"]').classList.add('active');
+                }
+
+                document.querySelector('[data-group="all"]').classList.remove('active');
+            }
+
+            applyGroupFilter();
+            if (!state.activeGroups.has('all')) {
+                state.activeRoles.clear();
+                state.activeRoles.add('all');
+                document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+                const allRole = document.querySelector('[data-role="all"]');
+                if (allRole) allRole.classList.add('active');
+            }
+            applyRoleFilter();
+        };
+
         App.toggleRoleFilter = function(role) {
             const chip = document.querySelector(`[data-role="${role}"]`);
             if (!chip) return;
@@ -2981,12 +3160,21 @@
             }
             
             applyRoleFilter();
+            if (!state.activeRoles.has('all')) {
+                state.activeGroups.clear();
+                state.activeGroups.add('all');
+                document.querySelectorAll('.group-chip').forEach(c => c.classList.remove('active'));
+                const allGroup = document.querySelector('[data-group="all"]');
+                if (allGroup) allGroup.classList.add('active');
+            }
+            applyGroupFilter();
         };
         
         App.updateFilterMode = function() {
             const mode = document.querySelector('input[name="filterMode"]:checked').value;
             state.filterMode = mode;
             applyRoleFilter();
+            applyGroupFilter();
         };
         
         // Initialize when DOM is ready
