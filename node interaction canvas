@@ -308,6 +308,24 @@
             gap: 5px;
         }
 
+        .drag-handle {
+            width: 18px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+
         .flow-control {
             width: 18px;
             height: 18px;
@@ -1690,6 +1708,7 @@
                         <span class="edit-hint">✎</span>
                     </div>
                     <div class="flow-controls">
+                        <div class="drag-handle" title="Drag flow">⠿</div>
                         <div class="flow-control" onclick="App.toggleFlow('${flow.id}')">${flow.collapsed ? '▶' : '▼'}</div>
                     </div>
                 </div>
@@ -1771,15 +1790,15 @@
             const header = el.querySelector('.flow-header');
             
             // Drag from header or flow body (but not from interactive elements)
-            el.addEventListener('mousedown', (e) => {
-                const isInteractive = e.target.classList.contains('flow-label') || 
+            el.addEventListener('pointerdown', (e) => {
+                const isInteractive = e.target.classList.contains('flow-label') ||
                                     e.target.classList.contains('edit-hint') ||
                                     e.target.classList.contains('flow-control') ||
                                     e.target.closest('.node') ||
                                     e.target.classList.contains('port') ||
                                     e.target.tagName === 'INPUT';
-                
-                if (!isInteractive) {
+
+                if (e.target.classList.contains('drag-handle') || !isInteractive) {
                     startDragFlow(e, flow);
                 }
             });
@@ -1971,31 +1990,31 @@
         function startDragFlow(e, flow) {
             if (e.target.classList.contains('port')) return;
             e.stopPropagation();
-            
+            e.preventDefault();
+
             const startX = e.clientX;
             const startY = e.clientY;
             const el = flow.element;
-            const rect = el.getBoundingClientRect();
             const canvasRect = state.canvas.getBoundingClientRect();
-            const offsetX = e.clientX - rect.left;
-            const offsetY = e.clientY - rect.top;
-            
+            const offsetX = ((startX - canvasRect.left - state.panX) / state.zoom) - flow.x;
+            const offsetY = ((startY - canvasRect.top - state.panY) / state.zoom) - flow.y;
+
             let dragStarted = false;
-            
-            const checkDragStart = throttle((e) => {
+
+            const handleDrag = throttle((e) => {
                 const distance = Math.hypot(e.clientX - startX, e.clientY - startY);
-                
+
                 if (distance > state.dragThreshold && !dragStarted) {
                     dragStarted = true;
                     state.draggedItem = flow;
                     el.classList.add('dragging');
                     el.style.cursor = 'grabbing';
                 }
-                
+
                 if (dragStarted) {
                     const x = (e.clientX - canvasRect.left - state.panX) / state.zoom - offsetX;
                     const y = (e.clientY - canvasRect.top - state.panY) / state.zoom - offsetY;
-                    
+
                     el.style.left = x + 'px';
                     el.style.top = y + 'px';
                     flow.x = x;
@@ -2007,20 +2026,23 @@
                     });
                 }
             }, 16);
-            
+
             function stopDrag() {
                 if (dragStarted) {
                     el.classList.remove('dragging');
                     el.style.cursor = '';
                     state.draggedItem = null;
                 }
-                
-                document.removeEventListener('mousemove', checkDragStart);
-                document.removeEventListener('mouseup', stopDrag);
+
+                document.removeEventListener('pointermove', handleDrag);
+                document.removeEventListener('pointerup', stopDrag);
             }
-            
-            document.addEventListener('mousemove', checkDragStart);
-            document.addEventListener('mouseup', stopDrag);
+
+            document.addEventListener('pointermove', handleDrag);
+            document.addEventListener('pointerup', stopDrag);
+            if (e.pointerId) {
+                try { el.setPointerCapture(e.pointerId); } catch (_) {}
+            }
         }
         
         // Connections - Connect first, configure later
