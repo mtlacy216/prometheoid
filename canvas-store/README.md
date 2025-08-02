@@ -21,3 +21,24 @@ Run tests with:
 ```
 node store.test.js
 ```
+
+## Flow Mapper
+
+`flowMapper.js` builds on the store to model flows with triadic roles. Each role (INS, P, REC) can embed an inline value or reference another flow by id.
+
+### Example
+```js
+const { FlowMapper } = require('./flowMapper');
+const mapper = new FlowMapper();
+mapper.addFlow('f1');
+mapper.addFlow('f2');
+mapper.setRole('f1', 'INS', { type: 'inline', value: 'Manager' });
+mapper.setRole('f1', 'P', { type: 'flow', reference: 'f2' });
+mapper.setRole('f1', 'REC', { type: 'inline', value: 'Report' });
+console.log(mapper.isTriadComplete('f1')); // true
+```
+
+Run tests:
+```bash
+node flowMapper.test.js
+```
