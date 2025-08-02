@@ -561,7 +561,6 @@
         .connection-group:hover .connection {
             stroke-width: 3;
             opacity: 1;
-            filter: drop-shadow(0 0 4px currentColor);
         }
 
         .connection.temp {
@@ -672,7 +671,9 @@
             position: absolute;
             top: 20px;
             left: 20px;
+            right: 20px;
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             z-index: 1000;
         }
@@ -699,6 +700,22 @@
         button:hover {
             background: #3a3a3a;
             border-color: #4a4a4a;
+        }
+
+        @media (max-width: 600px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+            }
+            .control-group {
+                display: flex;
+                flex-wrap: wrap;
+            }
+            .control-group button {
+                flex: 1 1 auto;
+                margin: 2px 0;
+            }
         }
 
         button.active {
@@ -2326,17 +2343,33 @@
         
         function selectItemsInBox(x, y, w, h) {
             state.selectedItems.clear();
-            
+
             state.flows.forEach(flow => {
                 const el = flow.element;
                 const flowX = parseInt(el.style.left);
                 const flowY = parseInt(el.style.top);
                 const flowW = el.offsetWidth;
                 const flowH = el.offsetHeight;
-                
+
                 if (flowX < x + w && flowX + flowW > x &&
                     flowY < y + h && flowY + flowH > y) {
                     state.selectedItems.add(flow);
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+
+            state.groups.forEach(group => {
+                const el = group.element;
+                const gX = parseInt(el.style.left);
+                const gY = parseInt(el.style.top);
+                const gW = el.offsetWidth;
+                const gH = el.offsetHeight;
+
+                if (gX < x + w && gX + gW > x &&
+                    gY < y + h && gY + gH > y) {
+                    state.selectedItems.add(group);
                     el.classList.add('selected');
                 } else {
                     el.classList.remove('selected');
@@ -2359,6 +2392,7 @@
 
                     item.element.remove();
                     state.flows = state.flows.filter(f => f !== item);
+                    state.groups = state.groups.filter(g => g !== item);
                 }
             });
 
@@ -2785,42 +2819,67 @@
         
         App.groupSelected = function() {
             if (state.selectedItems.size < 2) return;
-            
+
+            const id = state.groupIdCounter++;
             const group = {
-                id: 'group-' + state.groupIdCounter++,
+                id: 'group-' + id,
                 items: Array.from(state.selectedItems),
+                roles: new Set(),
                 element: null
             };
-            
+
             let minX = Infinity, minY = Infinity;
             let maxX = -Infinity, maxY = -Infinity;
-            
+
             group.items.forEach(item => {
                 const el = item.element;
                 const x = parseInt(el.style.left);
                 const y = parseInt(el.style.top);
                 const w = el.offsetWidth;
                 const h = el.offsetHeight;
-                
+
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
                 maxX = Math.max(maxX, x + w);
                 maxY = Math.max(maxY, y + h);
+
+                let itemRoles;
+                if (state.flows.includes(item)) {
+                    itemRoles = getFlowRoles(item);
+                } else if (state.groups.includes(item)) {
+                    itemRoles = new Set(item.roles);
+                } else {
+                    itemRoles = new Set();
+                }
+                itemRoles.forEach(r => group.roles.add(r));
             });
-            
+
+            group.roles = Array.from(group.roles);
+
             const groupEl = document.createElement('div');
             groupEl.className = 'group';
             groupEl.style.left = (minX - 20) + 'px';
             groupEl.style.top = (minY - 20) + 'px';
             groupEl.style.width = (maxX - minX + 40) + 'px';
             groupEl.style.height = (maxY - minY + 40) + 'px';
-            
-            groupEl.innerHTML = `<div class="group-header" contenteditable="true">Group ${state.groupIdCounter}</div>`;
-            
+
+            const roleLabel = group.roles.join(', ') || `Group ${id}`;
+            groupEl.innerHTML = `<div class="group-header" contenteditable="true">${roleLabel}</div>`;
+
+            groupEl.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                if (!e.shiftKey) {
+                    state.selectedItems.clear();
+                    document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+                }
+                state.selectedItems.add(group);
+                groupEl.classList.add('selected');
+            });
+
             state.canvas.insertBefore(groupEl, state.canvas.firstChild);
             group.element = groupEl;
             state.groups.push(group);
-            
+
             state.selectedItems.clear();
             document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
         };
