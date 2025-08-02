@@ -2119,7 +2119,8 @@
                     // Load data into the newly created fields
                     const lastAdded = this.dynamicData[type][this.dynamicData[type].length - 1];
                     if (lastAdded) {
-                        Object.assign(lastAdded, itemData);
+                        const { id: _unusedId, ...fields } = itemData;
+                        Object.assign(lastAdded, fields);
                         
                         // Update form fields
                     const prefixMap = {
