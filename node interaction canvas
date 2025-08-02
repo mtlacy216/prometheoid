@@ -1443,9 +1443,10 @@
             state.panX = x - (x - state.panX) * (newZoom / state.zoom);
             state.panY = y - (y - state.panY) * (newZoom / state.zoom);
             
-           state.zoom = newZoom;
-           updateCanvasTransform();
-           updateZoomDisplay();
+            // Apply zoom and refresh visuals
+            state.zoom = newZoom;
+            updateCanvasTransform();
+            updateZoomDisplay();
             scheduleUpdate(() => {
                 updateAllConnections();
                 updateMinimap();
