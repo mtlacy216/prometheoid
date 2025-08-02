@@ -1,0 +1,3721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Operations Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #FFFFFF;
+            --bg-secondary: #F8F9FA;
+            --bg-tertiary: #E9ECEF;
+            --text-primary: #212529;
+            --text-secondary: #495057;
+            --text-tertiary: #6C757D;
+            --border-color: #DEE2E6;
+            --accent-blue: #0066CC;
+            --accent-green: #00A850;
+            --accent-yellow: #F59E0B;
+            --accent-red: #DC2626;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --spacing: 8px;
+        }
+
+        .org-name-display {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-left: calc(var(--spacing) * 1);
+            padding-left: calc(var(--spacing) * 2);
+            border-left: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .org-name-display:hover {
+            color: var(--accent-blue);
+        }
+
+        .org-name-display.unnamed {
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Terminal Theme */
+        body.theme-terminal {
+            --bg-primary: #0C0C0C;
+            --bg-secondary: #1A1A1A;
+            --bg-tertiary: #262626;
+            --text-primary: #00FF00;
+            --text-secondary: #00CC00;
+            --text-tertiary: #009900;
+            --border-color: #00FF00;
+            --accent-blue: #0099FF;
+            --accent-green: #00FF00;
+            --accent-yellow: #FFFF00;
+            --accent-red: #FF0033;
+        }
+
+        /* Dark Theme */
+        body.theme-dark {
+            --bg-primary: #0F0F0F;
+            --bg-secondary: #1A1A1A;
+            --bg-tertiary: #262626;
+            --text-primary: #E5E5E5;
+            --text-secondary: #A3A3A3;
+            --text-tertiary: #737373;
+            --border-color: #404040;
+            --accent-blue: #3B82F6;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-red: #EF4444;
+        }
+
+        .welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .welcome-content {
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            padding: calc(var(--spacing) * 4);
+        }
+
+        .welcome-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: calc(var(--spacing) * 2);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: calc(var(--spacing) * 4);
+        }
+
+        .welcome-options {
+            display: flex;
+            gap: calc(var(--spacing) * 2);
+            flex-direction: column;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .welcome-option {
+            padding: calc(var(--spacing) * 3);
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 1);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .welcome-option:hover {
+            border-color: var(--accent-blue);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .welcome-option-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: calc(var(--spacing) * 1);
+        }
+
+        .welcome-option-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .app-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+            flex-wrap: wrap;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 4);
+            flex: 1;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            white-space: nowrap;
+        }
+
+        .logo .divider {
+            color: var(--accent-blue);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: calc(var(--spacing) * 1);
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: calc(var(--spacing) * 0.5);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            background: var(--bg-secondary);
+            border-radius: calc(var(--spacing) * 0.5);
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sync-status.needs-download {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-yellow);
+            border: 1px solid var(--accent-yellow);
+        }
+
+        .sync-status.downloaded {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .download-info {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--accent-yellow);
+            color: var(--text-primary);
+            padding: calc(var(--spacing) * 2);
+            border-radius: calc(var(--spacing) * 0.5);
+            margin: calc(var(--spacing) * 2) 0;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .download-info-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .download-btn {
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border: none;
+            background: var(--accent-green);
+            color: white;
+            border-radius: calc(var(--spacing) * 0.5);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            transition: all 0.2s ease;
+        }
+
+        .download-btn:hover {
+            background: #00A850;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .download-btn.has-changes {
+            background: var(--accent-yellow);
+            color: var(--text-primary);
+            animation: pulse-shadow 2s infinite;
+        }
+
+        .download-btn.has-changes:hover {
+            background: #DC8F0B;
+            animation: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        @keyframes pulse-shadow {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+            50% { 
+                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+            }
+        }
+
+        .theme-toggle {
+            padding: calc(var(--spacing) * 1);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            border-radius: calc(var(--spacing) * 0.5);
+            cursor: pointer;
+            font-size: 1rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+        }
+
+        .settings-btn {
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            border-radius: calc(var(--spacing) * 0.5);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .settings-btn:hover {
+            background: var(--bg-tertiary);
+            transform: translateY(-1px);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--spacing) * 3);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .view-container {
+            display: none;
+        }
+
+        .view-container.active {
+            display: block;
+        }
+
+        .profile-header {
+            background: var(--bg-secondary);
+            padding: calc(var(--spacing) * 3);
+            border-radius: calc(var(--spacing) * 1);
+            margin-bottom: calc(var(--spacing) * 3);
+        }
+
+        .profile-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing) * 1);
+        }
+
+        .profile-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+        }
+
+        .profile-meta {
+            display: flex;
+            gap: calc(var(--spacing) * 3);
+            margin-top: calc(var(--spacing) * 2);
+            flex-wrap: wrap;
+        }
+
+        .profile-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing) * 0.5);
+        }
+
+        .profile-meta-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-meta-value {
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        .profile-section {
+            margin-bottom: calc(var(--spacing) * 4);
+        }
+
+        .profile-section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 0.5);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+
+        .back-button:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transform: translateX(-2px);
+        }
+
+        pre {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: calc(var(--spacing) * 2);
+            border-radius: calc(var(--spacing) * 0.5);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+        
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.875em;
+        }
+
+        .page-header {
+            margin-bottom: calc(var(--spacing) * 3);
+        }
+
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: calc(var(--spacing) * 1);
+        }
+
+        .page-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: calc(var(--spacing) * 3);
+            gap: calc(var(--spacing) * 2);
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+            padding-left: calc(var(--spacing) * 5);
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 0.5);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .search-box::before {
+            content: "🔍";
+            position: absolute;
+            left: calc(var(--spacing) * 2);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .btn-primary {
+            padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+            border: none;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: calc(var(--spacing) * 0.5);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+        }
+
+        .btn-primary:hover {
+            background: #0052A3;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 1);
+            padding: calc(var(--spacing) * 3);
+            margin-bottom: calc(var(--spacing) * 2);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .card.clickable {
+            cursor: pointer;
+        }
+
+        .card.clickable:hover {
+            border-color: var(--accent-blue);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: calc(var(--spacing) * 2);
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            word-wrap: break-word;
+        }
+
+        .card-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: calc(var(--spacing) * 0.5);
+            word-wrap: break-word;
+        }
+
+        .entity-link {
+            color: var(--accent-blue);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .entity-link:hover {
+            text-decoration: underline;
+            color: #0052A3;
+        }
+        
+        .clickable-name {
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        
+        .clickable-name:hover {
+            color: var(--accent-blue);
+            text-decoration: underline;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 1);
+            border-radius: calc(var(--spacing) * 0.5);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-blue {
+            background: rgba(0, 102, 204, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .badge-green {
+            background: rgba(0, 168, 80, 0.1);
+            color: var(--accent-green);
+        }
+
+        .badge-yellow {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-yellow);
+        }
+
+        .badge-red {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--accent-red);
+        }
+
+        .badge-okays {
+            background: rgba(0, 102, 204, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .badge-does {
+            background: rgba(0, 168, 80, 0.1);
+            color: var(--accent-green);
+        }
+
+        .badge-shares {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-yellow);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: calc(var(--spacing) * 3);
+            margin-bottom: calc(var(--spacing) * 3);
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            padding: calc(var(--spacing) * 2);
+            background: var(--bg-secondary);
+            border-radius: calc(var(--spacing) * 0.5);
+            gap: calc(var(--spacing) * 2);
+            transition: all 0.2s ease;
+        }
+
+        .list-item:hover {
+            background: var(--bg-tertiary);
+            transform: translateX(2px);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .info-group {
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+
+        .info-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: calc(var(--spacing) * 0.5);
+        }
+
+        .info-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .info-list li {
+            padding: calc(var(--spacing) * 0.5) 0;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .btn-icon {
+            padding: calc(var(--spacing) * 1);
+            border: none;
+            background: transparent;
+            color: var(--text-tertiary);
+            border-radius: calc(var(--spacing) * 0.5);
+            cursor: pointer;
+            font-size: 1rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn-icon.btn-danger {
+            color: var(--accent-red);
+        }
+
+        .btn-icon.btn-danger:hover {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--accent-red);
+        }
+
+        .btn-secondary {
+            padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: calc(var(--spacing) * 0.5);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary.btn-danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        .btn-secondary.btn-danger:hover {
+            background: rgba(220, 38, 38, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            max-width: 600px;
+            width: 90%;
+            margin: 5% auto;
+            border-radius: calc(var(--spacing) * 1);
+            box-shadow: var(--shadow-lg);
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: calc(var(--spacing) * 3);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-tertiary);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: calc(var(--spacing) * 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: calc(var(--spacing) * 3);
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: calc(var(--spacing) * 3);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: calc(var(--spacing) * 2);
+        }
+
+        .form-group {
+            margin-bottom: calc(var(--spacing) * 3);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: calc(var(--spacing) * 1);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: calc(var(--spacing) * 1.5);
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 0.5);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-select[multiple] {
+            padding: calc(var(--spacing) * 0.5);
+        }
+
+        .form-select[multiple] option {
+            padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 1);
+            cursor: pointer;
+        }
+
+        .form-select[multiple] option:checked {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            box-shadow: var(--shadow-lg);
+            font-size: 0.875rem;
+            font-weight: 500;
+            z-index: 1001;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .settings-tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .settings-tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .settings-tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .settings-tab-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .settings-tab-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing) * 1.5);
+            margin-top: calc(var(--spacing) * 2);
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1.5);
+            cursor: pointer;
+            padding: calc(var(--spacing) * 1.5);
+            border: 1px solid var(--border-color);
+            border-radius: calc(var(--spacing) * 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-label:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-blue);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .checkbox-text {
+            flex: 1;
+        }
+
+        .checkbox-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .checkbox-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: calc(var(--spacing) * 2);
+            }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+                gap: calc(var(--spacing) * 2);
+            }
+
+            .header-left {
+                flex-direction: column;
+                align-items: stretch;
+                gap: calc(var(--spacing) * 2);
+            }
+            
+            .org-name-display {
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                padding-top: calc(var(--spacing) * 1);
+                text-align: center;
+            }
+
+            .header-right {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: calc(var(--spacing) * 1);
+                display: flex;
+                gap: calc(var(--spacing) * 0.5);
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-bar {
+                flex-direction: column;
+            }
+
+            .search-box {
+                max-width: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Welcome Screen -->
+    <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-content">
+            <h1 class="welcome-title">Team Operations Archive</h1>
+            <p class="welcome-subtitle">
+                Manage your organizational structure, roles, and workflows locally in your browser.
+                <br><span style="font-size: 0.875rem; margin-top: 8px; display: block;">Need help getting started? Check out our AI Assist guide!</span>
+            </p>
+            <div class="welcome-options">
+                <div class="welcome-option" onclick="window.app.startBlank()">
+                    <div class="welcome-option-title">Start Fresh</div>
+                    <div class="welcome-option-desc">Begin with a blank workspace</div>
+                </div>
+                <div class="welcome-option" onclick="window.app.uploadData()">
+                    <div class="welcome-option-title">Upload Existing File</div>
+                    <div class="welcome-option-desc">Continue working on previously saved data</div>
+                </div>
+                <div style="text-align: center; margin-top: 24px;">
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                        Need help creating your data? 
+                        <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showAIAssistFromWelcome()">
+                            Use AI Assist →
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" style="display: none;">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo">
+                        Team Operations <span class="divider">//</span> Archive
+                    </div>
+                    <span class="org-name-display" id="orgNameDisplay" onclick="window.app.editOrgName()" title="Click to edit organization name">
+                        <span id="orgNameText">Unnamed Organization</span>
+                    </span>
+                    <nav class="nav-tabs">
+                        <button class="nav-tab active" onclick="window.app.showView('overview')">Overview</button>
+                        <button class="nav-tab" onclick="window.app.showView('people')">People</button>
+                        <button class="nav-tab" onclick="window.app.showView('roles')">Roles</button>
+                        <button class="nav-tab" onclick="window.app.showView('flows')">Flows</button>
+                        <button class="nav-tab" onclick="window.app.showView('ai-assist')">AI Assist</button>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <div class="sync-status needs-download" id="syncStatus">
+                        <span class="sync-indicator"></span>
+                        <span id="syncText">No downloads yet</span>
+                    </div>
+                    <button class="download-btn" onclick="window.app.exportData()" title="Download your data">
+                        <span>💾</span>
+                        <span>Save</span>
+                    </button>
+                    <button class="theme-toggle" onclick="window.app.cycleTheme()" title="Change theme">
+                        <span id="themeIcon">☀️</span>
+                    </button>
+                    <button class="settings-btn" onclick="window.app.showSettings()">
+                        <span>⚙️</span>
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Overview View -->
+            <div id="overview-view" class="view-container active">
+                <div class="page-header">
+                    <h1 class="page-title">System Overview</h1>
+                    <p class="page-description">Current organizational structure and operational flows</p>
+                </div>
+
+                <div id="downloadReminder" class="download-info" style="display: none;">
+                    <span class="download-info-icon">💡</span>
+                    <div>
+                        <strong>Remember to save your work!</strong><br>
+                        <span id="downloadReminderText"></span>
+                    </div>
+                </div>
+
+                <div class="download-info" id="aiAssistHint" style="background: rgba(0, 102, 204, 0.1); border-color: var(--accent-blue); display: none;">
+                    <span class="download-info-icon">🤖</span>
+                    <div>
+                        <strong>New to Team Operations Archive?</strong><br>
+                        Check out the <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showView('ai-assist')">AI Assist</a> tab to quickly generate your organizational data using AI!
+                    </div>
+                    <button class="btn-icon" onclick="document.getElementById('aiAssistHint').style.display='none'" style="margin-left: auto;" title="Dismiss">
+                        ×
+                    </button>
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Active People</h3>
+                                <p class="card-subtitle">Team members in the system</p>
+                            </div>
+                            <span class="badge badge-blue" id="peopleCount">0</span>
+                        </div>
+                        <button class="btn-primary" onclick="window.app.showView('people')">
+                            View People →
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Defined Roles</h3>
+                                <p class="card-subtitle">Organizational positions</p>
+                            </div>
+                            <span class="badge badge-green" id="rolesCount">0</span>
+                        </div>
+                        <button class="btn-primary" onclick="window.app.showView('roles')">
+                            View Roles →
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h3 class="card-title">Active Flows</h3>
+                                <p class="card-subtitle">Operational connections</p>
+                        </div>
+                        <span class="badge badge-yellow" id="flowsCount">0</span>
+                    </div>
+                    <button class="btn-primary" onclick="window.app.showView('flows')">
+                        View Flows →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- People View -->
+        <div id="people-view" class="view-container">
+            <div class="page-header">
+                <h1 class="page-title">People</h1>
+                <p class="page-description">Manage team members and their role assignments</p>
+            </div>
+
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="text" placeholder="Search people...">
+                </div>
+                <button class="btn-primary" onclick="window.app.showAddPersonModal()">
+                    + Add Person
+                </button>
+            </div>
+
+            <div class="list" id="peopleList"></div>
+        </div>
+
+        <!-- Roles View -->
+        <div id="roles-view" class="view-container">
+            <div class="page-header">
+                <h1 class="page-title">Roles</h1>
+                <p class="page-description">Define organizational roles and responsibilities</p>
+            </div>
+
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="text" placeholder="Search roles...">
+                </div>
+                <button class="btn-primary" onclick="window.app.showAddRoleModal()">
+                    + Add Role
+                </button>
+            </div>
+
+            <div class="grid" id="rolesList"></div>
+        </div>
+
+        <!-- Flows View -->
+        <div id="flows-view" class="view-container">
+            <div class="page-header">
+                <h1 class="page-title">Flows</h1>
+                <p class="page-description">Manage operational connections and workflows</p>
+            </div>
+
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="text" placeholder="Search flows...">
+                </div>
+                <button class="btn-primary" onclick="window.app.showAddFlowModal()">
+                    + Add Flow
+                </button>
+            </div>
+
+            <div class="list" id="flowsList"></div>
+        </div>
+
+        <!-- Person Profile View -->
+        <div id="person-profile-view" class="view-container">
+            <button class="back-button" onclick="window.app.goBack()">
+                ← Back
+            </button>
+            <div id="personProfileContent"></div>
+        </div>
+
+        <!-- Role Profile View -->
+        <div id="role-profile-view" class="view-container">
+            <button class="back-button" onclick="window.app.goBack()">
+                ← Back
+            </button>
+            <div id="roleProfileContent"></div>
+        </div>
+
+        <!-- Flow Profile View -->
+        <div id="flow-profile-view" class="view-container">
+            <button class="back-button" onclick="window.app.goBack()">
+                ← Back
+            </button>
+            <div id="flowProfileContent"></div>
+        </div>
+
+        <!-- AI Assist View -->
+        <div id="ai-assist-view" class="view-container">
+            <div class="page-header">
+                <h1 class="page-title">AI Assist</h1>
+                <p class="page-description">Use AI to help create your organizational data</p>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px;">Quick Start with AI</h2>
+                <p style="margin-bottom: 16px;">You can use any AI assistant (ChatGPT, Claude, Gemini, etc.) to help you quickly create your organizational data in the correct format.</p>
+                
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px; font-size: 1.125rem;">Step 1: Copy this prompt template</h3>
+                    <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; margin-bottom: 12px; position: relative;">
+                        <button class="btn-icon" style="position: absolute; top: 8px; right: 8px;" onclick="window.app.copyToClipboard('ai-prompt-template')" title="Copy prompt">
+                            📋
+                        </button>
+                        <pre id="ai-prompt-template" style="margin: 0; white-space: pre-wrap;">Create a JSON file for Team Operations Archive with the following structure for [YOUR ORGANIZATION NAME]:
+
+{
+  "version": "1.0.0",
+  "organizationName": "[YOUR ORGANIZATION NAME]",
+  "data": {
+    "people": [
+      {
+        "id": unique_number,
+        "name": "Full Name",
+        "email": "email@company.com",
+        "roleId": matching_role_id,
+        "department": "Department Name",
+        "startDate": "YYYY-MM-DD",
+        "status": "active" or "inactive"
+      }
+    ],
+    "roles": [
+      {
+        "id": unique_number,
+        "name": "Role Name",
+        "code": "SHORT_CODE",
+        "responsibilities": ["responsibility 1", "responsibility 2"],
+        "ownership": ["ownership area 1", "ownership area 2"]
+      }
+    ],
+    "flows": [
+      {
+        "id": unique_number,
+        "roleId": initiating_role_id,
+        "action": "okays" or "does" or "shares",
+        "connection": "Description of what they do",
+        "counterpartRoleIds": [role_ids],
+        "counterpartRoleNames": ["Role Names"],
+        "counterpartType": "roles",
+        "updated": "YYYY-MM-DD"
+      }
+    ]
+  }
+}
+
+Please create this for my organization with:
+[DESCRIBE YOUR ORGANIZATION, TEAMS, AND REPORTING STRUCTURE]</pre>
+                    </div>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary);">Customize the bracketed parts with your organization's information.</p>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px; font-size: 1.125rem;">Step 2: Get AI assistance</h3>
+                    <p style="margin-bottom: 12px;">Paste the customized prompt into your preferred AI assistant. Be specific about:</p>
+                    <ul style="margin-left: 20px; margin-bottom: 0;">
+                        <li>Your organization name and structure</li>
+                        <li>Team members and their roles</li>
+                        <li>Who reports to whom</li>
+                        <li>Key responsibilities and decision-making authority</li>
+                    </ul>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px;">
+                    <h3 style="margin-bottom: 12px; font-size: 1.125rem;">Step 3: Import your data</h3>
+                    <ol style="margin-left: 20px; margin-bottom: 0;">
+                        <li>Copy the JSON output from the AI</li>
+                        <li>Save it as a .json file (e.g., "my-organization.json")</li>
+                        <li>Use the "Upload Existing File" option on the welcome screen, or</li>
+                        <li>Go to Settings → Data → Replace with Another File</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px;">Understanding the Data Structure</h2>
+                
+                <div class="info-group" style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px;">People</h3>
+                    <p style="margin-bottom: 12px;">Each person in your organization needs:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>id</strong>: A unique number (e.g., 1, 2, 3...)</li>
+                        <li><strong>name</strong>: Their full name</li>
+                        <li><strong>email</strong>: Their email address</li>
+                        <li><strong>roleId</strong>: Must match an id from the roles section</li>
+                        <li><strong>department</strong>: Their department or team</li>
+                        <li><strong>startDate</strong>: When they joined (format: "2024-01-15")</li>
+                        <li><strong>status</strong>: Either "active" or "inactive"</li>
+                    </ul>
+                </div>
+
+                <div class="info-group" style="margin-bottom: 24px;">
+                    <h3 style="margin-bottom: 12px;">Roles</h3>
+                    <p style="margin-bottom: 12px;">Each role needs:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>id</strong>: A unique number</li>
+                        <li><strong>name</strong>: Role title (e.g., "Engineering Manager")</li>
+                        <li><strong>code</strong>: Short code (e.g., "ENG_MGR")</li>
+                        <li><strong>responsibilities</strong>: Array of what they're responsible for</li>
+                        <li><strong>ownership</strong>: Array of what they own/control</li>
+                    </ul>
+                </div>
+
+                <div class="info-group">
+                    <h3 style="margin-bottom: 12px;">Flows</h3>
+                    <p style="margin-bottom: 12px;">Each flow represents a connection between roles:</p>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>id</strong>: A unique number</li>
+                        <li><strong>roleId</strong>: The role that initiates the action</li>
+                        <li><strong>action</strong>: One of "okays", "does", or "shares"</li>
+                        <li><strong>connection</strong>: Description (e.g., "Approves budgets for")</li>
+                        <li><strong>counterpartRoleIds</strong>: Array of role IDs this applies to</li>
+                        <li><strong>counterpartRoleNames</strong>: Array of role names (must match)</li>
+                        <li><strong>updated</strong>: Last update date</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px;">Example Prompts</h2>
+                
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <h3 style="margin-bottom: 8px; font-size: 1rem;">Small Startup</h3>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; margin: 0;">"Create a Team Operations Archive JSON for a 10-person startup called TechCo with a CEO, CTO, Head of Sales, and two developers, two salespeople, a designer, a marketer, and an office manager."</p>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                    <h3 style="margin-bottom: 8px; font-size: 1rem;">Department Structure</h3>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; margin: 0;">"Create a Team Operations Archive JSON for the Engineering department at MegaCorp. We have 3 engineering managers, each with 5-7 engineers. The VP of Engineering oversees all managers. Include approval flows for code reviews, architecture decisions, and hiring."</p>
+                </div>
+
+                <div style="background: var(--bg-secondary); padding: 16px; border-radius: 8px;">
+                    <h3 style="margin-bottom: 8px; font-size: 1rem;">Retail Store</h3>
+                    <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; margin: 0;">"Create a Team Operations Archive JSON for a retail store with a Store Manager, Assistant Manager, 5 Sales Associates, 2 Cashiers, and 1 Stock Clerk. Include flows for opening/closing procedures, discount approvals, and inventory management."</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 16px;">Tips for Best Results</h2>
+                <ul style="margin-left: 20px;">
+                    <li>Be specific about reporting relationships</li>
+                    <li>Include real names and emails if you have them</li>
+                    <li>Describe key decision-making authorities</li>
+                    <li>Mention any special approval processes</li>
+                    <li>List departments or teams clearly</li>
+                    <li>Specify who can approve what (for flows)</li>
+                    <li>You can always edit the data after importing</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 32px; text-align: center;">
+                <button class="btn-primary" onclick="window.app.showView('overview')">
+                    Start Building Your Organization →
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modalContent"></div>
+    </div>
+
+    <script>
+        // Debug mode
+        const DEBUG = true;
+        
+        // App object
+        window.app = {
+            // Data
+            data: {
+                organizationName: '',
+                people: [],
+                roles: [],
+                flows: [],
+                currentTheme: 'light',
+                autoSave: true,
+                showInactive: false,
+                lastDownloadTime: null,
+                hasChanges: false,
+                originalFileName: null,
+                includesSampleData: false
+            },
+            
+            // Navigation
+            currentView: 'overview',
+            previousView: 'overview',
+            
+            // Theme management
+            themes: ['light', 'dark', 'terminal'],
+            themeIcons: {
+                light: '☀️',
+                dark: '🌙',
+                terminal: '💻'
+            },
+
+            // Initialize
+            init() {
+                if (DEBUG) console.log('App initializing...');
+                
+                // Load theme
+                const savedTheme = localStorage.getItem('appTheme') || 'light';
+                this.setTheme(savedTheme);
+                
+                // Check if there's existing data
+                const savedData = localStorage.getItem('teamOpsData');
+                if (savedData) {
+                    try {
+                        const parsed = JSON.parse(savedData);
+                        this.data = { 
+                            ...this.data, 
+                            organizationName: parsed.organizationName || '',
+                            people: parsed.people || [],
+                            roles: parsed.roles || [],
+                            flows: parsed.flows || [],
+                            autoSave: parsed.autoSave !== undefined ? parsed.autoSave : true,
+                            showInactive: parsed.showInactive || false,
+                            lastDownloadTime: parsed.lastDownloadTime || null,
+                            originalFileName: parsed.originalFileName || null,
+                            includesSampleData: parsed.includesSampleData || false
+                        };
+                        
+                        // Show main app directly
+                        document.getElementById('welcomeScreen').style.display = 'none';
+                        document.getElementById('mainApp').style.display = 'block';
+                        
+                        // Update UI
+                        this.updateOrgNameDisplay();
+                        this.updateCounts();
+                        this.updateSyncStatus();
+                        this.render();
+                    } catch (e) {
+                        console.error('Failed to load saved data:', e);
+                    }
+                }
+                
+                // Track changes
+                setInterval(() => this.updateSyncStatus(), 10000); // Update every 10 seconds
+                
+                if (DEBUG) console.log('App initialized!', this.data);
+            },
+
+            // Start blank
+            startBlank() {
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Start Fresh</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="margin-bottom: 24px;">Would you like to include sample data to help you get started?</p>
+                        
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="includeSampleData" checked>
+                                <div class="checkbox-text">
+                                    <div class="checkbox-title">Include sample data</div>
+                                    <div class="checkbox-desc">Adds example people (Jane Smith, John Doe), roles (Manager, Sales Associate), and flows to help you understand the system</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                        <button type="button" class="btn-primary" onclick="window.app.confirmStartBlank()">Start</button>
+                    </div>
+                `);
+            },
+
+            // Confirm start blank
+            confirmStartBlank() {
+                const includeSample = document.getElementById('includeSampleData').checked;
+                
+                if (includeSample) {
+                    this.loadSampleData();
+                } else {
+                    this.data.people = [];
+                    this.data.roles = [];
+                    this.data.flows = [];
+                }
+                
+                this.data.includesSampleData = includeSample;
+                this.data.originalFileName = 'team-operations-archive.json';
+                
+                // Save initial state
+                this.saveData();
+                
+                // Show main app
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                
+                // Update UI
+                this.updateOrgNameDisplay();
+                this.updateCounts();
+                this.updateSyncStatus();
+                this.render();
+                this.currentView = 'overview';
+                this.previousView = 'overview';
+                this.closeModal();
+                
+                if (includeSample) {
+                    this.showNotification('Started with sample data. Feel free to modify or delete it!');
+                } else {
+                    this.showNotification('Started with a blank workspace!');
+                }
+                
+                // Prompt to set organization name
+                setTimeout(() => {
+                    this.editOrgName();
+                }, 500);
+            },
+
+            // Upload data
+            uploadData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    this.data.originalFileName = file.name;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            
+                            // Handle different data formats
+                            if (imported.data) {
+                                this.data.people = imported.data.people || [];
+                                this.data.roles = imported.data.roles || [];
+                                this.data.flows = imported.data.flows || [];
+                            } else {
+                                // Direct format
+                                this.data.people = imported.people || [];
+                                this.data.roles = imported.roles || [];
+                                this.data.flows = imported.flows || [];
+                            }
+                            
+                            // Load organization name if present
+                            this.data.organizationName = imported.organizationName || '';
+                            
+                            // Mark as just downloaded
+                            this.data.lastDownloadTime = new Date().toISOString();
+                            this.data.hasChanges = false;
+                            
+                            this.saveData();
+                            
+                            // Show main app
+                            document.getElementById('welcomeScreen').style.display = 'none';
+                            document.getElementById('mainApp').style.display = 'block';
+                            
+                            // Update UI
+                            this.updateOrgNameDisplay();
+                            this.updateCounts();
+                            this.updateSyncStatus();
+                            this.render();
+                            this.currentView = 'overview';
+                            this.previousView = 'overview';
+                            
+                            this.showNotification(`Loaded ${file.name} successfully!`);
+                        } catch (error) {
+                            this.showNotification('Failed to load file. Please check the format.');
+                            console.error('Import error:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            },
+
+            // Load sample data
+            loadSampleData() {
+                this.data.roles = [
+                    {
+                        id: 1,
+                        name: "Manager",
+                        code: "MGR",
+                        responsibilities: ["Oversee daily operations", "Approve discounts", "Set schedules"],
+                        ownership: ["Daily reports", "Staff scheduling", "Customer escalations"],
+                        isTemplate: true
+                    },
+                    {
+                        id: 2,
+                        name: "Sales Associate",
+                        code: "SALES",
+                        responsibilities: ["Assist customers", "Process transactions", "Maintain store"],
+                        ownership: ["Customer service", "POS operations", "Product knowledge"],
+                        isTemplate: true
+                    }
+                ];
+
+                this.data.people = [
+                    {
+                        id: 1,
+                        name: "Jane Smith",
+                        email: "jane.smith@company.com",
+                        roleId: 1,
+                        department: "Retail",
+                        startDate: "2023-01-15",
+                        status: "active",
+                        isTemplate: true
+                    },
+                    {
+                        id: 2,
+                        name: "John Doe",
+                        email: "john.doe@company.com",
+                        roleId: 2,
+                        department: "Retail",
+                        startDate: "2023-03-20",
+                        status: "active",
+                        isTemplate: true
+                    }
+                ];
+
+                this.data.flows = [
+                    {
+                        id: 1,
+                        roleId: 1,
+                        action: "okays",
+                        connection: "Approves discounts for",
+                        counterpartRoleIds: [2],
+                        counterpartRoleNames: ["Sales Associate"],
+                        counterpartType: "roles",
+                        updated: "2024-01-14",
+                        isTemplate: true
+                    }
+                ];
+            },
+
+            // Navigate to entity
+            navigateToEntity(type, id) {
+                if (type === 'role') {
+                    this.showRoleProfile(id);
+                } else if (type === 'person') {
+                    this.showPersonProfile(id);
+                } else if (type === 'flow') {
+                    this.showFlowProfile(id);
+                }
+            },
+
+            // Show person profile
+            showPersonProfile(personId) {
+                const person = this.data.people.find(p => p.id == personId);
+                if (!person) return;
+
+                const role = this.data.roles.find(r => r.id === person.roleId);
+                const flows = role ? this.data.flows.filter(f => 
+                    f.roleId === role.id || 
+                    (f.counterpartRoleIds && f.counterpartRoleIds.includes(role.id))
+                ) : [];
+
+                const content = document.getElementById('personProfileContent');
+                content.innerHTML = `
+                    <div class="profile-header">
+                        <h1 class="profile-title">${person.name}</h1>
+                        <p class="profile-subtitle">${person.email}</p>
+                        <div class="profile-meta">
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Status</span>
+                                <span class="profile-meta-value">
+                                    <span class="badge badge-${person.status === 'active' ? 'green' : 'red'}">${person.status}</span>
+                                </span>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Department</span>
+                                <span class="profile-meta-value">${person.department}</span>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Start Date</span>
+                                <span class="profile-meta-value">${person.startDate}</span>
+                            </div>
+                            ${person.isTemplate ? `
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Type</span>
+                                <span class="profile-meta-value">
+                                    <span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">SAMPLE DATA</span>
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Role</h2>
+                        ${role ? `
+                            <div class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h3 class="card-title">
+                                            <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showRoleProfile(${role.id})">
+                                                ${role.name}
+                                            </a>
+                                        </h3>
+                                        <p class="card-subtitle">${role.code}</p>
+                                    </div>
+                                </div>
+                                <div class="info-group">
+                                    <div class="info-label">Responsibilities</div>
+                                    <ul class="info-list">
+                                        ${role.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                                    </ul>
+                                </div>
+                                <div class="info-group">
+                                    <div class="info-label">Ownership Areas</div>
+                                    <ul class="info-list">
+                                        ${role.ownership.map(o => `<li>${o}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        ` : '<p style="color: var(--text-tertiary);">No role assigned</p>'}
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Related Flows</h2>
+                        ${flows.length > 0 ? flows.map(flow => {
+                            const flowRole = this.data.roles.find(r => r.id === flow.roleId);
+                            let counterpartDisplay = '';
+                            if (flow.counterpartRoleNames && flow.counterpartRoleNames.length > 0) {
+                                if (flow.counterpartRoleNames.length === 1 && flow.counterpartRoleIds[0]) {
+                                    counterpartDisplay = `<a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showRoleProfile(${flow.counterpartRoleIds[0]})">${flow.counterpartRoleNames[0]}</a>`;
+                                } else {
+                                    counterpartDisplay = `<span style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; font-size: 0.875rem;">${flow.counterpartRoleNames.length} roles</span>`;
+                                }
+                            }
+                            
+                            return `
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div style="flex: 1;">
+                                            <h3 class="card-title">
+                                                <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showFlowProfile(${flow.id})">
+                                                    ${flowRole ? flowRole.name : 'Unknown Role'}
+                                                </a>
+                                            </h3>
+                                            <p class="card-subtitle">
+                                                <span class="badge badge-${flow.action}">${flow.action}</span>
+                                                ${flow.connection} ${counterpartDisplay}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : '<p style="color: var(--text-tertiary);">No related flows</p>'}
+                    </div>
+
+                    <div style="display: flex; gap: calc(var(--spacing) * 2); justify-content: flex-end;">
+                        <button class="btn-secondary" onclick="window.app.editPerson(${person.id})">
+                            Edit Person
+                        </button>
+                        <button class="btn-secondary btn-danger" onclick="if(confirm('Delete ${person.name}?')) { window.app.deletePerson(${person.id}); window.app.goBack(); }">
+                            Delete Person
+                        </button>
+                    </div>
+                `;
+
+                this.showView('person-profile');
+            },
+
+            // Show role profile
+            showRoleProfile(roleId) {
+                const role = this.data.roles.find(r => r.id == roleId);
+                if (!role) return;
+
+                const people = this.data.people.filter(p => p.roleId === role.id);
+                const flows = this.data.flows.filter(f => 
+                    f.roleId === role.id || 
+                    (f.counterpartRoleIds && f.counterpartRoleIds.includes(role.id))
+                );
+
+                const content = document.getElementById('roleProfileContent');
+                content.innerHTML = `
+                    <div class="profile-header">
+                        <h1 class="profile-title">${role.name}</h1>
+                        <p class="profile-subtitle">${role.code}</p>
+                        <div class="profile-meta">
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">People in Role</span>
+                                <span class="profile-meta-value">${people.length}</span>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Related Flows</span>
+                                <span class="profile-meta-value">${flows.length}</span>
+                            </div>
+                            ${role.isTemplate ? `
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Type</span>
+                                <span class="profile-meta-value">
+                                    <span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">SAMPLE DATA</span>
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Responsibilities</h2>
+                        <ul class="info-list">
+                            ${role.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Ownership Areas</h2>
+                        <ul class="info-list">
+                            ${role.ownership.map(o => `<li>${o}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">People in This Role</h2>
+                        ${people.length > 0 ? people.map(person => `
+                            <div class="card">
+                                <div class="card-header">
+                                    <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 2); flex: 1;">
+                                        <div class="avatar">${person.name.split(' ').map(n => n[0]).join('')}</div>
+                                        <div>
+                                            <h3 class="card-title">
+                                                <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showPersonProfile(${person.id})">
+                                                    ${person.name}
+                                                </a>
+                                            </h3>
+                                            <p class="card-subtitle">${person.email}</p>
+                                        </div>
+                                    </div>
+                                    <span class="badge badge-${person.status === 'active' ? 'green' : 'red'}">${person.status}</span>
+                                </div>
+                            </div>
+                        `).join('') : '<p style="color: var(--text-tertiary);">No people assigned to this role</p>'}
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Related Flows</h2>
+                        ${flows.length > 0 ? flows.map(flow => {
+                            const isMainRole = flow.roleId === role.id;
+                            const flowRole = this.data.roles.find(r => r.id === flow.roleId);
+                            
+                            return `
+                                <div class="card">
+                                    <div class="card-header">
+                                        <div style="flex: 1;">
+                                            <h3 class="card-title">
+                                                <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showFlowProfile(${flow.id})">
+                                                    ${isMainRole ? role.name : (flowRole ? flowRole.name : 'Unknown Role')}
+                                                    <span class="badge badge-${flow.action}">${flow.action}</span>
+                                                    ${flow.connection}
+                                                </a>
+                                            </h3>
+                                            <p class="card-subtitle">
+                                                ${isMainRole ? 'This role initiates the flow' : 'This role is a counterpart'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : '<p style="color: var(--text-tertiary);">No flows involving this role</p>'}
+                    </div>
+
+                    <div style="display: flex; gap: calc(var(--spacing) * 2); justify-content: flex-end;">
+                        <button class="btn-secondary" onclick="window.app.editRole(${role.id})">
+                            Edit Role
+                        </button>
+                        <button class="btn-secondary btn-danger" onclick="if(confirm('Delete ${role.name} role? This will affect ${people.length} people and ${flows.length} flows.')) { window.app.deleteRole(${role.id}); window.app.goBack(); }">
+                            Delete Role
+                        </button>
+                    </div>
+                `;
+
+                this.showView('role-profile');
+            },
+
+            // Show flow profile
+            showFlowProfile(flowId) {
+                const flow = this.data.flows.find(f => f.id == flowId);
+                if (!flow) return;
+
+                const role = this.data.roles.find(r => r.id === flow.roleId);
+                const peopleInRole = role ? this.data.people.filter(p => p.roleId === role.id) : [];
+                
+                const content = document.getElementById('flowProfileContent');
+                content.innerHTML = `
+                    <div class="profile-header">
+                        <h1 class="profile-title">
+                            ${role ? role.name : 'Unknown Role'} 
+                            <span class="badge badge-${flow.action}" style="font-size: 1.5rem; vertical-align: middle;">${flow.action}</span>
+                        </h1>
+                        <p class="profile-subtitle">${flow.connection}</p>
+                        <div class="profile-meta">
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Last Updated</span>
+                                <span class="profile-meta-value">${flow.updated}</span>
+                            </div>
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Flow Type</span>
+                                <span class="profile-meta-value">${flow.counterpartType || 'Role-based'}</span>
+                            </div>
+                            ${flow.isTemplate ? `
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Type</span>
+                                <span class="profile-meta-value">
+                                    <span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">SAMPLE DATA</span>
+                                </span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Initiating Role</h2>
+                        ${role ? `
+                            <div class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h3 class="card-title">
+                                            <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showRoleProfile(${role.id})">
+                                                ${role.name}
+                                            </a>
+                                        </h3>
+                                        <p class="card-subtitle">${role.code} • ${peopleInRole.length} people</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : '<p style="color: var(--text-tertiary);">Role not found</p>'}
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">Counterpart Roles</h2>
+                        ${flow.counterpartRoleIds && flow.counterpartRoleIds.length > 0 ? 
+                            flow.counterpartRoleIds.map((roleId, index) => {
+                                const counterpartRole = this.data.roles.find(r => r.id === roleId);
+                                const counterpartPeople = counterpartRole ? this.data.people.filter(p => p.roleId === counterpartRole.id) : [];
+                                
+                                return counterpartRole ? `
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div>
+                                                <h3 class="card-title">
+                                                    <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showRoleProfile(${counterpartRole.id})">
+                                                        ${counterpartRole.name}
+                                                    </a>
+                                                </h3>
+                                                <p class="card-subtitle">${counterpartRole.code} • ${counterpartPeople.length} people</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : '';
+                            }).join('')
+                        : '<p style="color: var(--text-tertiary);">No counterpart roles defined</p>'}
+                    </div>
+
+                    <div class="profile-section">
+                        <h2 class="profile-section-title">People Affected</h2>
+                        <p style="margin-bottom: calc(var(--spacing) * 2); color: var(--text-secondary);">
+                            People in the initiating role who can perform this action:
+                        </p>
+                        ${peopleInRole.length > 0 ? peopleInRole.map(person => `
+                            <div class="card">
+                                <div class="card-header">
+                                    <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 2); flex: 1;">
+                                        <div class="avatar">${person.name.split(' ').map(n => n[0]).join('')}</div>
+                                        <div>
+                                            <h3 class="card-title">
+                                                <a href="#" class="entity-link" onclick="event.preventDefault(); window.app.showPersonProfile(${person.id})">
+                                                    ${person.name}
+                                                </a>
+                                            </h3>
+                                            <p class="card-subtitle">${person.department}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : '<p style="color: var(--text-tertiary);">No people in the initiating role</p>'}
+                    </div>
+
+                    <div style="display: flex; gap: calc(var(--spacing) * 2); justify-content: flex-end;">
+                        <button class="btn-secondary" onclick="window.app.editFlow(${flow.id})">
+                            Edit Flow
+                        </button>
+                        <button class="btn-secondary btn-danger" onclick="if(confirm('Delete this flow?')) { window.app.deleteFlow(${flow.id}); window.app.goBack(); }">
+                            Delete Flow
+                        </button>
+                    </div>
+                `;
+
+                this.showView('flow-profile');
+            },
+
+            // Update sync status
+            updateSyncStatus() {
+                const syncStatus = document.getElementById('syncStatus');
+                const syncText = document.getElementById('syncText');
+                const downloadBtn = document.querySelector('.download-btn');
+                const reminder = document.getElementById('downloadReminder');
+                const reminderText = document.getElementById('downloadReminderText');
+                
+                if (this.data.lastDownloadTime) {
+                    const lastDownload = new Date(this.data.lastDownloadTime);
+                    const now = new Date();
+                    const diff = now - lastDownload;
+                    
+                    const minutes = Math.floor(diff / 60000);
+                    const hours = Math.floor(diff / 3600000);
+                    const days = Math.floor(diff / 86400000);
+                    
+                    let timeText;
+                    if (days > 0) {
+                        timeText = `${days} day${days > 1 ? 's' : ''} ago`;
+                    } else if (hours > 0) {
+                        timeText = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                    } else if (minutes > 0) {
+                        timeText = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+                    } else {
+                        timeText = 'Just now';
+                    }
+                    
+                    if (this.data.hasChanges) {
+                        syncStatus.className = 'sync-status needs-download';
+                        syncText.textContent = `Changes since download ${timeText}`;
+                        downloadBtn.className = 'download-btn has-changes';
+                        
+                        // Show reminder if more than 30 minutes
+                        if (minutes > 30) {
+                            reminder.style.display = 'flex';
+                            reminderText.innerHTML = `Last saved ${timeText}. ${this.data.originalFileName ? `Save over <strong>${this.data.originalFileName}</strong>` : 'Download'} to keep your changes.`;
+                        } else {
+                            reminder.style.display = 'none';
+                        }
+                    } else {
+                        syncStatus.className = 'sync-status downloaded';
+                        syncText.textContent = `Downloaded ${timeText}`;
+                        downloadBtn.className = 'download-btn';
+                        reminder.style.display = 'none';
+                    }
+                } else {
+                    syncStatus.className = 'sync-status needs-download';
+                    syncText.textContent = 'No downloads yet';
+                    downloadBtn.className = 'download-btn has-changes';
+                    
+                    if (this.data.people.length > 0 || this.data.roles.length > 0 || this.data.flows.length > 0) {
+                        reminder.style.display = 'flex';
+                        reminderText.innerHTML = 'Download your data to save your work permanently.';
+                    }
+                }
+            },
+
+            // Theme management
+            setTheme(theme) {
+                document.body.className = theme === 'light' ? '' : `theme-${theme}`;
+                this.data.currentTheme = theme;
+                document.getElementById('themeIcon').textContent = this.themeIcons[theme];
+                localStorage.setItem('appTheme', theme);
+            },
+
+            cycleTheme() {
+                const currentIndex = this.themes.indexOf(this.data.currentTheme);
+                const nextIndex = (currentIndex + 1) % this.themes.length;
+                this.setTheme(this.themes[nextIndex]);
+            },
+
+            // View management
+            showView(viewName) {
+                if (DEBUG) console.log('Showing view:', viewName);
+                
+                // Track previous view for back navigation
+                if (!viewName.includes('-profile')) {
+                    this.previousView = this.currentView || 'overview';
+                }
+                this.currentView = viewName;
+                
+                // Hide all views
+                document.querySelectorAll('.view-container').forEach(view => {
+                    view.classList.remove('active');
+                });
+
+                // Show selected view
+                const view = document.getElementById(`${viewName}-view`);
+                if (view) {
+                    view.classList.add('active');
+                }
+
+                // Update nav tabs only for main views
+                if (!viewName.includes('-profile')) {
+                    document.querySelectorAll('.nav-tab').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    
+                    const tabs = document.querySelectorAll('.nav-tab');
+                    const tabNames = ['overview', 'people', 'roles', 'flows', 'ai-assist'];
+                    const tabIndex = tabNames.indexOf(viewName);
+                    if (tabIndex !== -1 && tabs[tabIndex]) {
+                        tabs[tabIndex].classList.add('active');
+                    }
+                }
+
+                // Render view content
+                this.render();
+            },
+
+            // Go back to previous view
+            goBack() {
+                this.showView(this.previousView);
+            },
+            
+            // Show AI Assist from welcome screen
+            showAIAssistFromWelcome() {
+                // Initialize with empty data
+                this.data.people = [];
+                this.data.roles = [];
+                this.data.flows = [];
+                this.data.originalFileName = 'team-operations-archive.json';
+                
+                // Save initial state
+                this.saveData();
+                
+                // Show main app
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                
+                // Update UI
+                this.updateOrgNameDisplay();
+                this.updateCounts();
+                this.updateSyncStatus();
+                this.render();
+                this.currentView = 'ai-assist';
+                this.previousView = 'overview';
+                
+                // Show AI Assist tab
+                this.showView('ai-assist');
+            },
+
+            // Update organization name display
+            updateOrgNameDisplay() {
+                const orgNameText = document.getElementById('orgNameText');
+                const orgNameDisplay = document.getElementById('orgNameDisplay');
+                
+                if (this.data.organizationName) {
+                    orgNameText.textContent = this.data.organizationName;
+                    orgNameDisplay.classList.remove('unnamed');
+                } else {
+                    orgNameText.textContent = 'Unnamed Organization';
+                    orgNameDisplay.classList.add('unnamed');
+                }
+            },
+
+            // Edit organization name
+            editOrgName() {
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Organization Name</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="editOrgNameForm" onsubmit="window.app.updateOrgName(event)">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Organization Name</label>
+                                <input type="text" class="form-input" name="orgName" 
+                                       value="${this.data.organizationName}" 
+                                       placeholder="Enter organization name" required>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    This helps identify your organization's data when exported
+                                </p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Save</button>
+                        </div>
+                    </form>
+                `);
+            },
+
+            // Update organization name
+            updateOrgName(event) {
+                event.preventDefault();
+                const form = event.target;
+                this.data.organizationName = form.orgName.value;
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                this.updateOrgNameDisplay();
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification('Organization name updated!');
+            },
+
+            // Update counts
+            updateCounts() {
+                const peopleCount = this.data.people.length;
+                const rolesCount = this.data.roles.length;
+                const flowsCount = this.data.flows.length;
+                
+                document.getElementById('peopleCount').textContent = peopleCount;
+                document.getElementById('rolesCount').textContent = rolesCount;
+                document.getElementById('flowsCount').textContent = flowsCount;
+                
+                // Show AI assist hint for new users
+                const aiHint = document.getElementById('aiAssistHint');
+                if (aiHint && peopleCount === 0 && rolesCount === 0 && flowsCount === 0) {
+                    aiHint.style.display = 'flex';
+                } else if (aiHint) {
+                    aiHint.style.display = 'none';
+                }
+            },
+
+            // Render
+            render() {
+                // Don't re-render profile views automatically
+                if (this.currentView.includes('-profile')) {
+                    return;
+                }
+                
+                this.renderPeople();
+                this.renderRoles();
+                this.renderFlows();
+            },
+
+            // Render people
+            renderPeople() {
+                const list = document.getElementById('peopleList');
+                if (!list) return;
+
+                // Filter people based on showInactive setting
+                let peopleToShow = this.data.people;
+                if (!this.data.showInactive) {
+                    peopleToShow = peopleToShow.filter(p => p.status === 'active');
+                }
+
+                if (peopleToShow.length === 0) {
+                    list.innerHTML = '<div class="card"><p style="text-align: center; color: var(--text-tertiary);">No people to display</p></div>';
+                    return;
+                }
+
+                list.innerHTML = peopleToShow.map(person => {
+                    const role = this.data.roles.find(r => r.id === person.roleId);
+                    return `
+                        <div class="card" data-person-id="${person.id}">
+                            <div class="card-header">
+                                <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 2); flex: 1;">
+                                    <div class="avatar" style="cursor: pointer;" onclick="window.app.showPersonProfile(${person.id})">${person.name.split(' ').map(n => n[0]).join('')}</div>
+                                    <div style="flex: 1;">
+                                        <h3 class="card-title clickable-name" onclick="window.app.showPersonProfile(${person.id})">
+                                            ${person.name}
+                                        </h3>
+                                        <p class="card-subtitle">${person.email}</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 1);">
+                                    <span class="badge badge-${person.status === 'active' ? 'green' : 'red'}">${person.status}</span>
+                                    ${person.isTemplate ? '<span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary); font-size: 0.7rem;">SAMPLE</span>' : ''}
+                                    <button class="btn-icon" onclick="window.app.editPerson(${person.id})" title="Edit person" style="padding: 4px; width: 24px; height: 24px; font-size: 0.875rem;">
+                                        ✏️
+                                    </button>
+                                    <button class="btn-icon btn-danger" onclick="window.app.deletePerson(${person.id})" title="Delete person" style="padding: 4px; width: 24px; height: 24px; font-size: 0.875rem;">
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Role</div>
+                                <div>${role ? `<span class="entity-link" onclick="window.app.showRoleProfile(${role.id})">${role.name}</span>` : 'Unassigned'}</div>
+                            </div>
+                            <div class="info-group">
+                                <div class="info-label">Department</div>
+                                <div>${person.department}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            // Render roles
+            renderRoles() {
+                const list = document.getElementById('rolesList');
+                if (!list) return;
+
+                if (this.data.roles.length === 0) {
+                    list.innerHTML = '<div class="card"><p style="text-align: center; color: var(--text-tertiary);">No roles defined yet</p></div>';
+                    return;
+                }
+
+                list.innerHTML = this.data.roles.map(role => {
+                    const peopleCount = this.data.people.filter(p => p.roleId === role.id).length;
+                    return `
+                        <div class="card" data-role-id="${role.id}">
+                            <div class="card-header">
+                                <div style="cursor: pointer;" onclick="window.app.showRoleProfile(${role.id})">
+                                    <h3 class="card-title clickable-name">
+                                        ${role.name}
+                                    </h3>
+                                    <p class="card-subtitle">${role.code}</p>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 1);">
+                                    <span class="badge badge-blue">${peopleCount} people</span>
+                                    ${role.isTemplate ? '<span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary); font-size: 0.7rem;">SAMPLE</span>' : ''}
+                                    <button class="btn-icon" onclick="window.app.editRole(${role.id})" title="Edit role" style="padding: 4px; width: 24px; height: 24px; font-size: 0.875rem;">
+                                        ✏️
+                                    </button>
+                                    <button class="btn-icon btn-danger" onclick="window.app.deleteRole(${role.id})" title="Delete role" style="padding: 4px; width: 24px; height: 24px; font-size: 0.875rem;">
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="info-group" style="cursor: pointer;" onclick="window.app.showRoleProfile(${role.id})">
+                                <div class="info-label">Responsibilities</div>
+                                <ul class="info-list">
+                                    ${role.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            // Render flows
+            renderFlows() {
+                const list = document.getElementById('flowsList');
+                if (!list) return;
+
+                if (this.data.flows.length === 0) {
+                    list.innerHTML = '<div class="card"><p style="text-align: center; color: var(--text-tertiary);">No flows defined yet</p></div>';
+                    return;
+                }
+
+                list.innerHTML = this.data.flows.map(flow => {
+                    const role = this.data.roles.find(r => r.id === flow.roleId);
+                    
+                    // Handle both old format (single counterpart) and new format (multiple counterparts)
+                    let counterpartDisplay = '';
+                    if (flow.counterpartRoleNames && flow.counterpartRoleNames.length > 0) {
+                        // New format with multiple roles
+                        if (flow.counterpartRoleNames.length === 1 && flow.counterpartRoleIds[0]) {
+                            counterpartDisplay = `<span class="entity-link" onclick="event.stopPropagation(); window.app.showRoleProfile(${flow.counterpartRoleIds[0]})">${flow.counterpartRoleNames[0]}</span>`;
+                        } else {
+                            counterpartDisplay = `<span style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; font-size: 0.875rem;">${flow.counterpartRoleNames.length} roles</span>`;
+                        }
+                    } else if (flow.counterpart) {
+                        // Old format with single counterpart
+                        counterpartDisplay = flow.counterpart;
+                    } else {
+                        counterpartDisplay = '<span style="color: var(--text-tertiary); font-style: italic;">(No counterpart)</span>';
+                    }
+                    
+                    return `
+                        <div class="card clickable" onclick="window.app.showFlowProfile(${flow.id})">
+                            <div class="card-header">
+                                <div style="flex: 1;">
+                                    <h3 class="card-title">${role ? `<span class="entity-link" onclick="event.stopPropagation(); window.app.showRoleProfile(${role.id})">${role.name}</span>` : 'Unknown Role'}</h3>
+                                    <p class="card-subtitle">
+                                        <span class="badge badge-${flow.action}">${flow.action}</span>
+                                        ${flow.connection} ${counterpartDisplay}
+                                    </p>
+                                    ${flow.counterpartRoleNames && flow.counterpartRoleNames.length > 1 ? `
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                            Applies to: ${flow.counterpartRoleNames.map((name, i) => 
+                                                `<span class="entity-link" onclick="event.stopPropagation(); window.app.showRoleProfile(${flow.counterpartRoleIds[i]})">${name}</span>`
+                                            ).join(', ')}
+                                        </p>
+                                    ` : ''}
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.75rem; color: var(--text-tertiary);">Updated</div>
+                                    <div>${flow.updated}</div>
+                                    ${flow.isTemplate ? '<div style="margin-top: 4px;"><span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary); font-size: 0.7rem;">SAMPLE</span></div>' : ''}
+                                    <div style="margin-top: 8px;">
+                                        <button class="btn-secondary" style="padding: 4px 12px; font-size: 0.75rem;" onclick="event.stopPropagation(); window.app.editFlow(${flow.id})">Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            // Modal management
+            showModal(content) {
+                document.getElementById('modalContent').innerHTML = content;
+                document.getElementById('modal').style.display = 'block';
+            },
+
+            closeModal() {
+                document.getElementById('modal').style.display = 'none';
+            },
+
+            // Add person modal
+            showAddPersonModal() {
+                const roleOptions = this.data.roles.map(r => 
+                    `<option value="${r.id}">${r.name}</option>`
+                ).join('');
+
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Add New Person</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="addPersonForm" onsubmit="window.app.addPerson(event)">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-input" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department</label>
+                                <input type="text" class="form-input" name="department" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="roleId" required>
+                                    <option value="">Select a role</option>
+                                    ${roleOptions}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-input" name="startDate" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Add Person</button>
+                        </div>
+                    </form>
+                `);
+            },
+
+            // Add role modal
+            showAddRoleModal() {
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Add New Role</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="addRoleForm" onsubmit="window.app.addRole(event)">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Role Name</label>
+                                <input type="text" class="form-input" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role Code</label>
+                                <input type="text" class="form-input" name="code" required placeholder="e.g., MGR, SALES">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Responsibilities (one per line)</label>
+                                <textarea class="form-textarea" name="responsibilities" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ownership Areas (one per line)</label>
+                                <textarea class="form-textarea" name="ownership" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Add Role</button>
+                        </div>
+                    </form>
+                `);
+            },
+
+            // Add flow modal
+            showAddFlowModal() {
+                const roleOptions = this.data.roles.map(r => 
+                    `<option value="${r.id}">${r.name}</option>`
+                ).join('');
+
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Add New Flow</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="addFlowForm" onsubmit="window.app.addFlow(event)">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="roleId" required>
+                                    <option value="">Select a role</option>
+                                    ${roleOptions}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required>
+                                    <option value="okays">Okays</option>
+                                    <option value="does">Does</option>
+                                    <option value="shares">Shares</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Connection</label>
+                                <input type="text" class="form-input" name="connection" required 
+                                       placeholder="e.g., Approves discounts for">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Counterpart Roles (Optional)</label>
+                                <select class="form-select" name="counterpartRoles" multiple style="height: 120px;">
+                                    ${roleOptions}
+                                </select>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Hold Ctrl (or Cmd on Mac) to select multiple roles
+                                </p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Add Flow</button>
+                        </div>
+                    </form>
+                `);
+            },
+
+            // Add person
+            addPerson(event) {
+                event.preventDefault();
+                const form = event.target;
+                const newPerson = {
+                    id: Date.now(),
+                    name: form.name.value,
+                    email: form.email.value,
+                    department: form.department.value,
+                    roleId: parseInt(form.roleId.value),
+                    startDate: form.startDate.value,
+                    status: 'active',
+                    isTemplate: false
+                };
+                this.data.people.push(newPerson);
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                this.render();
+                this.updateCounts();
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification(`${newPerson.name} added successfully!`);
+            },
+
+            // Add role
+            addRole(event) {
+                event.preventDefault();
+                const form = event.target;
+                const newRole = {
+                    id: Date.now(),
+                    name: form.name.value,
+                    code: form.code.value.toUpperCase(),
+                    responsibilities: form.responsibilities.value.split('\n').filter(r => r.trim()),
+                    ownership: form.ownership.value.split('\n').filter(o => o.trim()),
+                    isTemplate: false
+                };
+                this.data.roles.push(newRole);
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                this.render();
+                this.updateCounts();
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification(`${newRole.name} role created successfully!`);
+            },
+
+            // Add flow
+            addFlow(event) {
+                event.preventDefault();
+                const form = event.target;
+                
+                // Get selected counterpart roles
+                const selectedOptions = Array.from(form.counterpartRoles.selectedOptions);
+                const counterpartRoleIds = selectedOptions.map(option => parseInt(option.value));
+                const counterpartRoleNames = selectedOptions.map(option => option.text);
+                
+                const newFlow = {
+                    id: Date.now(),
+                    roleId: parseInt(form.roleId.value),
+                    action: form.action.value,
+                    connection: form.connection.value,
+                    counterpartRoleIds: counterpartRoleIds,
+                    counterpartRoleNames: counterpartRoleNames,
+                    counterpartType: 'roles',
+                    updated: new Date().toISOString().substring(0, 10),
+                    isTemplate: false
+                };
+                
+                this.data.flows.push(newFlow);
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                this.render();
+                this.updateCounts();
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification('Flow created successfully!');
+            },
+
+            // Save data
+            saveData() {
+                localStorage.setItem('teamOpsData', JSON.stringify({
+                    organizationName: this.data.organizationName,
+                    people: this.data.people,
+                    roles: this.data.roles,
+                    flows: this.data.flows,
+                    autoSave: this.data.autoSave,
+                    showInactive: this.data.showInactive,
+                    lastDownloadTime: this.data.lastDownloadTime,
+                    originalFileName: this.data.originalFileName,
+                    includesSampleData: this.data.includesSampleData
+                }));
+                localStorage.setItem('lastSaveTime', new Date().toISOString());
+            },
+
+            // Export data
+            exportData() {
+                const data = {
+                    version: "1.0.0",
+                    exported: new Date().toISOString(),
+                    organizationName: this.data.organizationName,
+                    theme: this.data.currentTheme,
+                    data: {
+                        people: this.data.people,
+                        roles: this.data.roles,
+                        flows: this.data.flows
+                    }
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Use original filename if available
+                a.download = this.data.originalFileName || 'team-operations-archive.json';
+                
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // Update last download time and clear changes flag
+                this.data.lastDownloadTime = new Date().toISOString();
+                this.data.hasChanges = false;
+                this.saveData();
+                this.updateSyncStatus();
+                
+                const message = this.data.originalFileName 
+                    ? `Saved! Replace the original "${this.data.originalFileName}" file to keep your changes.`
+                    : 'Data exported successfully!';
+                this.showNotification(message, 5000);
+            },
+
+            // Settings
+            showSettings() {
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Settings</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); margin-bottom: 24px;">
+                            <button class="settings-tab-btn active" onclick="window.app.showSettingsTab('general')" data-tab="general">General</button>
+                            <button class="settings-tab-btn" onclick="window.app.showSettingsTab('data')" data-tab="data">Data</button>
+                            <button class="settings-tab-btn" onclick="window.app.showSettingsTab('export')" data-tab="export">Export</button>
+                            <button class="settings-tab-btn" onclick="window.app.showSettingsTab('about')" data-tab="about">About</button>
+                        </div>
+                        
+                        <div id="settings-general" class="settings-tab-content">
+                            <h3 style="margin-bottom: 16px;">General Settings</h3>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Organization Name</label>
+                                <input type="text" class="form-input" 
+                                       value="${this.data.organizationName}" 
+                                       placeholder="Enter organization name"
+                                       onchange="window.app.data.organizationName = this.value; window.app.data.hasChanges = true; window.app.saveData(); window.app.updateOrgNameDisplay(); window.app.updateSyncStatus();">
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Click the organization name in the header to edit it anytime
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Theme</label>
+                                <select class="form-select" onchange="window.app.setTheme(this.value)">
+                                    <option value="light" ${this.data.currentTheme === 'light' ? 'selected' : ''}>Light</option>
+                                    <option value="dark" ${this.data.currentTheme === 'dark' ? 'selected' : ''}>Dark</option>
+                                    <option value="terminal" ${this.data.currentTheme === 'terminal' ? 'selected' : ''}>Terminal</option>
+                                </select>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Choose your preferred visual theme
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Auto-save</label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" ${this.data.autoSave !== false ? 'checked' : ''} 
+                                           onchange="window.app.toggleAutoSave(this.checked)">
+                                    <span>Automatically save changes to browser storage</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Data Display</label>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" ${this.data.showInactive ? 'checked' : ''} 
+                                           onchange="window.app.toggleShowInactive(this.checked)">
+                                    <span>Show inactive people and roles</span>
+                                </label>
+                            </div>
+                            
+                            ${this.data.originalFileName ? `
+                            <div class="form-group">
+                                <label class="form-label">Current File</label>
+                                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 4px; font-size: 0.875rem;">
+                                    <div style="font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+                                        ${this.data.originalFileName}
+                                    </div>
+                                    <div style="margin-top: 8px; color: var(--text-secondary); font-size: 0.75rem;">
+                                        Tip: Always save over this file to keep a single version
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div id="settings-data" class="settings-tab-content" style="display: none;">
+                            <h3 style="margin-bottom: 16px;">Data Management</h3>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Replace File</label>
+                                <button class="btn-secondary" onclick="window.app.replaceFile()">
+                                    Replace with Another File
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Upload a different JSON file to replace all current data
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Import Data</label>
+                                <button class="btn-secondary" onclick="window.app.importData()">
+                                    Import from JSON file
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Merge data from another JSON file (adds to existing data)
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Clear All Data</label>
+                                <button class="btn-secondary" style="background: rgba(220, 38, 38, 0.1); color: var(--accent-red); border-color: var(--accent-red);" 
+                                        onclick="window.app.clearAllData()">
+                                    Clear All Data
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--accent-red); margin-top: 8px;">
+                                    ⚠️ This will permanently delete all your data from browser storage
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Storage Info</label>
+                                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 4px; font-size: 0.875rem;">
+                                    <div>Organization: ${this.data.organizationName || 'Unnamed'}</div>
+                                    <div>People: ${this.data.people.length} records</div>
+                                    <div>Roles: ${this.data.roles.length} records</div>
+                                    <div>Flows: ${this.data.flows.length} records</div>
+                                    <div style="margin-top: 8px; color: var(--text-secondary);">
+                                        Last saved: ${this.getLastSaveTime()}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="settings-export" class="settings-tab-content" style="display: none;">
+                            <h3 style="margin-bottom: 16px;">Export Options</h3>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Export All Data</label>
+                                <button class="btn-primary" onclick="window.app.exportData()">
+                                    Export as JSON
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    ${this.data.originalFileName 
+                                        ? `Downloads as "${this.data.originalFileName}" - save over the existing file`
+                                        : 'Download all your data in a single JSON file'}
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Export Individual Tables</label>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="btn-secondary" onclick="window.app.exportCSV('people')">
+                                        Export People CSV
+                                    </button>
+                                    <button class="btn-secondary" onclick="window.app.exportCSV('roles')">
+                                        Export Roles CSV
+                                    </button>
+                                    <button class="btn-secondary" onclick="window.app.exportCSV('flows')">
+                                        Export Flows CSV
+                                    </button>
+                                </div>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Export individual tables for use in spreadsheet applications
+                                </p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Export Summary</label>
+                                <button class="btn-secondary" onclick="window.app.exportSummary()">
+                                    Generate Summary Report
+                                </button>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Create a text summary of your organizational structure
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div id="settings-about" class="settings-tab-content" style="display: none;">
+                            <h3 style="margin-bottom: 16px;">About Team Operations Archive</h3>
+                            
+                            <div style="font-size: 0.875rem; line-height: 1.6; color: var(--text-secondary);">
+                                <p style="margin-bottom: 16px;">
+                                    <strong>Version:</strong> 1.0.0<br>
+                                    <strong>Created:</strong> 2024<br>
+                                    <strong>License:</strong> Open Source
+                                </p>
+                                
+                                <p style="margin-bottom: 16px;">
+                                    Team Operations Archive is a local-first application for managing organizational 
+                                    structures, roles, and workflows. Your data stays in your browser and is never 
+                                    sent to any server.
+                                </p>
+                                
+                                <h4 style="margin-bottom: 8px; color: var(--text-primary);">Key Features:</h4>
+                                <ul style="margin-left: 20px; margin-bottom: 16px;">
+                                    <li>Privacy-first design - all data stays local</li>
+                                    <li>Role-based organizational modeling</li>
+                                    <li>Operational flow mapping</li>
+                                    <li>Export data in multiple formats</li>
+                                    <li>No sign-up or account required</li>
+                                </ul>
+                                
+                                <h4 style="margin-bottom: 8px; color: var(--text-primary);">Tips:</h4>
+                                <ul style="margin-left: 20px;">
+                                    <li>Always save over your original file to avoid multiple versions</li>
+                                    <li>Use roles to define responsibilities, not job titles</li>
+                                    <li>Map flows to clarify decision-making authority</li>
+                                    <li>Browser data can be lost if you clear cache - download regularly</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            },
+            
+            // Show settings tab
+            showSettingsTab(tabName) {
+                // Hide all tabs
+                document.querySelectorAll('.settings-tab-content').forEach(tab => {
+                    tab.style.display = 'none';
+                });
+                
+                // Remove active class from all buttons
+                document.querySelectorAll('.settings-tab-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Show selected tab
+                document.getElementById(`settings-${tabName}`).style.display = 'block';
+                
+                // Add active class to selected button
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            },
+            
+            // Show notification
+            showNotification(message, duration = 3000) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideUp 0.3s ease-out reverse';
+                    setTimeout(() => notification.remove(), 300);
+                }, duration);
+            },
+            
+            // Toggle auto-save
+            toggleAutoSave(enabled) {
+                this.data.autoSave = enabled;
+                this.saveData();
+                if (enabled) {
+                    this.showNotification('Auto-save enabled');
+                } else {
+                    this.showNotification('Auto-save disabled. Remember to export your data!');
+                }
+            },
+            
+            // Toggle show inactive
+            toggleShowInactive(show) {
+                this.data.showInactive = show;
+                this.saveData();
+                this.render();
+            },
+            
+            // Clear all data
+            clearAllData() {
+                if (confirm('Are you sure you want to delete all data? This cannot be undone!')) {
+                    if (confirm('This will permanently delete all people, roles, and flows. Are you really sure?')) {
+                        this.data.organizationName = '';
+                        this.data.people = [];
+                        this.data.roles = [];
+                        this.data.flows = [];
+                        this.data.lastDownloadTime = null;
+                        this.data.hasChanges = false;
+                        this.data.originalFileName = null;
+                        this.saveData();
+                        this.render();
+                        this.updateOrgNameDisplay();
+                        this.updateCounts();
+                        this.updateSyncStatus();
+                        this.closeModal();
+                        this.showNotification('All data has been cleared');
+                    }
+                }
+            },
+            
+            // Replace file
+            replaceFile() {
+                if (confirm('This will replace ALL current data with a new file. Are you sure?')) {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json';
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        this.data.originalFileName = file.name;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const imported = JSON.parse(event.target.result);
+                                
+                                // Replace all data
+                                if (imported.data) {
+                                    this.data.people = imported.data.people || [];
+                                    this.data.roles = imported.data.roles || [];
+                                    this.data.flows = imported.data.flows || [];
+                                } else {
+                                    // Direct format
+                                    this.data.people = imported.people || [];
+                                    this.data.roles = imported.roles || [];
+                                    this.data.flows = imported.flows || [];
+                                }
+                                
+                                // Load organization name if present
+                                this.data.organizationName = imported.organizationName || '';
+                                
+                                // Mark as just downloaded
+                                this.data.lastDownloadTime = new Date().toISOString();
+                                this.data.hasChanges = false;
+                                
+                                this.saveData();
+                                this.render();
+                                this.updateOrgNameDisplay();
+                                this.updateCounts();
+                                this.updateSyncStatus();
+                                this.closeModal();
+                                this.showNotification(`Replaced with ${file.name} successfully!`);
+                            } catch (error) {
+                                this.showNotification('Failed to load file. Please check the format.');
+                                console.error('Import error:', error);
+                            }
+                        };
+                        reader.readAsText(file);
+                    };
+                    input.click();
+                }
+            },
+            
+            // Import data (merge)
+            importData() {
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Import Data</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <p style="margin-bottom: 16px;">This will <strong>add</strong> data from another file to your existing data. Duplicate entries may be created.</p>
+                        <p style="margin-bottom: 24px;">To <strong>replace</strong> all data instead, use "Replace with Another File" option.</p>
+                        
+                        <button class="btn-primary" onclick="window.app.confirmImportData()">
+                            Choose File to Import
+                        </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                    </div>
+                `);
+            },
+            
+            // Confirm import data
+            confirmImportData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            
+                            // Merge data (add to existing)
+                            if (imported.data) {
+                                this.data.people = [...this.data.people, ...(imported.data.people || [])];
+                                this.data.roles = [...this.data.roles, ...(imported.data.roles || [])];
+                                this.data.flows = [...this.data.flows, ...(imported.data.flows || [])];
+                            } else {
+                                // Direct format
+                                this.data.people = [...this.data.people, ...(imported.people || [])];
+                                this.data.roles = [...this.data.roles, ...(imported.roles || [])];
+                                this.data.flows = [...this.data.flows, ...(imported.flows || [])];
+                            }
+                            
+                            // Don't change organization name when merging
+                            
+                            this.data.hasChanges = true;
+                            this.saveData();
+                            this.render();
+                            this.updateCounts();
+                            this.updateSyncStatus();
+                            this.closeModal();
+                            
+                            const counts = {
+                                people: (imported.data?.people || imported.people || []).length,
+                                roles: (imported.data?.roles || imported.roles || []).length,
+                                flows: (imported.data?.flows || imported.flows || []).length
+                            };
+                            
+                            this.showNotification(`Imported ${counts.people} people, ${counts.roles} roles, and ${counts.flows} flows from ${file.name}`);
+                        } catch (error) {
+                            this.showNotification('Failed to import data. Please check the file format.');
+                            console.error('Import error:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            },
+            
+            // Export CSV
+            exportCSV(type) {
+                let csv = '';
+                let filename = '';
+                
+                switch(type) {
+                    case 'people':
+                        csv = 'Name,Email,Department,Role,Start Date,Status\n';
+                        this.data.people.forEach(person => {
+                            const role = this.data.roles.find(r => r.id === person.roleId);
+                            csv += `"${person.name}","${person.email}","${person.department}","${role ? role.name : 'Unassigned'}","${person.startDate}","${person.status}"\n`;
+                        });
+                        filename = 'people.csv';
+                        break;
+                        
+                    case 'roles':
+                        csv = 'Name,Code,Responsibilities,Ownership,People Count\n';
+                        this.data.roles.forEach(role => {
+                            const peopleCount = this.data.people.filter(p => p.roleId === role.id).length;
+                            csv += `"${role.name}","${role.code}","${role.responsibilities.join('; ')}","${role.ownership.join('; ')}","${peopleCount}"\n`;
+                        });
+                        filename = 'roles.csv';
+                        break;
+                        
+                    case 'flows':
+                        csv = 'Role,Action,Connection,Counterpart,Type,Updated\n';
+                        this.data.flows.forEach(flow => {
+                            const role = this.data.roles.find(r => r.id === flow.roleId);
+                            
+                            // Handle both old and new format
+                            let counterpart = '';
+                            if (flow.counterpartRoleNames && flow.counterpartRoleNames.length > 0) {
+                                counterpart = flow.counterpartRoleNames.join('; ');
+                            } else if (flow.counterpart) {
+                                counterpart = flow.counterpart;
+                            }
+                            
+                            csv += `"${role ? role.name : 'Unknown'}","${flow.action}","${flow.connection}","${counterpart}","${flow.counterpartType || 'role'}","${flow.updated}"\n`;
+                        });
+                        filename = 'flows.csv';
+                        break;
+                }
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} exported as CSV`);
+            },
+            
+            // Export summary
+            exportSummary() {
+                const orgName = this.data.organizationName || 'Unnamed Organization';
+                let summary = `${orgName.toUpperCase()} - TEAM OPERATIONS SUMMARY\n`;
+                summary += '='.repeat(orgName.length + 28) + '\n\n';
+                summary += `Generated: ${new Date().toLocaleString()}\n\n`;
+                
+                summary += 'OVERVIEW\n';
+                summary += '--------\n';
+                summary += `Organization: ${orgName}\n`;
+                summary += `Total People: ${this.data.people.length}\n`;
+                summary += `Total Roles: ${this.data.roles.length}\n`;
+                summary += `Total Flows: ${this.data.flows.length}\n\n`;
+                
+                summary += 'ROLES\n';
+                summary += '-----\n';
+                this.data.roles.forEach(role => {
+                    const peopleInRole = this.data.people.filter(p => p.roleId === role.id);
+                    summary += `\n${role.name} (${role.code})\n`;
+                    summary += `People: ${peopleInRole.length}\n`;
+                    summary += `Responsibilities:\n`;
+                    role.responsibilities.forEach(r => summary += `  - ${r}\n`);
+                    summary += `Ownership:\n`;
+                    role.ownership.forEach(o => summary += `  - ${o}\n`);
+                });
+                
+                summary += '\n\nPEOPLE\n';
+                summary += '------\n';
+                this.data.people.forEach(person => {
+                    const role = this.data.roles.find(r => r.id === person.roleId);
+                    summary += `\n${person.name}\n`;
+                    summary += `  Email: ${person.email}\n`;
+                    summary += `  Department: ${person.department}\n`;
+                    summary += `  Role: ${role ? role.name : 'Unassigned'}\n`;
+                    summary += `  Status: ${person.status}\n`;
+                });
+                
+                summary += '\n\nFLOWS\n';
+                summary += '-----\n';
+                this.data.flows.forEach(flow => {
+                    const role = this.data.roles.find(r => r.id === flow.roleId);
+                    
+                    // Handle both old and new format
+                    let counterpart = '';
+                    if (flow.counterpartRoleNames && flow.counterpartRoleNames.length > 0) {
+                        counterpart = flow.counterpartRoleNames.join(', ');
+                    } else if (flow.counterpart) {
+                        counterpart = flow.counterpart;
+                    } else {
+                        counterpart = '(No counterpart)';
+                    }
+                    
+                    summary += `\n${role ? role.name : 'Unknown'} ${flow.action} ${flow.connection} ${counterpart}\n`;
+                });
+                
+                const blob = new Blob([summary], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'team-operations-summary.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.showNotification('Summary report exported successfully!');
+            },
+            
+            // Edit flow
+            editFlow(flowId) {
+                const flow = this.data.flows.find(f => f.id === flowId);
+                if (!flow) return;
+                
+                const roleOptions = this.data.roles.map(r => 
+                    `<option value="${r.id}" ${r.id === flow.roleId ? 'selected' : ''}>${r.name}</option>`
+                ).join('');
+                
+                // Pre-select counterpart roles
+                const counterpartOptions = this.data.roles.map(r => {
+                    const isSelected = flow.counterpartRoleIds && flow.counterpartRoleIds.includes(r.id);
+                    return `<option value="${r.id}" ${isSelected ? 'selected' : ''}>${r.name}</option>`;
+                }).join('');
+
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Edit Flow</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="editFlowForm" onsubmit="window.app.updateFlow(event, ${flowId})">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="roleId" required>
+                                    ${roleOptions}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required>
+                                    <option value="okays" ${flow.action === 'okays' ? 'selected' : ''}>Okays</option>
+                                    <option value="does" ${flow.action === 'does' ? 'selected' : ''}>Does</option>
+                                    <option value="shares" ${flow.action === 'shares' ? 'selected' : ''}>Shares</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Connection</label>
+                                <input type="text" class="form-input" name="connection" required 
+                                       value="${flow.connection}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Counterpart Roles (Optional)</label>
+                                <select class="form-select" name="counterpartRoles" multiple style="height: 120px;">
+                                    ${counterpartOptions}
+                                </select>
+                                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
+                                    Hold Ctrl (or Cmd on Mac) to select multiple roles
+                                </p>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary btn-danger" onclick="window.app.deleteFlow(${flowId})">Delete Flow</button>
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Update Flow</button>
+                        </div>
+                    </form>
+                `);
+            },
+            
+            // Update flow
+            updateFlow(event, flowId) {
+                event.preventDefault();
+                const form = event.target;
+                const flowIndex = this.data.flows.findIndex(f => f.id === flowId);
+                if (flowIndex === -1) return;
+                
+                // Get selected counterpart roles
+                const selectedOptions = Array.from(form.counterpartRoles.selectedOptions);
+                const counterpartRoleIds = selectedOptions.map(option => parseInt(option.value));
+                const counterpartRoleNames = selectedOptions.map(option => option.text);
+                
+                this.data.flows[flowIndex] = {
+                    ...this.data.flows[flowIndex],
+                    roleId: parseInt(form.roleId.value),
+                    action: form.action.value,
+                    connection: form.connection.value,
+                    counterpartRoleIds: counterpartRoleIds,
+                    counterpartRoleNames: counterpartRoleNames,
+                    counterpartType: 'roles',
+                    updated: new Date().toISOString().substring(0, 10)
+                };
+                
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                
+                // Refresh profile if we're viewing it
+                if (this.currentView === 'flow-profile') {
+                    this.showFlowProfile(flowId);
+                } else {
+                    this.render();
+                }
+                
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification('Flow updated successfully!');
+            },
+            
+            // Delete person
+            deletePerson(personId) {
+                const person = this.data.people.find(p => p.id === personId);
+                if (!person) return;
+                
+                if (confirm(`Are you sure you want to delete ${person.name}?`)) {
+                    this.data.people = this.data.people.filter(p => p.id !== personId);
+                    this.data.hasChanges = true;
+                    if (this.data.autoSave !== false) this.saveData();
+                    
+                    // If we're on the person's profile, go back
+                    if (this.currentView === 'person-profile') {
+                        this.goBack();
+                    }
+                    
+                    this.render();
+                    this.updateCounts();
+                    this.updateSyncStatus();
+                    this.showNotification(`${person.name} deleted successfully!`);
+                }
+            },
+            
+            // Edit person
+            editPerson(personId) {
+                const person = this.data.people.find(p => p.id === personId);
+                if (!person) return;
+                
+                const roleOptions = this.data.roles.map(r => 
+                    `<option value="${r.id}" ${r.id === person.roleId ? 'selected' : ''}>${r.name}</option>`
+                ).join('');
+
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Edit Person</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="editPersonForm" onsubmit="window.app.updatePerson(event, ${personId})">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-input" name="name" value="${person.name}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" name="email" value="${person.email}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Department</label>
+                                <input type="text" class="form-input" name="department" value="${person.department}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role</label>
+                                <select class="form-select" name="roleId" required>
+                                    <option value="">Select a role</option>
+                                    ${roleOptions}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" name="status" required>
+                                    <option value="active" ${person.status === 'active' ? 'selected' : ''}>Active</option>
+                                    <option value="inactive" ${person.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Update Person</button>
+                        </div>
+                    </form>
+                `);
+            },
+            
+            // Update person
+            updatePerson(event, personId) {
+                event.preventDefault();
+                const form = event.target;
+                const personIndex = this.data.people.findIndex(p => p.id === personId);
+                if (personIndex === -1) return;
+                
+                this.data.people[personIndex] = {
+                    ...this.data.people[personIndex],
+                    name: form.name.value,
+                    email: form.email.value,
+                    department: form.department.value,
+                    roleId: parseInt(form.roleId.value),
+                    status: form.status.value,
+                    isTemplate: false  // Once edited, no longer template data
+                };
+                
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                
+                // Refresh profile if we're viewing it
+                if (this.currentView === 'person-profile') {
+                    this.showPersonProfile(personId);
+                } else {
+                    this.render();
+                }
+                
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification('Person updated successfully!');
+            },
+            
+            // Delete role
+            deleteRole(roleId) {
+                const role = this.data.roles.find(r => r.id === roleId);
+                if (!role) return;
+                
+                const peopleInRole = this.data.people.filter(p => p.roleId === roleId);
+                const flowsWithRole = this.data.flows.filter(f => 
+                    f.roleId === roleId || 
+                    (f.counterpartRoleIds && f.counterpartRoleIds.includes(roleId))
+                );
+                
+                let warningMessage = `Are you sure you want to delete the "${role.name}" role?`;
+                if (peopleInRole.length > 0) {
+                    warningMessage += `\n\nThis will unassign ${peopleInRole.length} people from this role.`;
+                }
+                if (flowsWithRole.length > 0) {
+                    warningMessage += `\n\nThis will affect ${flowsWithRole.length} flows.`;
+                }
+                
+                if (confirm(warningMessage)) {
+                    // Unassign people from this role
+                    this.data.people.forEach(person => {
+                        if (person.roleId === roleId) {
+                            person.roleId = null;
+                        }
+                    });
+                    
+                    // Remove role from flows
+                    this.data.flows = this.data.flows.filter(f => f.roleId !== roleId);
+                    this.data.flows.forEach(flow => {
+                        if (flow.counterpartRoleIds) {
+                            const index = flow.counterpartRoleIds.indexOf(roleId);
+                            if (index > -1) {
+                                flow.counterpartRoleIds.splice(index, 1);
+                                flow.counterpartRoleNames.splice(index, 1);
+                            }
+                        }
+                    });
+                    
+                    // Delete the role
+                    this.data.roles = this.data.roles.filter(r => r.id !== roleId);
+                    
+                    this.data.hasChanges = true;
+                    if (this.data.autoSave !== false) this.saveData();
+                    
+                    // If we're on the role's profile, go back
+                    if (this.currentView === 'role-profile') {
+                        this.goBack();
+                    }
+                    
+                    this.render();
+                    this.updateCounts();
+                    this.updateSyncStatus();
+                    this.showNotification(`${role.name} role deleted successfully!`);
+                }
+            },
+            
+            // Edit role
+            editRole(roleId) {
+                const role = this.data.roles.find(r => r.id === roleId);
+                if (!role) return;
+
+                this.showModal(`
+                    <div class="modal-header">
+                        <h2 class="modal-title">Edit Role</h2>
+                        <button class="modal-close" onclick="window.app.closeModal()">×</button>
+                    </div>
+                    <form id="editRoleForm" onsubmit="window.app.updateRole(event, ${roleId})">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label class="form-label">Role Name</label>
+                                <input type="text" class="form-input" name="name" value="${role.name}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Role Code</label>
+                                <input type="text" class="form-input" name="code" value="${role.code}" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Responsibilities (one per line)</label>
+                                <textarea class="form-textarea" name="responsibilities" required>${role.responsibilities.join('\n')}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Ownership Areas (one per line)</label>
+                                <textarea class="form-textarea" name="ownership" required>${role.ownership.join('\n')}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="window.app.closeModal()">Cancel</button>
+                            <button type="submit" class="btn-primary">Update Role</button>
+                        </div>
+                    </form>
+                `);
+            },
+            
+            // Update role
+            updateRole(event, roleId) {
+                event.preventDefault();
+                const form = event.target;
+                const roleIndex = this.data.roles.findIndex(r => r.id === roleId);
+                if (roleIndex === -1) return;
+                
+                const oldName = this.data.roles[roleIndex].name;
+                const newName = form.name.value;
+                
+                this.data.roles[roleIndex] = {
+                    ...this.data.roles[roleIndex],
+                    name: newName,
+                    code: form.code.value.toUpperCase(),
+                    responsibilities: form.responsibilities.value.split('\n').filter(r => r.trim()),
+                    ownership: form.ownership.value.split('\n').filter(o => o.trim()),
+                    isTemplate: false  // Once edited, no longer template data
+                };
+                
+                // Update flow counterpart names if role name changed
+                if (oldName !== newName) {
+                    this.data.flows.forEach(flow => {
+                        if (flow.counterpartRoleIds && flow.counterpartRoleIds.includes(roleId)) {
+                            const index = flow.counterpartRoleIds.indexOf(roleId);
+                            if (index > -1 && flow.counterpartRoleNames) {
+                                flow.counterpartRoleNames[index] = newName;
+                            }
+                        }
+                    });
+                }
+                
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                
+                // Refresh profile if we're viewing it
+                if (this.currentView === 'role-profile') {
+                    this.showRoleProfile(roleId);
+                } else {
+                    this.render();
+                }
+                
+                this.updateSyncStatus();
+                this.closeModal();
+                this.showNotification('Role updated successfully!');
+            },
+            
+            // Delete flow
+            deleteFlow(flowId) {
+                if (confirm('Are you sure you want to delete this flow?')) {
+                    this.data.flows = this.data.flows.filter(f => f.id !== flowId);
+                    this.data.hasChanges = true;
+                    if (this.data.autoSave !== false) this.saveData();
+                    
+                    // If we're on the flow's profile, go back
+                    if (this.currentView === 'flow-profile') {
+                        this.goBack();
+                    }
+                    
+                    this.render();
+                    this.updateCounts();
+                    this.updateSyncStatus();
+                    this.closeModal();
+                    this.showNotification('Flow deleted successfully!');
+                }
+            },
+            
+            // Get last save time
+            getLastSaveTime() {
+                const lastSave = localStorage.getItem('lastSaveTime');
+                if (!lastSave) return 'Never';
+                
+                const date = new Date(lastSave);
+                const now = new Date();
+                const diff = now - date;
+                
+                if (diff < 60000) return 'Just now';
+                if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`;
+                if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
+                return date.toLocaleDateString();
+            },
+            
+            // Copy to clipboard
+            copyToClipboard(elementId) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                
+                const text = element.textContent || element.innerText;
+                
+                // Try modern clipboard API first
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text)
+                        .then(() => this.showNotification('Copied to clipboard!'))
+                        .catch(() => this.fallbackCopyToClipboard(text));
+                } else {
+                    this.fallbackCopyToClipboard(text);
+                }
+            },
+            
+            // Fallback copy method
+            fallbackCopyToClipboard(text) {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    this.showNotification('Copied to clipboard!');
+                } catch (err) {
+                    this.showNotification('Failed to copy. Please select and copy manually.');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+        };
+
+        // Initialize app when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            if (DEBUG) console.log('DOM loaded, initializing app...');
+            try {
+                window.app.init();
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+            }
+        });
+
+        // Modal close on background click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                window.app.closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
