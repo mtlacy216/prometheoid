@@ -1125,7 +1125,7 @@
         <div class="controls">
             <div class="control-group">
                 <button onclick="App.createNewFlow()" title="Create new flow">New Flow</button>
-                <button onclick="App.groupSelected()" title="Group selected flows">Group</button>
+                <button onclick="App.createSet()" title="Group selected flows into a set">Create Set</button>
                 <button onclick="App.exportAsText()" title="Export as text">Export</button>
             </div>
 
@@ -1262,6 +1262,7 @@
             flows: [],
             connections: [],
             groups: [],
+            sets: [],
             selectedItems: new Set(),
             draggedItem: null,
             connectingPort: null,
@@ -1279,6 +1280,7 @@
             flowIdCounter: 0,
             nodeIdCounter: 0,
             groupIdCounter: 0,
+            setIdCounter: 0,
             dragThreshold: 5,
             animationFrame: null,
             updateQueue: new Set(),
@@ -1290,6 +1292,8 @@
             // Group filtering
             activeGroups: new Set(['all']),
             availableGroups: new Set(),
+            // Placeholder for future set filtering
+            activeSets: new Set(['all']),
         };
         
         // Sample data
@@ -2454,6 +2458,19 @@
             updateAvailableGroups();
         }
 
+        function createSetFromSelection(name) {
+            const selectedFlows = Array.from(state.selectedItems).filter(item => item.element && item.element.classList.contains('flow'));
+            if (!selectedFlows.length) return;
+            const set = {
+                id: state.setIdCounter++,
+                name: name || `Set ${state.setIdCounter}`,
+                flows: selectedFlows
+            };
+            state.sets.push(set);
+            state.selectedItems.clear();
+            selectedFlows.forEach(f => f.element.classList.remove('selected'));
+        }
+
         function serializeFlow(flow) {
             return {
                 x: flow.x,
@@ -3039,7 +3056,13 @@
 
             updateAvailableGroups();
         };
-        
+
+        App.createSet = function() {
+            if (state.selectedItems.size === 0) return;
+            const name = prompt('Set name?');
+            createSetFromSelection(name);
+        };
+
         App.exportAsText = function() {
             let text = 'Flow Process Map\n================\n\n';
             

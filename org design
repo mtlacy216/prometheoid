@@ -1497,6 +1497,7 @@ Please create this for my organization with:
                 organizationName: '',
                 people: [],
                 roles: [],
+                roleGroups: [],
                 flows: [],
                 currentTheme: 'light',
                 autoSave: true,
@@ -1898,6 +1899,12 @@ Please create this for my organization with:
                         <h1 class="profile-title">${role.name}</h1>
                         <p class="profile-subtitle">${role.code}</p>
                         <div class="profile-meta">
+                            ${role.group ? `
+                            <div class="profile-meta-item">
+                                <span class="profile-meta-label">Group</span>
+                                <span class="profile-meta-value">${role.group}</span>
+                            </div>
+                            ` : ''}
                             <div class="profile-meta-item">
                                 <span class="profile-meta-label">People in Role</span>
                                 <span class="profile-meta-value">${people.length}</span>
@@ -2410,7 +2417,7 @@ Please create this for my organization with:
                                     <h3 class="card-title clickable-name">
                                         ${role.name}
                                     </h3>
-                                    <p class="card-subtitle">${role.code}</p>
+                                    <p class="card-subtitle">${role.code}${role.group ? ' • ' + role.group : ''}</p>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: calc(var(--spacing) * 1);">
                                     <span class="badge badge-blue">${peopleCount} people</span>
@@ -2567,6 +2574,10 @@ Please create this for my organization with:
                                 <input type="text" class="form-input" name="code" required placeholder="e.g., MGR, SALES">
                             </div>
                             <div class="form-group">
+                                <label class="form-label">Group</label>
+                                <input type="text" class="form-input" name="group" placeholder="Enter group name">
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Responsibilities (one per line)</label>
                                 <textarea class="form-textarea" name="responsibilities" required></textarea>
                             </div>
@@ -2666,10 +2677,14 @@ Please create this for my organization with:
                     id: Date.now(),
                     name: form.name.value,
                     code: form.code.value.toUpperCase(),
+                    group: form.group.value.trim(),
                     responsibilities: form.responsibilities.value.split('\n').filter(r => r.trim()),
                     ownership: form.ownership.value.split('\n').filter(o => o.trim()),
                     isTemplate: false
                 };
+                if (newRole.group && !this.data.roleGroups.includes(newRole.group)) {
+                    this.data.roleGroups.push(newRole.group);
+                }
                 this.data.roles.push(newRole);
                 this.data.hasChanges = true;
                 if (this.data.autoSave !== false) this.saveData();
@@ -3565,6 +3580,10 @@ Please create this for my organization with:
                                 <input type="text" class="form-input" name="code" value="${role.code}" required>
                             </div>
                             <div class="form-group">
+                                <label class="form-label">Group</label>
+                                <input type="text" class="form-input" name="group" value="${role.group || ''}">
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Responsibilities (one per line)</label>
                                 <textarea class="form-textarea" name="responsibilities" required>${role.responsibilities.join('\n')}</textarea>
                             </div>
@@ -3595,10 +3614,14 @@ Please create this for my organization with:
                     ...this.data.roles[roleIndex],
                     name: newName,
                     code: form.code.value.toUpperCase(),
+                    group: form.group.value.trim(),
                     responsibilities: form.responsibilities.value.split('\n').filter(r => r.trim()),
                     ownership: form.ownership.value.split('\n').filter(o => o.trim()),
                     isTemplate: false  // Once edited, no longer template data
                 };
+                if (form.group.value.trim() && !this.data.roleGroups.includes(form.group.value.trim())) {
+                    this.data.roleGroups.push(form.group.value.trim());
+                }
                 
                 // Update flow counterpart names if role name changed
                 if (oldName !== newName) {
