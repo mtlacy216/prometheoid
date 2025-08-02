@@ -479,6 +479,57 @@
             background: var(--text-tertiary);
         }
 
+        .maturity-legend {
+            display: flex;
+            gap: calc(var(--spacing) * 2);
+            font-size: 0.75rem;
+            margin-bottom: calc(var(--spacing) * 1);
+        }
+
+        .maturity-legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing) * 1);
+            color: var(--text-secondary);
+        }
+
+        .maturity-legend .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-item.integrated .legend-color {
+            background: var(--accent-green);
+        }
+
+        .legend-item.emerging .legend-color {
+            background: var(--accent-yellow);
+        }
+
+        .legend-item.shadow .legend-color {
+            background: var(--text-tertiary);
+        }
+
+        .system-health-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: calc(var(--spacing) * 2);
+        }
+
+        .toggle-dashboard {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
         .health-insight {
             font-size: 0.875rem;
             color: var(--text-secondary);
@@ -1739,26 +1790,36 @@
 
                 <!-- System Health Dashboard (E.O. Analytics) -->
                 <div class="system-health" id="systemHealth">
-                    <h2>Organization Health</h2>
-                    
-                    <div class="health-metric">
-                        <label>Role Development</label>
-                        <div class="maturity-progress" id="roleMaturityProgress">
-                            <div class="maturity-segment integrated" style="width: 33%">0 Integrated</div>
-                            <div class="maturity-segment emerging" style="width: 33%">0 Emerging</div>
-                            <div class="maturity-segment shadow" style="width: 34%">0 Unofficial</div>
+                    <div class="system-health-header">
+                        <h2>Organization Health</h2>
+                        <button id="toggleSystemHealth" class="toggle-dashboard">Hide Dashboard</button>
+                    </div>
+
+                    <div id="systemHealthContent">
+                        <div class="health-metric">
+                            <label>Role Development</label>
+                            <div class="maturity-progress" id="roleMaturityProgress">
+                                <div class="maturity-segment integrated" style="width: 0%"></div>
+                                <div class="maturity-segment emerging" style="width: 66.67%"></div>
+                                <div class="maturity-segment shadow" style="width: 33.33%"></div>
+                            </div>
+                            <div class="maturity-legend" id="roleMaturityLegend">
+                                <div class="legend-item integrated"><span class="legend-color"></span>0 Integrated</div>
+                                <div class="legend-item emerging"><span class="legend-color"></span>2 Emerging</div>
+                                <div class="legend-item shadow"><span class="legend-color"></span>1 Unofficial</div>
+                            </div>
+                            <p class="health-insight" id="roleInsight">1 unofficial function need owners</p>
                         </div>
-                        <p class="health-insight" id="roleInsight">No roles analyzed yet</p>
-                    </div>
-                    
-                    <div class="health-metric">
-                        <label>Team Maturity</label>
-                        <progress id="teamMaturityBar" value="0" max="100"></progress>
-                        <p class="health-insight" id="teamInsight">Enable analytics to see insights</p>
-                    </div>
-                    
-                    <div class="shadow-alerts" id="shadowAlerts">
-                        <!-- Shadow function alerts will appear here -->
+
+                        <div class="health-metric">
+                            <label>Team Maturity</label>
+                            <progress id="teamMaturityBar" value="0" max="100"></progress>
+                            <p class="health-insight" id="teamInsight">Enable analytics to see insights</p>
+                        </div>
+
+                        <div class="shadow-alerts" id="shadowAlerts">
+                            <!-- Shadow function alerts will appear here -->
+                        </div>
                     </div>
                 </div>
 
@@ -2347,6 +2408,16 @@ Please create this for my organization with:
                     
                     // Track changes
                     setInterval(() => this.updateSyncStatus(), 10000); // Update every 10 seconds
+
+                    // Dashboard toggle
+                    const toggleBtn = document.getElementById('toggleSystemHealth');
+                    const healthContent = document.getElementById('systemHealthContent');
+                    if (toggleBtn && healthContent) {
+                        toggleBtn.addEventListener('click', () => {
+                            const hidden = healthContent.classList.toggle('hidden');
+                            toggleBtn.textContent = hidden ? 'Show Dashboard' : 'Hide Dashboard';
+                        });
+                    }
                 },
 
                 // Migrate data to add E.O. fields if needed
@@ -2905,16 +2976,41 @@ Please create this for my organization with:
                         
                         // Update role maturity progress
                         const progressBar = document.getElementById('roleMaturityProgress');
-                        if (progressBar && total > 0) {
-                            const integratedPercent = (integrated / total) * 100;
-                            const emergingPercent = (emerging / total) * 100;
-                            const shadowPercent = (shadow / total) * 100;
-                            
-                            progressBar.innerHTML = `
-                                <div class="maturity-segment integrated" style="width: ${integratedPercent}%">${integrated} Integrated</div>
-                                <div class="maturity-segment emerging" style="width: ${emergingPercent}%">${emerging} Emerging</div>
-                                <div class="maturity-segment shadow" style="width: ${shadowPercent}%">${shadow} Unofficial</div>
-                            `;
+                        const legend = document.getElementById('roleMaturityLegend');
+                        if (progressBar) {
+                            if (total > 0) {
+                                const integratedPercent = (integrated / total) * 100;
+                                const emergingPercent = (emerging / total) * 100;
+                                const shadowPercent = (shadow / total) * 100;
+
+                                progressBar.innerHTML = `
+                                    <div class="maturity-segment integrated" style="width: ${integratedPercent}%"></div>
+                                    <div class="maturity-segment emerging" style="width: ${emergingPercent}%"></div>
+                                    <div class="maturity-segment shadow" style="width: ${shadowPercent}%"></div>
+                                `;
+
+                                if (legend) {
+                                    legend.innerHTML = `
+                                        <div class="legend-item integrated"><span class="legend-color"></span>${integrated} Integrated</div>
+                                        <div class="legend-item emerging"><span class="legend-color"></span>${emerging} Emerging</div>
+                                        <div class="legend-item shadow"><span class="legend-color"></span>${shadow} Unofficial</div>
+                                    `;
+                                }
+                            } else {
+                                progressBar.innerHTML = `
+                                    <div class="maturity-segment integrated" style="width: 0%"></div>
+                                    <div class="maturity-segment emerging" style="width: 0%"></div>
+                                    <div class="maturity-segment shadow" style="width: 0%"></div>
+                                `;
+
+                                if (legend) {
+                                    legend.innerHTML = `
+                                        <div class="legend-item integrated"><span class="legend-color"></span>0 Integrated</div>
+                                        <div class="legend-item emerging"><span class="legend-color"></span>0 Emerging</div>
+                                        <div class="legend-item shadow"><span class="legend-color"></span>0 Unofficial</div>
+                                    `;
+                                }
+                            }
                         }
                         
                         // Update role insight
