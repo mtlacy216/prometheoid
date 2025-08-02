@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flow Node Editor</title>
+    <title>Flow Process Mapper - E.O. Edition</title>
     <style>
         * {
             margin: 0;
@@ -37,14 +37,11 @@
             cursor: default;
             transform-origin: 0 0;
             transition: cursor 0.15s ease;
+            will-change: transform;
         }
 
         #canvas.grabbing {
             cursor: grabbing !important;
-        }
-
-        #canvas.can-grab {
-            cursor: grab;
         }
 
         #canvas.connecting {
@@ -61,12 +58,26 @@
             left: 0;
             width: 100%;
             height: 100%;
+            z-index: 15;
             pointer-events: none;
-            z-index: 5;
+        }
+        
+        svg .connection-group {
+            pointer-events: all;
         }
         
         svg path {
             pointer-events: stroke;
+            cursor: pointer;
+        }
+        
+        svg text {
+            pointer-events: none;
+        }
+        
+        svg .connection-hit-area {
+            pointer-events: stroke;
+            cursor: pointer;
         }
 
         /* Selection box */
@@ -104,84 +115,54 @@
             cursor: text;
         }
 
-        .group-header:focus {
-            outline: none;
-            color: #fff;
-        }
-
         /* Flows */
         .flow {
             position: absolute;
             background: #1a1a1a;
             border: 2px solid #2a2a2a;
             border-radius: 8px;
-            padding: 50px 20px 20px 20px;
-            min-width: 700px;
-            cursor: move;
+            padding: 32px 20px 20px 20px;
+            min-width: 600px;
+            cursor: default;
             z-index: 10;
-            transition: all 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            will-change: transform;
         }
 
         .flow:hover {
             border-color: #333;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: move;
+        }
+        
+        .flow .node {
+            cursor: pointer !important;
+        }
+        
+        .flow .flow-label-container {
+            cursor: default !important;
+        }
+        
+        .flow .flow-control {
+            cursor: pointer !important;
+        }
+        
+        .flow .port {
+            cursor: crosshair !important;
         }
 
         .flow.collapsed {
             background: #1e1e1e;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            padding: 15px 20px;
-            min-width: 200px;
-        }
-
-        .flow.collapsed .flow-content {
-            display: none;
-        }
-
-        .flow.dragging {
-            cursor: grabbing !important;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            z-index: 100;
-            transform: scale(1.02);
-        }
-
-        .flow.level-1 {
-            border-color: #4CAF50;
-        }
-
-        .flow.level-1:hover {
-            border-color: #5CBF60;
-        }
-
-        .flow.level-2 {
-            border-color: #FF9800;
-        }
-
-        .flow.level-2:hover {
-            border-color: #FFA820;
-        }
-
-        .flow.level-3 {
-            border-color: #F44336;
-        }
-
-        .flow.level-3:hover {
-            border-color: #F55346;
-        }
-
-        .flow-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 10px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 6px 6px 0 0;
+            padding: 0;
+            min-width: 120px;
+            width: 120px;
+            height: 120px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
+            border-radius: 12px;
         }
 
         .flow.collapsed .flow-header {
@@ -189,27 +170,137 @@
             border: none;
             background: none;
             padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flow.collapsed .flow-label-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+
+        .flow.collapsed .flow-label {
+            display: block;
+            font-size: 10px;
+            text-align: center;
+            padding: 4px;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ccc;
+            cursor: default;
+        }
+
+        .flow.collapsed .edit-hint {
+            display: none;
+        }
+
+        .flow.collapsed .flow-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .flow.collapsed .flow-content {
+            display: none;
+        }
+
+        .flow.collapsed .flow-controls {
+            display: none;
+        }
+
+        .flow.collapsed .port-input {
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .flow.collapsed .port-output {
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .flow.dragging {
+            cursor: grabbing !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            transform: scale(1.02);
+        }
+        
+        .flow.dragging * {
+            cursor: grabbing !important;
+        }
+
+        .flow-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 26px;
+        }
+
+        .flow-label-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            overflow: hidden;
         }
 
         .flow-label {
-            font-size: 14px;
-            color: #fff;
-            cursor: text;
-            flex: 1;
+            font-size: 10px;
+            color: #666;
+            cursor: default !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            user-select: none;
+            transition: color 0.2s ease;
         }
 
-        .flow-label:focus {
-            outline: 1px solid #4a9eff;
-            outline-offset: 2px;
+        .edit-hint {
+            font-size: 9px;
+            color: #555;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            cursor: pointer !important;
+        }
+
+        .flow-label-container:hover .edit-hint {
+            opacity: 1;
+        }
+
+        .flow-label-container:hover .flow-label {
+            color: #999;
+        }
+
+        .flow-label.editing {
+            color: #fff;
+            cursor: text !important;
+            user-select: text;
             background: rgba(255, 255, 255, 0.05);
             padding: 2px 4px;
             border-radius: 3px;
+            outline: 1px solid #4a9eff;
+            outline-offset: 1px;
+            font-size: 11px;
         }
 
-        .flow-sublabel {
-            font-size: 11px;
-            color: #666;
-            margin-left: 10px;
+        .flow-label.editing + .edit-hint {
+            display: none;
         }
 
         .flow-controls {
@@ -218,16 +309,16 @@
         }
 
         .flow-control {
-            width: 24px;
-            height: 24px;
+            width: 18px;
+            height: 18px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 10px;
             transition: all 0.2s ease;
         }
 
@@ -242,15 +333,18 @@
             gap: 30px;
             margin-top: 10px;
             position: relative;
+            cursor: default;
+            min-height: 80px;
         }
 
         /* Individual Nodes within flows */
         .node {
             position: relative;
-            z-index: 20;
+            z-index: 5;
             transition: transform 0.1s ease;
             padding: 4px;
             margin: -4px;
+            cursor: pointer;
         }
 
         .node.selected,
@@ -261,10 +355,10 @@
 
         .node:hover {
             transform: scale(1.05);
-            z-index: 21;
+            z-index: 6;
         }
 
-        /* Role Node (Rectangle) */
+        /* Role Node */
         .node-role {
             background: #2a2a2a;
             border: 2px solid #3a3a3a;
@@ -369,10 +463,6 @@
             color: #888;
         }
 
-        .node-action-checkbox input {
-            cursor: pointer;
-        }
-
         /* Operand Node */
         .node-operand {
             background: #2a2a2a;
@@ -391,20 +481,33 @@
         /* Ports */
         .port {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 24px;
+            height: 24px;
             background: #3a3a3a;
             border: 2px solid #5a5a5a;
             border-radius: 50%;
             cursor: crosshair;
             transition: all 0.2s ease;
-            z-index: 21;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .port::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            pointer-events: none;
         }
 
         .port:hover {
             background: #4a9eff;
             border-color: #3a8eef;
             transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(74, 158, 255, 0.6);
         }
 
         .port.connected {
@@ -416,92 +519,152 @@
             background: #ffd93d;
             border-color: #ffcc00;
             transform: scale(1.5);
-            box-shadow: 0 0 10px rgba(255, 217, 61, 0.6);
+            box-shadow: 0 0 15px rgba(255, 217, 61, 0.8);
         }
 
-        .port-input::before {
-            content: '◀';
-            position: absolute;
-            left: 2px;
+        .port-input {
+            left: -12px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 8px;
-            color: #666;
-            pointer-events: none;
         }
-        
-        .port-output::before {
-            content: '▶';
-            position: absolute;
-            right: 2px;
+
+        .port-output {
+            right: -12px;
             top: 50%;
             transform: translateY(-50%);
-            font-size: 8px;
-            color: #666;
-            pointer-events: none;
         }
-        
-        .port:hover::before {
-            color: #fff;
-        }
-        
-        .port-output.disabled {
-            background: #333;
-            border-color: #222;
-            cursor: not-allowed;
-            opacity: 0.3;
-        }
-        
-        .port-output.disabled::before {
-            content: '✕';
-            color: #666;
-        }
-        
+
         .port.connecting {
             background: #4a9eff;
             border-color: #3a8eef;
             box-shadow: 0 0 15px rgba(74, 158, 255, 0.8);
         }
 
-        .flow .port-input {
-            left: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .flow .port-output {
-            right: -6px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        /* Connections */
+        /* Connection Types */
         .connection {
             fill: none;
             stroke: #4CAF50;
             stroke-width: 2;
             opacity: 0.8;
             transition: all 0.2s ease;
+            pointer-events: none;
+        }
+
+        .connection-hit-area {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 20;
             pointer-events: stroke;
             cursor: pointer;
         }
 
-        .connection:hover {
-            stroke-width: 4;
+        .connection-group:hover .connection {
+            stroke-width: 3;
             opacity: 1;
             filter: drop-shadow(0 0 4px currentColor);
         }
 
         .connection.temp {
-            stroke: #4a9eff;
+            stroke: #4a9eff !important;
             stroke-dasharray: 5, 5;
             animation: dash 0.5s linear infinite;
+            opacity: 1 !important;
+            pointer-events: none;
+        }
+
+        .connection.designation {
+            stroke: #2196F3;
+        }
+
+        .connection.superposition {
+            stroke: #FF9800;
+            stroke-dasharray: 10, 5;
+        }
+
+        .connection.recursion {
+            stroke: #9C27B0;
+        }
+
+        .connection.segmentation {
+            stroke: #F44336;
+            stroke-dasharray: 2, 4;
+        }
+
+        .connection.constitution {
+            stroke: #00BCD4;
+        }
+
+        .connection.instance {
+            stroke: #8BC34A;
+            stroke-dasharray: 8, 4;
+        }
+
+        .connection.nullification {
+            stroke: #E91E63;
+        }
+
+        .connection.synthesis {
+            stroke: #FFC107;
+        }
+
+        .connection.alternation {
+            stroke: #795548;
+            stroke-dasharray: 5, 5, 1, 5;
         }
 
         @keyframes dash {
             to {
                 stroke-dashoffset: -10;
             }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                stroke-width: 4;
+            }
+            to {
+                opacity: 0.8;
+                stroke-width: 2;
+            }
+        }
+        
+        .connection {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Connection Labels */
+        .connection-label {
+            font-size: 14px;
+            fill: #fff;
+            text-anchor: middle;
+            pointer-events: all;
+            cursor: pointer;
+            paint-order: stroke;
+            stroke: #0d0d0d;
+            stroke-width: 3px;
+            stroke-linejoin: round;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        
+        .connection-label-bg {
+            fill: rgba(26, 26, 26, 0.9);
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1;
+            rx: 4;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .connection-group:hover .connection-label {
+            fill: #4a9eff;
+            font-size: 16px;
+        }
+        
+        .connection-group:hover .connection-label-bg {
+            fill: rgba(26, 26, 26, 1);
+            stroke: rgba(74, 158, 255, 0.5);
         }
 
         /* Controls */
@@ -559,13 +722,6 @@
             justify-content: center;
             font-size: 14px;
         }
-        
-        .zoom-controls button:first-child,
-        .zoom-controls button:nth-child(3) {
-            width: 32px;
-            padding: 0;
-            font-size: 16px;
-        }
 
         .zoom-level {
             font-size: 12px;
@@ -575,30 +731,66 @@
             font-family: monospace;
         }
 
-        /* Layer toggles */
-        .layer-toggles {
+        /* Connection Type Selector (Inline) */
+        .connection-type-selector {
+            position: fixed;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 4px;
+            display: none;
+            flex-direction: row;
+            gap: 2px;
+            z-index: 2001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .connection-type-selector.show {
             display: flex;
-            gap: 5px;
         }
 
-        .layer-toggle {
+        .connection-type-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .connection-type-option:hover {
+            background: rgba(74, 158, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .connection-type-option.active {
+            background: rgba(74, 158, 255, 0.3);
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.5);
+        }
+
+        .connection-type-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
             padding: 4px 8px;
-            font-size: 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            margin-bottom: 4px;
         }
 
-        .layer-toggle.level-1.active {
-            background: #4CAF50;
-            border-color: #45a049;
-        }
-
-        .layer-toggle.level-2.active {
-            background: #FF9800;
-            border-color: #F57C00;
-        }
-
-        .layer-toggle.level-3.active {
-            background: #F44336;
-            border-color: #D32F2F;
+        .connection-type-option:hover .connection-type-tooltip {
+            opacity: 1;
         }
 
         /* Modal */
@@ -724,6 +916,114 @@
             border-color: #2a7edf;
         }
 
+        /* Role Filter Bar */
+        .role-filter-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 15px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .role-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            max-width: 600px;
+        }
+
+        .role-chip {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .role-chip:hover {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+        }
+
+        .role-chip.active {
+            background: #4a9eff;
+            border-color: #3a8eef;
+            color: #fff;
+        }
+
+        .role-chip.active:hover {
+            background: #3a8eef;
+            border-color: #2a7edf;
+        }
+
+        .filter-mode {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .filter-mode label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .filter-mode input[type="radio"] {
+            margin: 0;
+        }
+
+        .filter-status {
+            font-size: 11px;
+            color: #666;
+            margin-left: 10px;
+            font-style: italic;
+        }
+
+        /* Filtered flow states */
+        .flow.dimmed {
+            opacity: 0.3;
+            filter: grayscale(0.8);
+            z-index: 5;
+        }
+
+        .flow.hidden {
+            display: none;
+        }
+
+        .flow.highlighted {
+            box-shadow: 0 0 20px rgba(74, 158, 255, 0.4);
+            border-color: #4a9eff;
+            z-index: 11;
+        }
+
+        .connection-group.dimmed {
+            opacity: 0.2;
+        }
+
+        .connection-group.hidden {
+            display: none;
+        }
+
         /* Help text */
         .help-text {
             position: absolute;
@@ -749,41 +1049,28 @@
         .help-text strong {
             color: #fff;
         }
-
-        /* Add button */
-        .add-node-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 18px;
-            color: #666;
-        }
-
-        .add-node-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
-            color: #fff;
-            transform: scale(1.1);
-        }
     </style>
 </head>
 <body>
     <div id="canvas-container">
-        <div id="canvas">
-            <svg id="connections"></svg>
-        </div>
+        <svg id="connections" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+        </svg>
+        <div id="canvas"></div>
         
         <div class="controls">
             <div class="control-group">
                 <button onclick="App.createNewFlow()" title="Create new flow">New Flow</button>
                 <button onclick="App.groupSelected()" title="Group selected flows">Group</button>
+                <button onclick="App.exportAsText()" title="Export as text">Export</button>
             </div>
             
             <div class="control-group zoom-controls">
@@ -793,23 +1080,71 @@
                 <button onclick="App.resetZoom()" title="Reset to 100%">100%</button>
                 <button onclick="App.fitToContent()" title="Fit all content">Fit</button>
             </div>
-            
-            <div class="control-group layer-toggles">
-                <button class="layer-toggle level-1 active" onclick="App.toggleLayer(1)" title="Toggle Level 1 flows">L1</button>
-                <button class="layer-toggle level-2 active" onclick="App.toggleLayer(2)" title="Toggle Level 2 flows">L2</button>
-                <button class="layer-toggle level-3 active" onclick="App.toggleLayer(3)" title="Toggle Level 3 flows">L3</button>
+        </div>
+        
+        <div class="role-filter-bar">
+            <div class="filter-label">Filter by role:</div>
+            <div class="role-chips">
+                <div class="role-chip active" data-role="all" onclick="App.toggleRoleFilter('all')">
+                    All Roles
+                </div>
             </div>
+            <div class="filter-mode">
+                <label><input type="radio" name="filterMode" value="highlight" checked onchange="App.updateFilterMode()"> Highlight</label>
+                <label><input type="radio" name="filterMode" value="hide" onchange="App.updateFilterMode()"> Hide Others</label>
+            </div>
+            <div class="filter-status"></div>
         </div>
         
         <div class="help-text" id="helpText">
-            <strong>Flow Node Editor</strong><br>
-            All flows now have input ports!<br>
-            • L1 flows: Green border<br>
-            • L2 flows: Orange (from L1 connections)<br>
-            • L3 flows: Red (can't output further)<br>
+            <strong>Flow Process Mapper</strong><br>
+            • Drag flows to move them around<br>
+            • Connect: drag from ▶ to ◀<br>
+            • Change type: click operator symbol<br>
+            • Rename: double-click label or click ✎<br>
+            • Filter by role to focus view<br>
             <hr>
-            Try dragging from Flow 2's ▶ to Flow 3's ◀<br>
-            <strong>Shortcuts:</strong> [F] Fit to view • [Delete] Remove selected
+            <strong>Shortcuts:</strong> [F] Fit • [R] Reset filter • [Delete] Remove
+        </div>
+    </div>
+
+    <!-- Connection Type Selector (Inline) -->
+    <div class="connection-type-selector" id="connectionTypeSelector">
+        <div class="connection-type-option" data-type="designation">
+            <span>⊡</span>
+            <div class="connection-type-tooltip">Approval</div>
+        </div>
+        <div class="connection-type-option" data-type="superposition">
+            <span>※</span>
+            <div class="connection-type-tooltip">Decision</div>
+        </div>
+        <div class="connection-type-option" data-type="recursion">
+            <span>⟳</span>
+            <div class="connection-type-tooltip">Loop</div>
+        </div>
+        <div class="connection-type-option" data-type="segmentation">
+            <span>|</span>
+            <div class="connection-type-tooltip">Handoff</div>
+        </div>
+        <div class="connection-type-option" data-type="constitution">
+            <span>☯</span>
+            <div class="connection-type-tooltip">Mutual</div>
+        </div>
+        <div class="connection-type-option" data-type="instance">
+            <span>△</span>
+            <div class="connection-type-tooltip">Pattern</div>
+        </div>
+        <div class="connection-type-option" data-type="nullification">
+            <span>∅</span>
+            <div class="connection-type-tooltip">Block</div>
+        </div>
+        <div class="connection-type-option" data-type="synthesis">
+            <span>*</span>
+            <div class="connection-type-tooltip">Merge</div>
+        </div>
+        <div class="connection-type-option" data-type="alternation">
+            <span>∿</span>
+            <div class="connection-type-tooltip">Turns</div>
         </div>
     </div>
 
@@ -828,8 +1163,21 @@
     </div>
 
     <script>
-        // Create App namespace to avoid global pollution
+        // Create App namespace
         window.App = {};
+        
+        // Connection type definitions
+        const connectionTypes = {
+            designation: { symbol: '⊡', name: 'Approval/Designation', color: '#2196F3', description: 'External marking/approval' },
+            superposition: { symbol: '※', name: 'Decision/Superposition', color: '#FF9800', description: 'Decision/conditional' },
+            recursion: { symbol: '⟳', name: 'Loop/Recursion', color: '#9C27B0', description: 'Feedback loop' },
+            segmentation: { symbol: '|', name: 'Handoff/Segmentation', color: '#F44336', description: 'Handoff/boundary' },
+            constitution: { symbol: '☯', name: 'Mutual/Constitution', color: '#00BCD4', description: 'Mutual definition' },
+            instance: { symbol: '△', name: 'Pattern/Instance', color: '#8BC34A', description: 'Follows pattern' },
+            nullification: { symbol: '∅', name: 'Block/Nullification', color: '#E91E63', description: 'Blocks/cancels' },
+            synthesis: { symbol: '*', name: 'Merge/Synthesis', color: '#FFC107', description: 'Merge/create' },
+            alternation: { symbol: '∿', name: 'Turns/Alternation', color: '#795548', description: 'Takes turns' }
+        };
         
         // Application state
         const state = {
@@ -849,85 +1197,153 @@
             selectionBox: null,
             isPanning: false,
             isSelecting: false,
-            mouseDownTime: 0,
-            mouseDownPos: { x: 0, y: 0 },
-            isDragIntent: false,
-            dragThreshold: 5,
-            dragDelay: 50,
+            activeConnection: null,
             flowIdCounter: 0,
             nodeIdCounter: 0,
             groupIdCounter: 0,
-            layerVisibility: {
-                1: true,
-                2: true,
-                3: true
-            }
+            dragThreshold: 5,
+            animationFrame: null,
+            updateQueue: new Set(),
+            // Role filtering
+            activeRoles: new Set(['all']),
+            filterMode: 'highlight',
+            availableRoles: new Set(),
         };
         
         // Sample data
         const availableRoles = [
             'Manager', 'Developer', 'Designer', 'QA Engineer',
             'Product Owner', 'Scrum Master', 'DevOps', 'Data Analyst',
-            'Marketing', 'Sales', 'Customer Support', 'HR'
+            'Marketing', 'Sales', 'Customer Support', 'HR',
+            'Finance', 'Accounting'
         ];
         
         const availableEntities = availableRoles;
+        
+        // Performance helpers
+        function throttle(func, delay) {
+            let lastCall = 0;
+            return function(...args) {
+                const now = Date.now();
+                if (now - lastCall >= delay) {
+                    lastCall = now;
+                    return func.apply(this, args);
+                }
+            };
+        }
+        
+        function scheduleUpdate(updateFunc) {
+            state.updateQueue.add(updateFunc);
+            if (!state.animationFrame) {
+                state.animationFrame = requestAnimationFrame(() => {
+                    state.updateQueue.forEach(fn => fn());
+                    state.updateQueue.clear();
+                    state.animationFrame = null;
+                });
+            }
+        }
         
         // Initialize
         function init() {
             // Get DOM elements
             state.canvas = document.getElementById('canvas');
             state.svgElement = document.getElementById('connections');
+            if (!state.svgElement) {
+                console.error('SVG element not found!');
+                return;
+            }
             state.canvasRect = state.canvas.getBoundingClientRect();
             
             setupEventListeners();
             updateCanvasTransform();
             
             // Create sample flows
-            const flow1 = createFlow(150, 250);
+            const flow1 = createFlow(150, 200);
             flow1.label = 'Manager approves budget';
             flow1.element.querySelector('.flow-label').textContent = flow1.label;
+            if (flow1.nodes[0]) flow1.nodes[0].roles = ['Manager'];
+            updateFlowIcon(flow1);
+            updateRoleDisplay(flow1.nodes[0]);
             
-            const flow2 = createFlow(550, 150);
+            const flow2 = createFlow(500, 100);
             flow2.label = 'Finance processes payment';
             flow2.element.querySelector('.flow-label').textContent = flow2.label;
+            if (flow2.nodes[0]) flow2.nodes[0].roles = ['Finance'];
+            updateFlowIcon(flow2);
+            updateRoleDisplay(flow2.nodes[0]);
             
-            const flow3 = createFlow(550, 350);
-            flow3.label = 'Accounting records transaction';
+            const flow3 = createFlow(500, 300);
+            flow3.label = 'Accounting logs transaction';
             flow3.element.querySelector('.flow-label').textContent = flow3.label;
+            if (flow3.nodes[0]) flow3.nodes[0].roles = ['Accounting'];
+            updateFlowIcon(flow3);
+            updateRoleDisplay(flow3.nodes[0]);
             
-            // Create initial connection
+            // Update role filter after creating flows
+            updateAvailableRoles();
+            
+            // Create a demo connection
             setTimeout(() => {
                 if (flow1.ports.output && flow2.ports.input) {
-                    createConnection(flow1.ports.output, flow2.ports.input, flow1, flow2);
-                    
-                    setTimeout(() => {
-                        const helpText = document.getElementById('helpText');
-                        if (helpText) {
-                            helpText.innerHTML = `
-                                <strong>Great!</strong> Notice Flow 2 became Level 2.<br>
-                                Try connecting Flow 2's ▶ to Flow 3's ◀ port.
-                                <hr>
-                                <strong>Quick Tips:</strong><br>
-                                • Double-click canvas = New flow<br>
-                                • Click any node = Edit it<br>
-                                • Click connections = Delete<br>
-                                • [F] key = Fit all to view
-                            `;
-                        }
-                    }, 500);
+                    createConnection(flow1.ports.output, flow2.ports.input, flow1, flow2, 'designation');
                 }
+            }, 500);
+            
+            // Auto-fit to content
+            setTimeout(() => {
+                App.fitToContent();
             }, 100);
+        }
+        
+        // Update flow icon based on content
+        function updateFlowIcon(flow) {
+            let icon = flow.element.querySelector('.flow-icon');
+            if (!icon) {
+                icon = document.createElement('div');
+                icon.className = 'flow-icon';
+                const labelContainer = flow.element.querySelector('.flow-label-container');
+                labelContainer.insertBefore(icon, labelContainer.firstChild);
+            }
+            
+            const label = flow.label.toLowerCase();
+            
+            // Simple icon mapping
+            if (label.includes('approve') || label.includes('okays')) icon.textContent = '✓';
+            else if (label.includes('process') || label.includes('does')) icon.textContent = '⚙';
+            else if (label.includes('share') || label.includes('communicate')) icon.textContent = '📤';
+            else if (label.includes('log') || label.includes('record')) icon.textContent = '📝';
+            else if (label.includes('design')) icon.textContent = '🎨';
+            else if (label.includes('develop')) icon.textContent = '💻';
+            else if (label.includes('test')) icon.textContent = '🧪';
+            else icon.textContent = '📋';
         }
         
         // Canvas controls
         function setupEventListeners() {
-            state.canvas.addEventListener('wheel', handleWheel);
+            state.canvas.addEventListener('wheel', handleWheel, { passive: false });
             state.canvas.addEventListener('mousedown', handleCanvasMouseDown);
             state.canvas.addEventListener('dblclick', handleCanvasDoubleClick);
             document.addEventListener('keydown', handleKeyDown);
             window.addEventListener('resize', () => {
                 state.canvasRect = state.canvas.getBoundingClientRect();
+                scheduleUpdate(() => updateAllConnections());
+            });
+            
+            // Connection type selector
+            const selector = document.getElementById('connectionTypeSelector');
+            selector.querySelectorAll('.connection-type-option').forEach(option => {
+                option.addEventListener('click', () => selectConnectionType(option.dataset.type));
+            });
+            
+            // Click outside to close selector
+            document.addEventListener('click', (e) => {
+                const selector = document.getElementById('connectionTypeSelector');
+                if (!e.target.closest('.connection-type-selector') && 
+                    !e.target.closest('.connection-label') &&
+                    selector.classList.contains('show')) {
+                    selector.classList.remove('show');
+                    state.activeConnection = null;
+                }
             });
         }
         
@@ -946,6 +1362,7 @@
             state.zoom = newZoom;
             updateCanvasTransform();
             updateZoomDisplay();
+            scheduleUpdate(() => updateAllConnections());
         }
         
         function updateCanvasTransform() {
@@ -980,7 +1397,12 @@
             if (e.key === 'Delete' && state.selectedItems.size > 0) {
                 deleteSelected();
             } else if (e.key.toLowerCase() === 'f') {
-                fitToContent();
+                App.fitToContent();
+            } else if (e.key === 'Tab' && state.activeConnection) {
+                e.preventDefault();
+                cycleConnectionType();
+            } else if (e.key.toLowerCase() === 'r') {
+                App.toggleRoleFilter('all');
             }
         }
         
@@ -992,11 +1414,12 @@
             const startPanX = state.panX;
             const startPanY = state.panY;
             
-            function pan(e) {
+            const pan = throttle((e) => {
                 state.panX = startPanX + (e.clientX - startX);
                 state.panY = startPanY + (e.clientY - startY);
                 updateCanvasTransform();
-            }
+                scheduleUpdate(() => updateAllConnections());
+            }, 16);
             
             function stopPanning() {
                 state.isPanning = false;
@@ -1010,10 +1433,9 @@
         }
         
         // Flow creation and management
-        function createFlow(x, y, level = 1) {
+        function createFlow(x, y) {
             const flow = {
                 id: 'flow-' + state.flowIdCounter++,
-                level: level,
                 x: x,
                 y: y,
                 collapsed: false,
@@ -1022,24 +1444,23 @@
                 element: null,
                 ports: {
                     input: {},
-                    output: level < 3 ? {} : null
+                    output: {}
                 }
             };
             
             const el = document.createElement('div');
-            el.className = 'flow level-' + level;
+            el.className = 'flow';
             el.style.left = x + 'px';
             el.style.top = y + 'px';
             
-            let portsHTML = '';
-            if (flow.ports.input) portsHTML += '<div class="port port-input" data-type="input" title="Input: Connect from another flow"></div>';
-            if (flow.ports.output) portsHTML += '<div class="port port-output" data-type="output" title="Output: Connect to another flow"></div>';
-            
             el.innerHTML = `
-                ${portsHTML}
+                <div class="port port-input" data-type="input" title="Input: Connect from another flow"></div>
+                <div class="port port-output" data-type="output" title="Output: Connect to another flow"></div>
                 <div class="flow-header">
-                    <div class="flow-label" contenteditable="true">${flow.label}</div>
-                    <span class="flow-sublabel">Level ${level} Flow</span>
+                    <div class="flow-label-container">
+                        <div class="flow-label" title="Double-click to rename">${flow.label}</div>
+                        <span class="edit-hint">✎</span>
+                    </div>
                     <div class="flow-controls">
                         <div class="flow-control" onclick="App.toggleFlow('${flow.id}')">${flow.collapsed ? '▶' : '▼'}</div>
                     </div>
@@ -1050,19 +1471,57 @@
             state.canvas.appendChild(el);
             flow.element = el;
             flow.contentElement = el.querySelector('.flow-content');
-            
-            if (flow.ports.input) flow.ports.input = el.querySelector('.port-input');
-            if (flow.ports.output) flow.ports.output = el.querySelector('.port-output');
+            flow.ports.input = el.querySelector('.port-input');
+            flow.ports.output = el.querySelector('.port-output');
             
             const labelEl = el.querySelector('.flow-label');
-            labelEl.addEventListener('blur', () => {
+            const editHint = el.querySelector('.edit-hint');
+            
+            // Click edit hint to edit
+            if (editHint) {
+                editHint.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    startEditingLabel();
+                });
+            }
+            
+            // Double-click to edit label
+            const startEditingLabel = () => {
+                labelEl.contentEditable = true;
+                labelEl.classList.add('editing');
+                labelEl.focus();
+                
+                // Select all text
+                const range = document.createRange();
+                range.selectNodeContents(labelEl);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            };
+            
+            labelEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                startEditingLabel();
+            });
+            
+            // Handle blur and enter key
+            const finishEditing = () => {
+                labelEl.contentEditable = false;
+                labelEl.classList.remove('editing');
                 flow.label = labelEl.textContent;
                 updateFlowGrammar(flow);
-            });
+                updateFlowIcon(flow);
+            };
+            
+            labelEl.addEventListener('blur', finishEditing);
             
             labelEl.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    labelEl.blur();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    labelEl.textContent = flow.label; // Revert
                     labelEl.blur();
                 }
             });
@@ -1076,28 +1535,40 @@
         
         function setupFlowInteractions(flow) {
             const el = flow.element;
+            const header = el.querySelector('.flow-header');
             
+            // Drag from header or flow body (but not from interactive elements)
             el.addEventListener('mousedown', (e) => {
-                if (!e.target.classList.contains('flow-label') && 
-                    !e.target.classList.contains('flow-control') &&
-                    !e.target.closest('.node')) {
+                const isInteractive = e.target.classList.contains('flow-label') || 
+                                    e.target.classList.contains('edit-hint') ||
+                                    e.target.classList.contains('flow-control') ||
+                                    e.target.closest('.node') ||
+                                    e.target.classList.contains('port') ||
+                                    e.target.tagName === 'INPUT';
+                
+                if (!isInteractive) {
                     startDragFlow(e, flow);
                 }
             });
             
-            el.addEventListener('dblclick', (e) => {
-                if (e.target === el || e.target.classList.contains('flow-header')) {
+            // Double-click header background to collapse
+            header.addEventListener('dblclick', (e) => {
+                if (!e.target.classList.contains('flow-label') && 
+                    !e.target.classList.contains('edit-hint') &&
+                    !e.target.classList.contains('flow-control') &&
+                    !e.target.closest('.flow-label-container')) {
                     e.stopPropagation();
                     App.toggleFlow(flow.id);
                 }
             });
             
-            if (flow.ports.input) {
-                flow.ports.input.addEventListener('mousedown', (e) => startConnection(e, flow.ports.input, flow));
-            }
-            if (flow.ports.output) {
-                flow.ports.output.addEventListener('mousedown', (e) => startConnection(e, flow.ports.output, flow));
-            }
+            // Better port interactions
+            [flow.ports.input, flow.ports.output].forEach(port => {
+                port.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    startConnection(e, port, flow);
+                });
+            });
         }
         
         function populateFlow(flow) {
@@ -1107,12 +1578,15 @@
             const role = createNodeInFlow(flow, 'role', { roles: ['Manager'] });
             const transform = createNodeInFlow(flow, 'transform', { transformType: 'Does' });
             const action = createNodeInFlow(flow, 'action', { 
-                text: 'writes meeting notes',
+                text: 'process request',
                 hasRoleAfter: false 
             });
             
             flow.nodes = [role, transform, action];
             resizeFlowToFitContent(flow);
+            
+            // Update available roles when flow is populated
+            updateAvailableRoles();
         }
         
         function createNodeInFlow(flow, type, data) {
@@ -1129,6 +1603,7 @@
             
             switch(type) {
                 case 'role':
+                    node.roles = node.roles || [];
                     el.innerHTML = `
                         <div class="node-role">
                             <div class="node-role-title">ROLE</div>
@@ -1154,7 +1629,7 @@
                             <div class="node-action-content">${data.text}</div>
                             <div class="node-action-checkbox">
                                 <input type="checkbox" id="role-after-${node.id}" ${data.hasRoleAfter ? 'checked' : ''}>
-                                <label for="role-after-${node.id}">A role is involved after this</label>
+                                <label for="role-after-${node.id}">Has recipient/target</label>
                             </div>
                         </div>
                     `;
@@ -1215,7 +1690,7 @@
             }
             
             if (operandNode) {
-                grammarText += ' to ' + operandNode.entity;
+                grammarText += ' for ' + operandNode.entity;
             }
             
             const labelEl = flow.element.querySelector('.flow-label');
@@ -1229,22 +1704,11 @@
             let operandNode = flow.nodes.find(n => n.type === 'operand');
             
             if (actionNode.hasRoleAfter && !operandNode) {
-                operandNode = createNodeInFlow(flow, 'operand', { entity: 'Executive Team' });
+                operandNode = createNodeInFlow(flow, 'operand', { entity: 'Team' });
                 flow.nodes.push(operandNode);
-                
-                const addBtn = document.createElement('div');
-                addBtn.className = 'add-node-btn';
-                addBtn.innerHTML = '+';
-                addBtn.onclick = () => {
-                    alert('Additional nodes can be added here in future versions');
-                };
-                flow.contentElement.appendChild(addBtn);
             } else if (!actionNode.hasRoleAfter && operandNode) {
                 operandNode.element.remove();
                 flow.nodes = flow.nodes.filter(n => n.type !== 'operand');
-                
-                const addBtn = flow.contentElement.querySelector('.add-node-btn');
-                if (addBtn) addBtn.remove();
             }
             
             resizeFlowToFitContent(flow);
@@ -1262,16 +1726,11 @@
                 }
             });
             
-            const addBtn = flow.contentElement.querySelector('.add-node-btn');
-            if (addBtn) {
-                totalWidth += 50;
-            }
-            
-            flow.element.style.width = Math.max(700, totalWidth) + 'px';
-            updateAllConnections();
+            flow.element.style.width = Math.max(600, totalWidth) + 'px';
+            scheduleUpdate(() => updateAllConnections());
         }
         
-        // Dragging
+        // Dragging with performance optimizations
         function startDragFlow(e, flow) {
             if (e.target.classList.contains('port')) return;
             e.stopPropagation();
@@ -1285,9 +1744,8 @@
             const offsetY = e.clientY - rect.top;
             
             let dragStarted = false;
-            let dragTimeout = null;
             
-            function checkDragStart(e) {
+            const checkDragStart = throttle((e) => {
                 const distance = Math.hypot(e.clientX - startX, e.clientY - startY);
                 
                 if (distance > state.dragThreshold && !dragStarted) {
@@ -1306,13 +1764,11 @@
                     flow.x = x;
                     flow.y = y;
                     
-                    updateAllConnections();
+                    scheduleUpdate(() => updateAllConnections());
                 }
-            }
+            }, 16);
             
             function stopDrag() {
-                if (dragTimeout) clearTimeout(dragTimeout);
-                
                 if (dragStarted) {
                     el.classList.remove('dragging');
                     el.style.cursor = '';
@@ -1323,59 +1779,68 @@
                 document.removeEventListener('mouseup', stopDrag);
             }
             
-            dragTimeout = setTimeout(() => {
-                document.addEventListener('mousemove', checkDragStart);
-            }, state.dragDelay);
-            
             document.addEventListener('mousemove', checkDragStart);
             document.addEventListener('mouseup', stopDrag);
         }
         
-        // Connections
+        // Connections - Connect first, configure later
         function startConnection(e, port, owner) {
-            e.stopPropagation();
             e.preventDefault();
-            
-            if (port.classList.contains('disabled')) return;
             
             state.connectingPort = { port, owner };
             port.classList.add('connecting');
             state.canvas.classList.add('connecting');
             
             const rect = port.getBoundingClientRect();
-            const canvasRect = state.canvas.getBoundingClientRect();
-            const startX = (rect.left + rect.width / 2 - canvasRect.left - state.panX) / state.zoom;
-            const startY = (rect.top + rect.height / 2 - canvasRect.top - state.panY) / state.zoom;
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+            const startX = rect.left + rect.width / 2 - containerRect.left;
+            const startY = rect.top + rect.height / 2 - containerRect.top;
             
             state.tempConnection = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             state.tempConnection.classList.add('connection', 'temp');
             state.svgElement.appendChild(state.tempConnection);
             
-            function dragConnection(e) {
-                const currentX = (e.clientX - canvasRect.left - state.panX) / state.zoom;
-                const currentY = (e.clientY - canvasRect.top - state.panY) / state.zoom;
+            const dragConnection = throttle((e) => {
+                const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
+                const currentX = e.clientX - containerRect.left;
+                const currentY = e.clientY - containerRect.top;
                 
                 const path = calculateBezierPath(startX, startY, currentX, currentY);
                 state.tempConnection.setAttribute('d', path);
                 
                 highlightCompatiblePorts(e);
-            }
+            }, 16);
             
             function endConnection(e) {
-                state.connectingPort.port.classList.remove('connecting');
-                state.canvas.classList.remove('connecting');
-                
                 const targetPort = document.querySelector('.port.highlight');
                 
-                document.querySelectorAll('.port').forEach(p => p.classList.remove('highlight'));
+                document.querySelectorAll('.port').forEach(p => {
+                    p.classList.remove('highlight');
+                });
                 
                 if (targetPort && isValidConnection(state.connectingPort, targetPort)) {
                     const targetOwner = findPortOwner(targetPort);
-                    createConnection(state.connectingPort.port, targetPort, state.connectingPort.owner, targetOwner);
+                    
+                    // Create connection immediately
+                    const sourcePort = state.connectingPort.port;
+                    const sourceOwner = state.connectingPort.owner;
+                    
+                    createConnection(
+                        sourcePort.dataset.type === 'output' ? sourcePort : targetPort,
+                        sourcePort.dataset.type === 'input' ? sourcePort : targetPort,
+                        sourcePort.dataset.type === 'output' ? sourceOwner : targetOwner,
+                        sourcePort.dataset.type === 'input' ? sourceOwner : targetOwner,
+                        'designation' // Default type
+                    );
                 }
+                
+                // Clean up
+                state.connectingPort.port.classList.remove('connecting');
+                state.canvas.classList.remove('connecting');
                 
                 if (state.tempConnection) state.tempConnection.remove();
                 state.tempConnection = null;
+                state.connectingPort = null;
                 
                 document.removeEventListener('mousemove', dragConnection);
                 document.removeEventListener('mouseup', endConnection);
@@ -1385,21 +1850,109 @@
             document.addEventListener('mouseup', endConnection);
         }
         
-        function createConnection(outputPort, inputPort, outputOwner, inputOwner) {
+        function showConnectionTypeSelector(connection, x, y) {
+            const selector = document.getElementById('connectionTypeSelector');
+            
+            // Update active states
+            selector.querySelectorAll('.connection-type-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.type === connection.type);
+            });
+            
+            state.activeConnection = connection;
+            
+            // Position relative to viewport
+            selector.style.left = x + 'px';
+            selector.style.top = y + 'px';
+            selector.classList.add('show');
+            
+            // Ensure it's within viewport bounds
+            setTimeout(() => {
+                const rect = selector.getBoundingClientRect();
+                if (rect.right > window.innerWidth) {
+                    selector.style.left = (window.innerWidth - rect.width - 10) + 'px';
+                }
+                if (rect.bottom > window.innerHeight) {
+                    selector.style.top = (window.innerHeight - rect.height - 10) + 'px';
+                }
+            }, 0);
+        }
+        
+        function selectConnectionType(type) {
+            const selector = document.getElementById('connectionTypeSelector');
+            selector.classList.remove('show');
+            
+            if (state.activeConnection) {
+                state.activeConnection.type = type;
+                state.activeConnection.path.className = 'connection ' + type;
+                state.activeConnection.path.style.stroke = connectionTypes[type].color;
+                state.activeConnection.label.textContent = connectionTypes[type].symbol;
+                
+                state.activeConnection = null;
+            }
+        }
+        
+        function cycleConnectionType() {
+            if (!state.activeConnection) return;
+            
+            const types = Object.keys(connectionTypes);
+            const currentIndex = types.indexOf(state.activeConnection.type);
+            const nextIndex = (currentIndex + 1) % types.length;
+            const nextType = types[nextIndex];
+            
+            selectConnectionType(nextType);
+        }
+        
+        function createConnection(outputPort, inputPort, outputOwner, inputOwner, type = 'designation') {
+            if (!outputPort || !inputPort || !outputOwner || !inputOwner) {
+                console.error('Invalid connection parameters');
+                return;
+            }
+            
             const connection = {
                 id: 'conn-' + Date.now(),
                 output: outputPort,
                 input: inputPort,
                 outputOwner: outputOwner,
                 inputOwner: inputOwner,
-                path: null
+                type: type,
+                path: null,
+                label: null,
+                group: null,
+                labelBg: null
             };
             
+            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            g.setAttribute('id', connection.id);
+            g.setAttribute('class', 'connection-group');
+            
+            // Invisible hit area for better interaction
+            const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hitArea.classList.add('connection-hit-area');
+            
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.classList.add('connection');
+            path.classList.add('connection', type);
+            path.style.stroke = connectionTypes[type].color;
+            
+            // Label background
+            const labelBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            labelBg.classList.add('connection-label-bg');
+            
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.classList.add('connection-label');
+            text.textContent = connectionTypes[type].symbol;
+            
+            g.appendChild(hitArea);
+            g.appendChild(path);
+            g.appendChild(labelBg);
+            g.appendChild(text);
             
             connection.path = path;
-            state.svgElement.appendChild(path);
+            connection.label = text;
+            connection.group = g;
+            connection.labelBg = labelBg;
+            connection.hitArea = hitArea;
+            
+            state.svgElement.appendChild(g);
             
             outputPort.classList.add('connected');
             inputPort.classList.add('connected');
@@ -1407,95 +1960,72 @@
             state.connections.push(connection);
             updateConnection(connection);
             
-            path.addEventListener('click', () => removeConnection(connection));
-            
-            // Update levels
-            if (outputOwner.level && inputOwner.level) {
-                const newLevel = Math.min(3, outputOwner.level + 1);
-                if (newLevel !== inputOwner.level) {
-                    const wasCollapsed = inputOwner.element.classList.contains('collapsed');
-                    inputOwner.level = newLevel;
-                    inputOwner.element.className = 'flow level-' + newLevel;
-                    if (wasCollapsed) {
-                        inputOwner.element.classList.add('collapsed');
-                    }
-                    inputOwner.element.querySelector('.flow-sublabel').textContent = 'Level ' + newLevel + ' Flow';
-                    
-                    if (newLevel >= 3 && inputOwner.ports.output) {
-                        inputOwner.ports.output.classList.add('disabled');
-                        inputOwner.ports.output.title = 'Level 3 flows cannot be used as inputs';
-                        const newPort = inputOwner.ports.output.cloneNode(true);
-                        inputOwner.ports.output.parentNode.replaceChild(newPort, inputOwner.ports.output);
-                        inputOwner.ports.output = newPort;
-                    }
+            // Click to remove
+            hitArea.addEventListener('click', (e) => {
+                if (!e.shiftKey) {
+                    e.stopPropagation();
+                    removeConnection(connection);
                 }
-            }
+            });
             
-            // Update help text
-            if (state.connections.length === 2) {
-                const helpText = document.getElementById('helpText');
-                if (helpText) {
-                    helpText.innerHTML = `
-                        <strong>Perfect!</strong> You've created a workflow chain.<br>
-                        Flow 3 is now Level 3 (red) and can't output.
-                        <hr>
-                        <strong>Next Steps:</strong><br>
-                        • Click nodes to edit their content<br>
-                        • Double-click flow headers to collapse<br>
-                        • Create your own workflows!<br>
-                        • L1/L2/L3 buttons hide/show levels
-                    `;
+            // Click label to change type
+            [text, labelBg].forEach(el => {
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const rect = text.getBoundingClientRect();
+                    showConnectionTypeSelector(connection, rect.left + rect.width / 2, rect.bottom + 5);
+                });
+            });
+            
+            // Shift+click to change type
+            hitArea.addEventListener('click', (e) => {
+                if (e.shiftKey) {
+                    e.stopPropagation();
+                    const rect = text.getBoundingClientRect();
+                    showConnectionTypeSelector(connection, rect.left + rect.width / 2, rect.bottom + 5);
                 }
-            }
+            });
         }
         
         function removeConnection(connection) {
             const index = state.connections.indexOf(connection);
             if (index > -1) {
                 state.connections.splice(index, 1);
-                connection.path.remove();
+                connection.group.remove();
                 connection.output.classList.remove('connected');
                 connection.input.classList.remove('connected');
-                
-                if (connection.inputOwner && connection.inputOwner.level) {
-                    const hasOtherInputs = state.connections.some(conn => 
-                        conn.inputOwner === connection.inputOwner && conn !== connection
-                    );
-                    
-                    if (!hasOtherInputs) {
-                        const wasCollapsed = connection.inputOwner.element.classList.contains('collapsed');
-                        connection.inputOwner.level = 1;
-                        connection.inputOwner.element.className = 'flow level-1';
-                        if (wasCollapsed) {
-                            connection.inputOwner.element.classList.add('collapsed');
-                        }
-                        connection.inputOwner.element.querySelector('.flow-sublabel').textContent = 'Level 1 Flow';
-                        
-                        if (connection.inputOwner.ports.output && connection.inputOwner.ports.output.classList.contains('disabled')) {
-                            connection.inputOwner.ports.output.classList.remove('disabled');
-                            connection.inputOwner.ports.output.title = '';
-                            
-                            connection.inputOwner.ports.output.addEventListener('mousedown', (e) => 
-                                startConnection(e, connection.inputOwner.ports.output, connection.inputOwner)
-                            );
-                        }
-                    }
-                }
             }
         }
         
         function updateConnection(connection) {
+            if (!connection.output || !connection.input) return;
+            
             const outputRect = connection.output.getBoundingClientRect();
             const inputRect = connection.input.getBoundingClientRect();
-            const canvasRect = state.canvas.getBoundingClientRect();
+            const containerRect = document.getElementById('canvas-container').getBoundingClientRect();
             
-            const x1 = (outputRect.left + outputRect.width / 2 - canvasRect.left - state.panX) / state.zoom;
-            const y1 = (outputRect.top + outputRect.height / 2 - canvasRect.top - state.panY) / state.zoom;
-            const x2 = (inputRect.left + inputRect.width / 2 - canvasRect.left - state.panX) / state.zoom;
-            const y2 = (inputRect.top + inputRect.height / 2 - canvasRect.top - state.panY) / state.zoom;
+            const x1 = outputRect.left + outputRect.width / 2 - containerRect.left;
+            const y1 = outputRect.top + outputRect.height / 2 - containerRect.top;
+            const x2 = inputRect.left + inputRect.width / 2 - containerRect.left;
+            const y2 = inputRect.top + inputRect.height / 2 - containerRect.top;
             
             const path = calculateBezierPath(x1, y1, x2, y2);
             connection.path.setAttribute('d', path);
+            connection.hitArea.setAttribute('d', path);
+            
+            // Position label at midpoint
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2;
+            
+            // Update label background
+            const bbox = { width: 30, height: 24 }; // Approximate size
+            connection.labelBg.setAttribute('x', mx - bbox.width / 2);
+            connection.labelBg.setAttribute('y', my - bbox.height / 2 - 3);
+            connection.labelBg.setAttribute('width', bbox.width);
+            connection.labelBg.setAttribute('height', bbox.height);
+            
+            connection.label.setAttribute('x', mx);
+            connection.label.setAttribute('y', my + 2);
         }
         
         function updateAllConnections() {
@@ -1513,6 +2043,7 @@
         
         function highlightCompatiblePorts(e) {
             const ports = document.querySelectorAll('.port');
+            const threshold = 50;
             
             ports.forEach(p => {
                 if (p !== state.connectingPort.port && p.dataset.type !== state.connectingPort.port.dataset.type) {
@@ -1522,7 +2053,7 @@
                         e.clientY - (rect.top + rect.height / 2)
                     );
                     
-                    if (dist < 30 && isValidConnection(state.connectingPort, p)) {
+                    if (dist < threshold && isValidConnection(state.connectingPort, p)) {
                         p.classList.add('highlight');
                     } else {
                         p.classList.remove('highlight');
@@ -1536,20 +2067,6 @@
             
             if (targetPort.dataset.type === 'input' && targetPort.classList.contains('connected')) {
                 return false;
-            }
-            
-            const targetOwner = findPortOwner(targetPort);
-            if (source.owner.level && targetOwner && targetOwner.level) {
-                if (source.port.dataset.type === 'output' && source.owner.level >= 3) {
-                    return false;
-                }
-                
-                if (source.port.dataset.type === 'output' && targetPort.dataset.type === 'input') {
-                    const resultingLevel = source.owner.level + 1;
-                    if (resultingLevel > 3) {
-                        return false;
-                    }
-                }
             }
             
             return true;
@@ -1632,7 +2149,7 @@
                 if (item.element) {
                     state.connections = state.connections.filter(conn => {
                         if (conn.outputOwner === item || conn.inputOwner === item) {
-                            conn.path.remove();
+                            conn.group.remove();
                             conn.output.classList.remove('connected');
                             conn.input.classList.remove('connected');
                             return false;
@@ -1646,6 +2163,7 @@
             });
             
             state.selectedItems.clear();
+            updateAvailableRoles(); // Update roles after deletion
         }
         
         // Modal
@@ -1691,9 +2209,9 @@
                         <div class="form-group">
                             <label>Action Type</label>
                             <select id="transformType">
-                                <option value="Does" ${node.transformType === 'Does' ? 'selected' : ''}>Does</option>
-                                <option value="Okays" ${node.transformType === 'Okays' ? 'selected' : ''}>Okays</option>
-                                <option value="Shares" ${node.transformType === 'Shares' ? 'selected' : ''}>Shares</option>
+                                <option value="Does" ${node.transformType === 'Does' ? 'selected' : ''}>Does (creates/processes)</option>
+                                <option value="Okays" ${node.transformType === 'Okays' ? 'selected' : ''}>Okays (approves/validates)</option>
+                                <option value="Shares" ${node.transformType === 'Shares' ? 'selected' : ''}>Shares (communicates/sends)</option>
                             </select>
                         </div>
                     `;
@@ -1704,22 +2222,22 @@
                     content.innerHTML = `
                         <div class="form-group">
                             <label>Action Description</label>
-                            <textarea id="actionText" placeholder="e.g., writes meeting notes, gives reports to...">${node.text}</textarea>
+                            <textarea id="actionText" placeholder="e.g., process invoices, review proposals...">${node.text}</textarea>
                         </div>
                         <div class="form-group">
                             <label>
                                 <input type="checkbox" id="hasRoleAfter" ${node.hasRoleAfter ? 'checked' : ''}>
-                                A role is involved after this
+                                Has a recipient or target role
                             </label>
                         </div>
                     `;
                     break;
                     
                 case 'operand':
-                    title.textContent = 'Edit Operand';
+                    title.textContent = 'Edit Target/Recipient';
                     content.innerHTML = `
                         <div class="form-group">
-                            <label>Select Entity</label>
+                            <label>Select Target Role</label>
                             <select id="operandEntity">
                                 ${availableEntities.map(entity => `
                                     <option value="${entity}" ${node.entity === entity ? 'selected' : ''}>${entity}</option>
@@ -1732,17 +2250,133 @@
         }
         
         function updateRoleDisplay(node) {
-            const content = node.element.querySelector('.node-role-content');
-            const tags = node.element.querySelector('.node-role-tags');
+            const roleEl = node.element.querySelector('.node-role');
+            if (!roleEl) return;
             
-            if (node.roles.length === 0) {
+            const content = roleEl.querySelector('.node-role-content');
+            const tags = roleEl.querySelector('.node-role-tags');
+            
+            if (!content || !tags) return;
+            
+            if (!node.roles || node.roles.length === 0) {
                 content.textContent = 'Select roles...';
                 tags.innerHTML = '';
             } else {
                 content.textContent = node.roles[0];
-                tags.innerHTML = node.roles.map(role => 
+                tags.innerHTML = node.roles.slice(1).map(role => 
                     `<span class="role-tag">${role}</span>`
                 ).join('');
+            }
+        }
+        
+        // Role Filtering
+        function updateAvailableRoles() {
+            state.availableRoles.clear();
+            
+            // Extract all roles from flows
+            state.flows.forEach(flow => {
+                if (flow.nodes) {
+                    flow.nodes.forEach(node => {
+                        if (node.type === 'role' && node.roles) {
+                            node.roles.forEach(role => state.availableRoles.add(role));
+                        }
+                    });
+                }
+            });
+            
+            // Update role filter bar
+            const roleChips = document.querySelector('.role-chips');
+            if (!roleChips) return;
+            
+            // Keep the "All" chip and add role chips
+            const allChip = roleChips.querySelector('[data-role="all"]');
+            roleChips.innerHTML = '';
+            roleChips.appendChild(allChip);
+            
+            Array.from(state.availableRoles).sort().forEach(role => {
+                const chip = document.createElement('div');
+                chip.className = 'role-chip';
+                chip.setAttribute('data-role', role);
+                chip.textContent = role;
+                chip.onclick = () => App.toggleRoleFilter(role);
+                roleChips.appendChild(chip);
+            });
+        }
+        
+        function getFlowRoles(flow) {
+            const roles = new Set();
+            if (flow.nodes) {
+                flow.nodes.forEach(node => {
+                    if (node.type === 'role' && node.roles) {
+                        node.roles.forEach(role => roles.add(role));
+                    }
+                });
+            }
+            return roles;
+        }
+        
+        function applyRoleFilter() {
+            const statusEl = document.querySelector('.filter-status');
+            
+            if (state.activeRoles.has('all')) {
+                // Show all flows normally
+                state.flows.forEach(flow => {
+                    flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
+                });
+                state.connections.forEach(conn => {
+                    conn.group.classList.remove('dimmed', 'hidden');
+                });
+                if (statusEl) statusEl.textContent = '';
+                return;
+            }
+            
+            // Apply role-based filtering
+            let visibleCount = 0;
+            let totalCount = state.flows.length;
+            
+            state.flows.forEach(flow => {
+                const flowRoles = getFlowRoles(flow);
+                const hasActiveRole = Array.from(state.activeRoles).some(role => flowRoles.has(role));
+                
+                flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
+                
+                if (hasActiveRole) {
+                    flow.element.classList.add('highlighted');
+                    visibleCount++;
+                } else {
+                    if (state.filterMode === 'hide') {
+                        flow.element.classList.add('hidden');
+                    } else {
+                        flow.element.classList.add('dimmed');
+                        visibleCount++;
+                    }
+                }
+            });
+            
+            // Update connections based on flow visibility
+            state.connections.forEach(conn => {
+                const outputVisible = !conn.outputOwner.element.classList.contains('hidden');
+                const inputVisible = !conn.inputOwner.element.classList.contains('hidden');
+                const outputDimmed = conn.outputOwner.element.classList.contains('dimmed');
+                const inputDimmed = conn.inputOwner.element.classList.contains('dimmed');
+                
+                conn.group.classList.remove('dimmed', 'hidden');
+                
+                if (!outputVisible || !inputVisible) {
+                    conn.group.classList.add('hidden');
+                } else if (outputDimmed && inputDimmed) {
+                    conn.group.classList.add('dimmed');
+                }
+            });
+            
+            // Update status text
+            if (statusEl) {
+                if (state.filterMode === 'hide') {
+                    statusEl.textContent = `Showing ${visibleCount} of ${totalCount} flows`;
+                } else {
+                    const highlightedCount = document.querySelectorAll('.flow.highlighted').length;
+                    statusEl.textContent = `${highlightedCount} relevant flows`;
+                }
             }
         }
         
@@ -1754,14 +2388,17 @@
             const x = viewportCenterX + (Math.random() - 0.5) * 100;
             const y = viewportCenterY + (Math.random() - 0.5) * 100;
             
-            const flow = createFlow(x, y, 1);
+            const flow = createFlow(x, y);
             
             const templates = [
-                { role: 'Manager', action: 'approves', text: 'budget requests' },
+                { role: 'Manager', action: 'okays', text: 'budget requests' },
                 { role: 'Developer', action: 'shares', text: 'code updates', hasOperand: true },
                 { role: 'Designer', action: 'does', text: 'create mockups' },
                 { role: 'QA Engineer', action: 'okays', text: 'release builds' },
-                { role: 'Product Owner', action: 'shares', text: 'requirements', hasOperand: true }
+                { role: 'Product Owner', action: 'shares', text: 'requirements', hasOperand: true },
+                { role: 'Sales', action: 'does', text: 'process orders' },
+                { role: 'Finance', action: 'okays', text: 'expense reports' },
+                { role: 'HR', action: 'shares', text: 'policy updates', hasOperand: true }
             ];
             
             const template = templates[Math.floor(Math.random() * templates.length)];
@@ -1774,6 +2411,8 @@
             }
             
             populateFlow(flow);
+            updateFlowIcon(flow);
+            updateAvailableRoles(); // Update role filter when new flow is created
             
             return flow;
         };
@@ -1833,22 +2472,6 @@
             updateZoomDisplay();
         };
         
-        window.fitToContent = App.fitToContent;
-        
-        App.toggleLayer = function(level) {
-            state.layerVisibility[level] = !state.layerVisibility[level];
-            const btn = document.querySelector(`.layer-toggle.level-${level}`);
-            btn.classList.toggle('active');
-            
-            state.flows.forEach(flow => {
-                if (flow.level === level) {
-                    flow.element.style.display = state.layerVisibility[level] ? 'block' : 'none';
-                }
-            });
-            
-            updateAllConnections();
-        };
-        
         App.toggleFlow = function(flowId) {
             const flow = state.flows.find(f => f.id === flowId);
             if (!flow) return;
@@ -1857,9 +2480,12 @@
             flow.element.classList.toggle('collapsed');
             
             const control = flow.element.querySelector('.flow-control');
-            control.textContent = flow.collapsed ? '▶' : '▼';
+            if (control) control.textContent = flow.collapsed ? '▶' : '▼';
             
-            updateAllConnections();
+            // Update connections after transition
+            setTimeout(() => {
+                scheduleUpdate(() => updateAllConnections());
+            }, 50);
         };
         
         App.groupSelected = function() {
@@ -1904,6 +2530,31 @@
             document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
         };
         
+        App.exportAsText = function() {
+            let text = 'Flow Process Map\n================\n\n';
+            
+            text += 'Flows:\n';
+            state.flows.forEach(flow => {
+                text += `- ${flow.label}\n`;
+            });
+            
+            text += '\nConnections:\n';
+            state.connections.forEach(conn => {
+                const type = connectionTypes[conn.type];
+                text += `- ${conn.outputOwner.label} ${type.symbol} ${conn.inputOwner.label} (${type.name})\n`;
+            });
+            
+            // Copy to clipboard
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            alert('Flow map copied to clipboard!');
+        };
+        
         App.closeModal = function() {
             document.getElementById('modalOverlay').style.display = 'none';
         };
@@ -1920,6 +2571,7 @@
                     });
                     node.roles = selectedRoles;
                     updateRoleDisplay(node);
+                    updateAvailableRoles(); // Update role filter when roles change
                     break;
                     
                 case 'transform':
@@ -1948,9 +2600,53 @@
             
             if (node.flow) {
                 updateFlowGrammar(node.flow);
+                updateFlowIcon(node.flow);
             }
             
             App.closeModal();
+        };
+        
+        App.toggleRoleFilter = function(role) {
+            const chip = document.querySelector(`[data-role="${role}"]`);
+            if (!chip) return;
+            
+            if (role === 'all') {
+                // Clear all selections and activate "all"
+                state.activeRoles.clear();
+                state.activeRoles.add('all');
+                document.querySelectorAll('.role-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+            } else {
+                // Toggle individual role
+                if (state.activeRoles.has('all')) {
+                    state.activeRoles.clear();
+                }
+                
+                if (state.activeRoles.has(role)) {
+                    state.activeRoles.delete(role);
+                    chip.classList.remove('active');
+                } else {
+                    state.activeRoles.add(role);
+                    chip.classList.add('active');
+                }
+                
+                // If no roles selected, go back to "all"
+                if (state.activeRoles.size === 0) {
+                    state.activeRoles.add('all');
+                    document.querySelector('[data-role="all"]').classList.add('active');
+                }
+                
+                // Update "all" chip state
+                document.querySelector('[data-role="all"]').classList.remove('active');
+            }
+            
+            applyRoleFilter();
+        };
+        
+        App.updateFilterMode = function() {
+            const mode = document.querySelector('input[name="filterMode"]:checked').value;
+            state.filterMode = mode;
+            applyRoleFilter();
         };
         
         // Initialize when DOM is ready
