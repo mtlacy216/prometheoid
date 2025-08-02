@@ -1206,6 +1206,7 @@
             dragThreshold: 5,
             animationFrame: null,
             updateQueue: new Set(),
+            clipboard: [],
             // Role filtering
             activeRoles: new Set(['all']),
             filterMode: 'highlight',
@@ -1398,6 +1399,15 @@
         function handleKeyDown(e) {
             if (e.key === 'Delete' && state.selectedItems.size > 0) {
                 deleteSelected();
+            } else if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+                e.preventDefault();
+                copySelectedFlows();
+            } else if (e.ctrlKey && e.key.toLowerCase() === 'x') {
+                e.preventDefault();
+                cutSelectedFlows();
+            } else if (e.ctrlKey && e.key.toLowerCase() === 'v') {
+                e.preventDefault();
+                pasteFlows();
             } else if (e.key.toLowerCase() === 'f') {
                 App.fitToContent();
             } else if (e.key === 'Tab' && state.activeConnection) {
@@ -2158,14 +2168,72 @@
                         }
                         return true;
                     });
-                    
+
                     item.element.remove();
                     state.flows = state.flows.filter(f => f !== item);
                 }
             });
-            
+
             state.selectedItems.clear();
             updateAvailableRoles(); // Update roles after deletion
+        }
+
+        function serializeFlow(flow) {
+            return {
+                x: flow.x,
+                y: flow.y,
+                collapsed: flow.collapsed,
+                label: flow.label,
+                nodes: flow.nodes.map(n => {
+                    const data = { type: n.type };
+                    if (n.roles) data.roles = [...n.roles];
+                    if (n.transformType) data.transformType = n.transformType;
+                    if (n.text) data.text = n.text;
+                    if (typeof n.hasRoleAfter !== 'undefined') data.hasRoleAfter = n.hasRoleAfter;
+                    if (n.entity) data.entity = n.entity;
+                    return data;
+                })
+            };
+        }
+
+        function copySelectedFlows() {
+            const flows = Array.from(state.selectedItems).filter(item => state.flows.includes(item));
+            if (flows.length === 0) return;
+            state.clipboard = flows.map(f => serializeFlow(f));
+        }
+
+        function cutSelectedFlows() {
+            const flows = Array.from(state.selectedItems).filter(item => state.flows.includes(item));
+            if (flows.length === 0) return;
+            state.clipboard = flows.map(f => serializeFlow(f));
+            deleteSelected();
+        }
+
+        function pasteFlows() {
+            if (!state.clipboard || state.clipboard.length === 0) return;
+            const offset = 20;
+            state.clipboard.forEach(data => {
+                const clone = JSON.parse(JSON.stringify(data));
+                const flow = createFlow(clone.x + offset, clone.y + offset);
+
+                flow.label = clone.label;
+                const labelEl = flow.element.querySelector('.flow-label');
+                if (labelEl) labelEl.textContent = flow.label;
+
+                if (clone.collapsed !== flow.collapsed) {
+                    App.toggleFlow(flow.id);
+                }
+
+                flow.contentElement.innerHTML = '';
+                flow.nodes = [];
+                clone.nodes.forEach(nodeData => {
+                    const node = createNodeInFlow(flow, nodeData.type, nodeData);
+                    flow.nodes.push(node);
+                });
+                resizeFlowToFitContent(flow);
+                updateFlowGrammar(flow);
+            });
+            updateAvailableRoles();
         }
         
         // Modal
