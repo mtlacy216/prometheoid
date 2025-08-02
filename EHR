@@ -2038,8 +2038,10 @@
                 const items = [];
                 const containers = document.querySelectorAll(`[data-${type}-id]`);
                 
+                const toCamel = str => str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
                 containers.forEach(container => {
-                    const id = container.dataset[`${type.replace('-', '')}Id`];
+                    const id = container.dataset[`${toCamel(type)}Id`];
                     if (!id) return;
                     
                     const item = { id };
@@ -2104,6 +2106,9 @@
                 
                 // Add items
                 items.forEach(itemData => {
+                    if (!itemData || Object.keys(itemData).length === 0) {
+                        return;
+                    }
                     const addMethod = {
                         'providers': () => this.addProvider(),
                         'medications': () => this.addMedication(),
