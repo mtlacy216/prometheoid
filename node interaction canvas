@@ -543,10 +543,9 @@
         /* Connection Types */
         .connection {
             fill: none;
-            stroke: #4CAF50;
+            stroke: #b3b3b3;
             stroke-width: 2;
-            opacity: 0.8;
-            transition: all 0.2s ease;
+            stroke-linecap: round;
             pointer-events: none;
         }
 
@@ -556,11 +555,6 @@
             stroke-width: 20;
             pointer-events: stroke;
             cursor: pointer;
-        }
-
-        .connection-group:hover .connection {
-            stroke-width: 3;
-            opacity: 1;
         }
 
         .connection.temp {
@@ -617,21 +611,6 @@
             }
         }
         
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                stroke-width: 4;
-            }
-            to {
-                opacity: 0.8;
-                stroke-width: 2;
-            }
-        }
-        
-        .connection {
-            animation: fadeIn 0.3s ease-out;
-        }
-
         /* Connection Labels */
         .connection-label {
             font-size: 14px;
@@ -1109,17 +1088,7 @@
 </head>
 <body>
     <div id="canvas-container">
-        <svg id="connections" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <filter id="glow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-            </defs>
-        </svg>
+        <svg id="connections" xmlns="http://www.w3.org/2000/svg"></svg>
         <div id="canvas"></div>
         
         <div class="controls">
