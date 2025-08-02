@@ -2038,8 +2038,10 @@
                 const items = [];
                 const containers = document.querySelectorAll(`[data-${type}-id]`);
                 
+                const toCamel = str => str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
                 containers.forEach(container => {
-                    const id = container.dataset[`${type.replace('-', '')}Id`];
+                    const id = container.dataset[`${toCamel(type)}Id`];
                     if (!id) return;
                     
                     const item = { id };
@@ -2104,6 +2106,9 @@
                 
                 // Add items
                 items.forEach(itemData => {
+                    if (!itemData || Object.keys(itemData).length === 0) {
+                        return;
+                    }
                     const addMethod = {
                         'providers': () => this.addProvider(),
                         'medications': () => this.addMedication(),
@@ -2119,11 +2124,21 @@
                     // Load data into the newly created fields
                     const lastAdded = this.dynamicData[type][this.dynamicData[type].length - 1];
                     if (lastAdded) {
-                        Object.assign(lastAdded, itemData);
+                        const { id: _unusedId, ...fields } = itemData;
+                        Object.assign(lastAdded, fields);
                         
                         // Update form fields
-                        const prefix = type.replace('s', '').replace('ie', 'y').replace('emergencyContact', 'emergency');
-                        const selector = `[data-${prefix.toLowerCase().replace('_', '-')}-id="${lastAdded.id}"]`;
+                    const prefixMap = {
+                        providers: 'provider',
+                        medications: 'med',
+                        conditions: 'condition',
+                        surgeries: 'surgery',
+                        pastSurgeries: 'past-surgery',
+                        notes: 'note',
+                        emergencyContacts: 'emergency'
+                    };
+                    const prefix = prefixMap[type] || type;
+                    const selector = `[data-${prefix}-id="${lastAdded.id}"]`;
                         const inputs = document.querySelectorAll(`${selector} .form-data`);
                         
                         inputs.forEach(input => {
@@ -2228,11 +2243,13 @@
                 container.insertAdjacentHTML('beforeend', providerHtml);
                 
                 // Add event listeners to new elements
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeProvider(providerId));
-                container.lastElementChild.querySelector('[data-field="name"]').addEventListener('change', () => this.updateProviderDropdowns());
-                container.lastElementChild.querySelector('[data-field="specialty"]').addEventListener('change', () => this.updateProviderDropdowns());
-                container.lastElementChild.querySelector('[data-field="safetyStatus"]').addEventListener('change', (e) => this.updateProviderSafety(e.target));
-                container.lastElementChild.querySelector('[data-field="active"]').addEventListener('change', () => this.toggleProviderActive(providerId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeProvider(providerId));
+                    container.lastElementChild.querySelector('[data-field="name"]').addEventListener('change', () => this.updateProviderDropdowns());
+                    container.lastElementChild.querySelector('[data-field="specialty"]').addEventListener('change', () => this.updateProviderDropdowns());
+                    container.lastElementChild.querySelector('[data-field="safetyStatus"]').addEventListener('change', (e) => this.updateProviderSafety(e.target));
+                    container.lastElementChild.querySelector('[data-field="active"]').addEventListener('change', () => this.toggleProviderActive(providerId));
+                }
                 
                 this.markAsChanged();
                 this.updateProviderDropdowns();
@@ -2377,7 +2394,9 @@
                 container.insertAdjacentHTML('beforeend', contactHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeEmergencyContact(contactId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeEmergencyContact(contactId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2424,7 +2443,9 @@
                 container.insertAdjacentHTML('beforeend', medHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeMedication(medId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeMedication(medId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2471,7 +2492,9 @@
                 container.insertAdjacentHTML('beforeend', conditionHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeCondition(conditionId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeCondition(conditionId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2520,7 +2543,9 @@
                 container.insertAdjacentHTML('beforeend', surgeryHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeSurgery(surgeryId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeSurgery(surgeryId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2567,7 +2592,9 @@
                 container.insertAdjacentHTML('beforeend', surgeryHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removePastSurgery(surgeryId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removePastSurgery(surgeryId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2649,10 +2676,12 @@
                 container.insertAdjacentHTML('beforeend', noteHtml);
                 
                 // Add event listeners
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeNote(noteId));
-                container.lastElementChild.querySelectorAll('.scale-item').forEach(item => {
-                    item.addEventListener('click', (e) => this.selectMood(e.target, noteId));
-                });
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeNote(noteId));
+                    container.lastElementChild.querySelectorAll('.scale-item').forEach(item => {
+                        item.addEventListener('click', (e) => this.selectMood(e.target, noteId));
+                    });
+                }
                 
                 this.markAsChanged();
                 this.updateProviderDropdowns();
