@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow Node Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d0d0d;
+            overflow: hidden;
+            user-select: none;
+            color: #fff;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            background: #0d0d0d;
+            background-image: 
+                radial-gradient(circle at 1px 1px, #1a1a1a 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: absolute;
+            cursor: default;
+            transform-origin: 0 0;
+            transition: cursor 0.15s ease;
+        }
+
+        #canvas.grabbing {
+            cursor: grabbing !important;
+        }
+
+        #canvas.can-grab {
+            cursor: grab;
+        }
+
+        #canvas.connecting {
+            cursor: crosshair;
+        }
+
+        #canvas.selecting {
+            cursor: crosshair;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        svg path {
+            pointer-events: stroke;
+        }
+
+        /* Selection box */
+        .selection-box {
+            position: absolute;
+            border: 2px dashed #4a9eff;
+            background: rgba(74, 158, 255, 0.1);
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Groups */
+        .group {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1;
+        }
+
+        .group.selected {
+            border-color: #4a9eff;
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .group-header {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: #0d0d0d;
+            padding: 0 10px;
+            font-size: 12px;
+            color: #666;
+            cursor: text;
+        }
+
+        .group-header:focus {
+            outline: none;
+            color: #fff;
+        }
+
+        /* Flows */
+        .flow {
+            position: absolute;
+            background: #1a1a1a;
+            border: 2px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 50px 20px 20px 20px;
+            min-width: 700px;
+            cursor: move;
+            z-index: 10;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .flow:hover {
+            border-color: #333;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .flow.collapsed {
+            background: #1e1e1e;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            padding: 15px 20px;
+            min-width: 200px;
+        }
+
+        .flow.collapsed .flow-content {
+            display: none;
+        }
+
+        .flow.dragging {
+            cursor: grabbing !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+            transform: scale(1.02);
+        }
+
+        .flow.level-1 {
+            border-color: #4CAF50;
+        }
+
+        .flow.level-1:hover {
+            border-color: #5CBF60;
+        }
+
+        .flow.level-2 {
+            border-color: #FF9800;
+        }
+
+        .flow.level-2:hover {
+            border-color: #FFA820;
+        }
+
+        .flow.level-3 {
+            border-color: #F44336;
+        }
+
+        .flow.level-3:hover {
+            border-color: #F55346;
+        }
+
+        .flow-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flow.collapsed .flow-header {
+            position: relative;
+            border: none;
+            background: none;
+            padding: 0;
+        }
+
+        .flow-label {
+            font-size: 14px;
+            color: #fff;
+            cursor: text;
+            flex: 1;
+        }
+
+        .flow-label:focus {
+            outline: 1px solid #4a9eff;
+            outline-offset: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .flow-sublabel {
+            font-size: 11px;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .flow-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .flow-control {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .flow-control:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .flow-content {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        /* Individual Nodes within flows */
+        .node {
+            position: relative;
+            z-index: 20;
+            transition: transform 0.1s ease;
+            padding: 4px;
+            margin: -4px;
+        }
+
+        .node.selected,
+        .flow.selected {
+            outline: 2px solid #4a9eff;
+            outline-offset: 2px;
+        }
+
+        .node:hover {
+            transform: scale(1.05);
+            z-index: 21;
+        }
+
+        /* Role Node (Rectangle) */
+        .node-role {
+            background: #2a2a2a;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 150px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .node-role-title {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+
+        .node-role-content {
+            font-size: 14px;
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .node-role-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .role-tag {
+            background: rgba(74, 158, 255, 0.2);
+            border: 1px solid rgba(74, 158, 255, 0.4);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 11px;
+            color: #4a9eff;
+        }
+
+        /* Transform Node (Circle) */
+        .node-transform {
+            width: 100px;
+            height: 100px;
+            background: #2a2a2a;
+            border: 3px solid #3a3a3a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .node-transform-content {
+            text-align: center;
+            font-size: 14px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .node-transform.does {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .node-transform.okays {
+            border-color: #2196F3;
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .node-transform.shares {
+            border-color: #FF9800;
+            background: rgba(255, 152, 0, 0.1);
+        }
+
+        /* Action Node */
+        .node-action {
+            background: #1e2329;
+            border: 2px solid #2e3640;
+            border-radius: 6px;
+            padding: 10px 14px;
+            min-width: 200px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .node-action-title {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .node-action-content {
+            font-size: 13px;
+            color: #fff;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .node-action-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .node-action-checkbox input {
+            cursor: pointer;
+        }
+
+        /* Operand Node */
+        .node-operand {
+            background: #2a2a2a;
+            border: 2px dashed #4a4a4a;
+            border-radius: 8px;
+            padding: 10px 14px;
+            min-width: 120px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .node-operand-content {
+            font-size: 13px;
+            color: #ffa726;
+        }
+
+        /* Ports */
+        .port {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3a3a3a;
+            border: 2px solid #5a5a5a;
+            border-radius: 50%;
+            cursor: crosshair;
+            transition: all 0.2s ease;
+            z-index: 21;
+        }
+
+        .port:hover {
+            background: #4a9eff;
+            border-color: #3a8eef;
+            transform: scale(1.3);
+        }
+
+        .port.connected {
+            background: #4CAF50;
+            border-color: #45a049;
+        }
+
+        .port.highlight {
+            background: #ffd93d;
+            border-color: #ffcc00;
+            transform: scale(1.5);
+            box-shadow: 0 0 10px rgba(255, 217, 61, 0.6);
+        }
+
+        .port-input::before {
+            content: '◀';
+            position: absolute;
+            left: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 8px;
+            color: #666;
+            pointer-events: none;
+        }
+        
+        .port-output::before {
+            content: '▶';
+            position: absolute;
+            right: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 8px;
+            color: #666;
+            pointer-events: none;
+        }
+        
+        .port:hover::before {
+            color: #fff;
+        }
+        
+        .port-output.disabled {
+            background: #333;
+            border-color: #222;
+            cursor: not-allowed;
+            opacity: 0.3;
+        }
+        
+        .port-output.disabled::before {
+            content: '✕';
+            color: #666;
+        }
+        
+        .port.connecting {
+            background: #4a9eff;
+            border-color: #3a8eef;
+            box-shadow: 0 0 15px rgba(74, 158, 255, 0.8);
+        }
+
+        .flow .port-input {
+            left: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .flow .port-output {
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Connections */
+        .connection {
+            fill: none;
+            stroke: #4CAF50;
+            stroke-width: 2;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
+
+        .connection:hover {
+            stroke-width: 4;
+            opacity: 1;
+            filter: drop-shadow(0 0 4px currentColor);
+        }
+
+        .connection.temp {
+            stroke: #4a9eff;
+            stroke-dasharray: 5, 5;
+            animation: dash 0.5s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -10;
+            }
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .control-group {
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        button {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #3a3a3a;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+        }
+
+        button.active {
+            background: #4a9eff;
+            border-color: #3a8eef;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zoom-controls button {
+            width: auto;
+            min-width: 32px;
+            height: 28px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .zoom-controls button:first-child,
+        .zoom-controls button:nth-child(3) {
+            width: 32px;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .zoom-level {
+            font-size: 12px;
+            color: #888;
+            min-width: 50px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        /* Layer toggles */
+        .layer-toggles {
+            display: flex;
+            gap: 5px;
+        }
+
+        .layer-toggle {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .layer-toggle.level-1.active {
+            background: #4CAF50;
+            border-color: #45a049;
+        }
+
+        .layer-toggle.level-2.active {
+            background: #FF9800;
+            border-color: #F57C00;
+        }
+
+        .layer-toggle.level-3.active {
+            background: #F44336;
+            border-color: #D32F2F;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            min-width: 400px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #4a9eff;
+            background: #111;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .multi-select {
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .multi-select-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .multi-select-item:hover {
+            background: rgba(74, 158, 255, 0.1);
+        }
+
+        .multi-select-item.selected {
+            background: rgba(74, 158, 255, 0.2);
+        }
+
+        .multi-select-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-primary {
+            background: #4a9eff;
+            border-color: #3a8eef;
+        }
+
+        .btn-primary:hover {
+            background: #3a8eef;
+            border-color: #2a7edf;
+        }
+
+        /* Help text */
+        .help-text {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #888;
+            backdrop-filter: blur(10px);
+            max-width: 350px;
+            line-height: 1.5;
+        }
+        
+        .help-text hr {
+            margin: 8px 0;
+            border: none;
+            border-top: 1px solid #333;
+        }
+
+        .help-text strong {
+            color: #fff;
+        }
+
+        /* Add button */
+        .add-node-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .add-node-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: #fff;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <div id="canvas">
+            <svg id="connections"></svg>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <button onclick="App.createNewFlow()" title="Create new flow">New Flow</button>
+                <button onclick="App.groupSelected()" title="Group selected flows">Group</button>
+            </div>
+            
+            <div class="control-group zoom-controls">
+                <button onclick="App.zoomOut()" title="Zoom out">−</button>
+                <span class="zoom-level">100%</span>
+                <button onclick="App.zoomIn()" title="Zoom in">+</button>
+                <button onclick="App.resetZoom()" title="Reset to 100%">100%</button>
+                <button onclick="App.fitToContent()" title="Fit all content">Fit</button>
+            </div>
+            
+            <div class="control-group layer-toggles">
+                <button class="layer-toggle level-1 active" onclick="App.toggleLayer(1)" title="Toggle Level 1 flows">L1</button>
+                <button class="layer-toggle level-2 active" onclick="App.toggleLayer(2)" title="Toggle Level 2 flows">L2</button>
+                <button class="layer-toggle level-3 active" onclick="App.toggleLayer(3)" title="Toggle Level 3 flows">L3</button>
+            </div>
+        </div>
+        
+        <div class="help-text" id="helpText">
+            <strong>Flow Node Editor</strong><br>
+            All flows now have input ports!<br>
+            • L1 flows: Green border<br>
+            • L2 flows: Orange (from L1 connections)<br>
+            • L3 flows: Red (can't output further)<br>
+            <hr>
+            Try dragging from Flow 2's ▶ to Flow 3's ◀<br>
+            <strong>Shortcuts:</strong> [F] Fit to view • [Delete] Remove selected
+        </div>
+    </div>
+
+    <!-- Modal for node editing -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header" id="modalTitle">Edit Node</div>
+            <div class="modal-content" id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+            <div class="modal-footer">
+                <button onclick="App.closeModal()">Cancel</button>
+                <button class="btn-primary" onclick="App.saveModal()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create App namespace to avoid global pollution
+        window.App = {};
+        
+        // Application state
+        const state = {
+            canvas: null,
+            svgElement: null,
+            canvasRect: null,
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            flows: [],
+            connections: [],
+            groups: [],
+            selectedItems: new Set(),
+            draggedItem: null,
+            connectingPort: null,
+            tempConnection: null,
+            selectionBox: null,
+            isPanning: false,
+            isSelecting: false,
+            mouseDownTime: 0,
+            mouseDownPos: { x: 0, y: 0 },
+            isDragIntent: false,
+            dragThreshold: 5,
+            dragDelay: 50,
+            flowIdCounter: 0,
+            nodeIdCounter: 0,
+            groupIdCounter: 0,
+            layerVisibility: {
+                1: true,
+                2: true,
+                3: true
+            }
+        };
+        
+        // Sample data
+        const availableRoles = [
+            'Manager', 'Developer', 'Designer', 'QA Engineer',
+            'Product Owner', 'Scrum Master', 'DevOps', 'Data Analyst',
+            'Marketing', 'Sales', 'Customer Support', 'HR'
+        ];
+        
+        const availableEntities = availableRoles;
+        
+        // Initialize
+        function init() {
+            // Get DOM elements
+            state.canvas = document.getElementById('canvas');
+            state.svgElement = document.getElementById('connections');
+            state.canvasRect = state.canvas.getBoundingClientRect();
+            
+            setupEventListeners();
+            updateCanvasTransform();
+            
+            // Create sample flows
+            const flow1 = createFlow(150, 250);
+            flow1.label = 'Manager approves budget';
+            flow1.element.querySelector('.flow-label').textContent = flow1.label;
+            
+            const flow2 = createFlow(550, 150);
+            flow2.label = 'Finance processes payment';
+            flow2.element.querySelector('.flow-label').textContent = flow2.label;
+            
+            const flow3 = createFlow(550, 350);
+            flow3.label = 'Accounting records transaction';
+            flow3.element.querySelector('.flow-label').textContent = flow3.label;
+            
+            // Create initial connection
+            setTimeout(() => {
+                if (flow1.ports.output && flow2.ports.input) {
+                    createConnection(flow1.ports.output, flow2.ports.input, flow1, flow2);
+                    
+                    setTimeout(() => {
+                        const helpText = document.getElementById('helpText');
+                        if (helpText) {
+                            helpText.innerHTML = `
+                                <strong>Great!</strong> Notice Flow 2 became Level 2.<br>
+                                Try connecting Flow 2's ▶ to Flow 3's ◀ port.
+                                <hr>
+                                <strong>Quick Tips:</strong><br>
+                                • Double-click canvas = New flow<br>
+                                • Click any node = Edit it<br>
+                                • Click connections = Delete<br>
+                                • [F] key = Fit all to view
+                            `;
+                        }
+                    }, 500);
+                }
+            }, 100);
+        }
+        
+        // Canvas controls
+        function setupEventListeners() {
+            state.canvas.addEventListener('wheel', handleWheel);
+            state.canvas.addEventListener('mousedown', handleCanvasMouseDown);
+            state.canvas.addEventListener('dblclick', handleCanvasDoubleClick);
+            document.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('resize', () => {
+                state.canvasRect = state.canvas.getBoundingClientRect();
+            });
+        }
+        
+        function handleWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.1, Math.min(5, state.zoom * delta));
+            
+            const rect = state.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            state.panX = x - (x - state.panX) * (newZoom / state.zoom);
+            state.panY = y - (y - state.panY) * (newZoom / state.zoom);
+            
+            state.zoom = newZoom;
+            updateCanvasTransform();
+            updateZoomDisplay();
+        }
+        
+        function updateCanvasTransform() {
+            state.canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+        }
+        
+        function updateZoomDisplay() {
+            const percentage = Math.round(state.zoom * 100);
+            document.querySelector('.zoom-level').textContent = percentage + '%';
+        }
+        
+        function handleCanvasMouseDown(e) {
+            if (e.target === state.canvas || e.target === state.svgElement) {
+                if (e.shiftKey) {
+                    startSelection(e);
+                } else if (e.button === 0) {
+                    startPanning(e);
+                }
+            }
+        }
+        
+        function handleCanvasDoubleClick(e) {
+            if (e.target === state.canvas) {
+                const rect = state.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - state.panX) / state.zoom;
+                const y = (e.clientY - rect.top - state.panY) / state.zoom;
+                createFlow(x, y);
+            }
+        }
+        
+        function handleKeyDown(e) {
+            if (e.key === 'Delete' && state.selectedItems.size > 0) {
+                deleteSelected();
+            } else if (e.key.toLowerCase() === 'f') {
+                fitToContent();
+            }
+        }
+        
+        function startPanning(e) {
+            state.isPanning = true;
+            state.canvas.classList.add('grabbing');
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startPanX = state.panX;
+            const startPanY = state.panY;
+            
+            function pan(e) {
+                state.panX = startPanX + (e.clientX - startX);
+                state.panY = startPanY + (e.clientY - startY);
+                updateCanvasTransform();
+            }
+            
+            function stopPanning() {
+                state.isPanning = false;
+                state.canvas.classList.remove('grabbing');
+                document.removeEventListener('mousemove', pan);
+                document.removeEventListener('mouseup', stopPanning);
+            }
+            
+            document.addEventListener('mousemove', pan);
+            document.addEventListener('mouseup', stopPanning);
+        }
+        
+        // Flow creation and management
+        function createFlow(x, y, level = 1) {
+            const flow = {
+                id: 'flow-' + state.flowIdCounter++,
+                level: level,
+                x: x,
+                y: y,
+                collapsed: false,
+                label: 'New Flow',
+                nodes: [],
+                element: null,
+                ports: {
+                    input: {},
+                    output: level < 3 ? {} : null
+                }
+            };
+            
+            const el = document.createElement('div');
+            el.className = 'flow level-' + level;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            
+            let portsHTML = '';
+            if (flow.ports.input) portsHTML += '<div class="port port-input" data-type="input" title="Input: Connect from another flow"></div>';
+            if (flow.ports.output) portsHTML += '<div class="port port-output" data-type="output" title="Output: Connect to another flow"></div>';
+            
+            el.innerHTML = `
+                ${portsHTML}
+                <div class="flow-header">
+                    <div class="flow-label" contenteditable="true">${flow.label}</div>
+                    <span class="flow-sublabel">Level ${level} Flow</span>
+                    <div class="flow-controls">
+                        <div class="flow-control" onclick="App.toggleFlow('${flow.id}')">${flow.collapsed ? '▶' : '▼'}</div>
+                    </div>
+                </div>
+                <div class="flow-content"></div>
+            `;
+            
+            state.canvas.appendChild(el);
+            flow.element = el;
+            flow.contentElement = el.querySelector('.flow-content');
+            
+            if (flow.ports.input) flow.ports.input = el.querySelector('.port-input');
+            if (flow.ports.output) flow.ports.output = el.querySelector('.port-output');
+            
+            const labelEl = el.querySelector('.flow-label');
+            labelEl.addEventListener('blur', () => {
+                flow.label = labelEl.textContent;
+                updateFlowGrammar(flow);
+            });
+            
+            labelEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    labelEl.blur();
+                }
+            });
+            
+            setupFlowInteractions(flow);
+            state.flows.push(flow);
+            populateFlow(flow);
+            
+            return flow;
+        }
+        
+        function setupFlowInteractions(flow) {
+            const el = flow.element;
+            
+            el.addEventListener('mousedown', (e) => {
+                if (!e.target.classList.contains('flow-label') && 
+                    !e.target.classList.contains('flow-control') &&
+                    !e.target.closest('.node')) {
+                    startDragFlow(e, flow);
+                }
+            });
+            
+            el.addEventListener('dblclick', (e) => {
+                if (e.target === el || e.target.classList.contains('flow-header')) {
+                    e.stopPropagation();
+                    App.toggleFlow(flow.id);
+                }
+            });
+            
+            if (flow.ports.input) {
+                flow.ports.input.addEventListener('mousedown', (e) => startConnection(e, flow.ports.input, flow));
+            }
+            if (flow.ports.output) {
+                flow.ports.output.addEventListener('mousedown', (e) => startConnection(e, flow.ports.output, flow));
+            }
+        }
+        
+        function populateFlow(flow) {
+            flow.contentElement.innerHTML = '';
+            flow.nodes = [];
+            
+            const role = createNodeInFlow(flow, 'role', { roles: ['Manager'] });
+            const transform = createNodeInFlow(flow, 'transform', { transformType: 'Does' });
+            const action = createNodeInFlow(flow, 'action', { 
+                text: 'writes meeting notes',
+                hasRoleAfter: false 
+            });
+            
+            flow.nodes = [role, transform, action];
+            resizeFlowToFitContent(flow);
+        }
+        
+        function createNodeInFlow(flow, type, data) {
+            const node = {
+                id: 'node-' + state.nodeIdCounter++,
+                type: type,
+                flow: flow,
+                element: null,
+                ...data
+            };
+            
+            const el = document.createElement('div');
+            el.className = 'node node-' + type;
+            
+            switch(type) {
+                case 'role':
+                    el.innerHTML = `
+                        <div class="node-role">
+                            <div class="node-role-title">ROLE</div>
+                            <div class="node-role-content">Select roles...</div>
+                            <div class="node-role-tags"></div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'transform':
+                    el.className += ' ' + data.transformType.toLowerCase();
+                    el.innerHTML = `
+                        <div class="node-transform">
+                            <div class="node-transform-content">${data.transformType}</div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'action':
+                    el.innerHTML = `
+                        <div class="node-action">
+                            <div class="node-action-title">ACTION</div>
+                            <div class="node-action-content">${data.text}</div>
+                            <div class="node-action-checkbox">
+                                <input type="checkbox" id="role-after-${node.id}" ${data.hasRoleAfter ? 'checked' : ''}>
+                                <label for="role-after-${node.id}">A role is involved after this</label>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'operand':
+                    el.innerHTML = `
+                        <div class="node-operand">
+                            <div class="node-operand-content">${data.entity}</div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            flow.contentElement.appendChild(el);
+            node.element = el;
+            
+            el.addEventListener('click', (e) => {
+                if (e.target.type !== 'checkbox') {
+                    openNodeModal(node);
+                }
+            });
+            
+            if (type === 'action') {
+                const checkbox = el.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', (e) => {
+                    node.hasRoleAfter = e.target.checked;
+                    updateFlowOperand(flow, node);
+                });
+            }
+            
+            if (type === 'role') {
+                updateRoleDisplay(node);
+            }
+            
+            return node;
+        }
+        
+        function updateFlowGrammar(flow) {
+            if (!flow.nodes || flow.nodes.length === 0) return;
+            
+            let grammarText = '';
+            const roleNode = flow.nodes.find(n => n.type === 'role');
+            const transformNode = flow.nodes.find(n => n.type === 'transform');
+            const actionNode = flow.nodes.find(n => n.type === 'action');
+            const operandNode = flow.nodes.find(n => n.type === 'operand');
+            
+            if (roleNode && roleNode.roles.length > 0) {
+                grammarText += roleNode.roles[0];
+            }
+            
+            if (transformNode) {
+                grammarText += ' ' + transformNode.transformType.toLowerCase();
+            }
+            
+            if (actionNode) {
+                grammarText += ' ' + actionNode.text;
+            }
+            
+            if (operandNode) {
+                grammarText += ' to ' + operandNode.entity;
+            }
+            
+            const labelEl = flow.element.querySelector('.flow-label');
+            if (labelEl.textContent === flow.label || flow.label === 'New Flow') {
+                flow.label = grammarText || 'New Flow';
+                labelEl.textContent = flow.label;
+            }
+        }
+        
+        function updateFlowOperand(flow, actionNode) {
+            let operandNode = flow.nodes.find(n => n.type === 'operand');
+            
+            if (actionNode.hasRoleAfter && !operandNode) {
+                operandNode = createNodeInFlow(flow, 'operand', { entity: 'Executive Team' });
+                flow.nodes.push(operandNode);
+                
+                const addBtn = document.createElement('div');
+                addBtn.className = 'add-node-btn';
+                addBtn.innerHTML = '+';
+                addBtn.onclick = () => {
+                    alert('Additional nodes can be added here in future versions');
+                };
+                flow.contentElement.appendChild(addBtn);
+            } else if (!actionNode.hasRoleAfter && operandNode) {
+                operandNode.element.remove();
+                flow.nodes = flow.nodes.filter(n => n.type !== 'operand');
+                
+                const addBtn = flow.contentElement.querySelector('.add-node-btn');
+                if (addBtn) addBtn.remove();
+            }
+            
+            resizeFlowToFitContent(flow);
+        }
+        
+        function resizeFlowToFitContent(flow) {
+            const padding = 40;
+            const nodeSpacing = 30;
+            let totalWidth = padding * 2;
+            
+            flow.nodes.forEach((node, index) => {
+                if (node.element) {
+                    totalWidth += node.element.offsetWidth;
+                    if (index > 0) totalWidth += nodeSpacing;
+                }
+            });
+            
+            const addBtn = flow.contentElement.querySelector('.add-node-btn');
+            if (addBtn) {
+                totalWidth += 50;
+            }
+            
+            flow.element.style.width = Math.max(700, totalWidth) + 'px';
+            updateAllConnections();
+        }
+        
+        // Dragging
+        function startDragFlow(e, flow) {
+            if (e.target.classList.contains('port')) return;
+            e.stopPropagation();
+            
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const el = flow.element;
+            const rect = el.getBoundingClientRect();
+            const canvasRect = state.canvas.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const offsetY = e.clientY - rect.top;
+            
+            let dragStarted = false;
+            let dragTimeout = null;
+            
+            function checkDragStart(e) {
+                const distance = Math.hypot(e.clientX - startX, e.clientY - startY);
+                
+                if (distance > state.dragThreshold && !dragStarted) {
+                    dragStarted = true;
+                    state.draggedItem = flow;
+                    el.classList.add('dragging');
+                    el.style.cursor = 'grabbing';
+                }
+                
+                if (dragStarted) {
+                    const x = (e.clientX - canvasRect.left - state.panX) / state.zoom - offsetX;
+                    const y = (e.clientY - canvasRect.top - state.panY) / state.zoom - offsetY;
+                    
+                    el.style.left = x + 'px';
+                    el.style.top = y + 'px';
+                    flow.x = x;
+                    flow.y = y;
+                    
+                    updateAllConnections();
+                }
+            }
+            
+            function stopDrag() {
+                if (dragTimeout) clearTimeout(dragTimeout);
+                
+                if (dragStarted) {
+                    el.classList.remove('dragging');
+                    el.style.cursor = '';
+                    state.draggedItem = null;
+                }
+                
+                document.removeEventListener('mousemove', checkDragStart);
+                document.removeEventListener('mouseup', stopDrag);
+            }
+            
+            dragTimeout = setTimeout(() => {
+                document.addEventListener('mousemove', checkDragStart);
+            }, state.dragDelay);
+            
+            document.addEventListener('mousemove', checkDragStart);
+            document.addEventListener('mouseup', stopDrag);
+        }
+        
+        // Connections
+        function startConnection(e, port, owner) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (port.classList.contains('disabled')) return;
+            
+            state.connectingPort = { port, owner };
+            port.classList.add('connecting');
+            state.canvas.classList.add('connecting');
+            
+            const rect = port.getBoundingClientRect();
+            const canvasRect = state.canvas.getBoundingClientRect();
+            const startX = (rect.left + rect.width / 2 - canvasRect.left - state.panX) / state.zoom;
+            const startY = (rect.top + rect.height / 2 - canvasRect.top - state.panY) / state.zoom;
+            
+            state.tempConnection = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            state.tempConnection.classList.add('connection', 'temp');
+            state.svgElement.appendChild(state.tempConnection);
+            
+            function dragConnection(e) {
+                const currentX = (e.clientX - canvasRect.left - state.panX) / state.zoom;
+                const currentY = (e.clientY - canvasRect.top - state.panY) / state.zoom;
+                
+                const path = calculateBezierPath(startX, startY, currentX, currentY);
+                state.tempConnection.setAttribute('d', path);
+                
+                highlightCompatiblePorts(e);
+            }
+            
+            function endConnection(e) {
+                state.connectingPort.port.classList.remove('connecting');
+                state.canvas.classList.remove('connecting');
+                
+                const targetPort = document.querySelector('.port.highlight');
+                
+                document.querySelectorAll('.port').forEach(p => p.classList.remove('highlight'));
+                
+                if (targetPort && isValidConnection(state.connectingPort, targetPort)) {
+                    const targetOwner = findPortOwner(targetPort);
+                    createConnection(state.connectingPort.port, targetPort, state.connectingPort.owner, targetOwner);
+                }
+                
+                if (state.tempConnection) state.tempConnection.remove();
+                state.tempConnection = null;
+                
+                document.removeEventListener('mousemove', dragConnection);
+                document.removeEventListener('mouseup', endConnection);
+            }
+            
+            document.addEventListener('mousemove', dragConnection);
+            document.addEventListener('mouseup', endConnection);
+        }
+        
+        function createConnection(outputPort, inputPort, outputOwner, inputOwner) {
+            const connection = {
+                id: 'conn-' + Date.now(),
+                output: outputPort,
+                input: inputPort,
+                outputOwner: outputOwner,
+                inputOwner: inputOwner,
+                path: null
+            };
+            
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.classList.add('connection');
+            
+            connection.path = path;
+            state.svgElement.appendChild(path);
+            
+            outputPort.classList.add('connected');
+            inputPort.classList.add('connected');
+            
+            state.connections.push(connection);
+            updateConnection(connection);
+            
+            path.addEventListener('click', () => removeConnection(connection));
+            
+            // Update levels
+            if (outputOwner.level && inputOwner.level) {
+                const newLevel = Math.min(3, outputOwner.level + 1);
+                if (newLevel !== inputOwner.level) {
+                    const wasCollapsed = inputOwner.element.classList.contains('collapsed');
+                    inputOwner.level = newLevel;
+                    inputOwner.element.className = 'flow level-' + newLevel;
+                    if (wasCollapsed) {
+                        inputOwner.element.classList.add('collapsed');
+                    }
+                    inputOwner.element.querySelector('.flow-sublabel').textContent = 'Level ' + newLevel + ' Flow';
+                    
+                    if (newLevel >= 3 && inputOwner.ports.output) {
+                        inputOwner.ports.output.classList.add('disabled');
+                        inputOwner.ports.output.title = 'Level 3 flows cannot be used as inputs';
+                        const newPort = inputOwner.ports.output.cloneNode(true);
+                        inputOwner.ports.output.parentNode.replaceChild(newPort, inputOwner.ports.output);
+                        inputOwner.ports.output = newPort;
+                    }
+                }
+            }
+            
+            // Update help text
+            if (state.connections.length === 2) {
+                const helpText = document.getElementById('helpText');
+                if (helpText) {
+                    helpText.innerHTML = `
+                        <strong>Perfect!</strong> You've created a workflow chain.<br>
+                        Flow 3 is now Level 3 (red) and can't output.
+                        <hr>
+                        <strong>Next Steps:</strong><br>
+                        • Click nodes to edit their content<br>
+                        • Double-click flow headers to collapse<br>
+                        • Create your own workflows!<br>
+                        • L1/L2/L3 buttons hide/show levels
+                    `;
+                }
+            }
+        }
+        
+        function removeConnection(connection) {
+            const index = state.connections.indexOf(connection);
+            if (index > -1) {
+                state.connections.splice(index, 1);
+                connection.path.remove();
+                connection.output.classList.remove('connected');
+                connection.input.classList.remove('connected');
+                
+                if (connection.inputOwner && connection.inputOwner.level) {
+                    const hasOtherInputs = state.connections.some(conn => 
+                        conn.inputOwner === connection.inputOwner && conn !== connection
+                    );
+                    
+                    if (!hasOtherInputs) {
+                        const wasCollapsed = connection.inputOwner.element.classList.contains('collapsed');
+                        connection.inputOwner.level = 1;
+                        connection.inputOwner.element.className = 'flow level-1';
+                        if (wasCollapsed) {
+                            connection.inputOwner.element.classList.add('collapsed');
+                        }
+                        connection.inputOwner.element.querySelector('.flow-sublabel').textContent = 'Level 1 Flow';
+                        
+                        if (connection.inputOwner.ports.output && connection.inputOwner.ports.output.classList.contains('disabled')) {
+                            connection.inputOwner.ports.output.classList.remove('disabled');
+                            connection.inputOwner.ports.output.title = '';
+                            
+                            connection.inputOwner.ports.output.addEventListener('mousedown', (e) => 
+                                startConnection(e, connection.inputOwner.ports.output, connection.inputOwner)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        
+        function updateConnection(connection) {
+            const outputRect = connection.output.getBoundingClientRect();
+            const inputRect = connection.input.getBoundingClientRect();
+            const canvasRect = state.canvas.getBoundingClientRect();
+            
+            const x1 = (outputRect.left + outputRect.width / 2 - canvasRect.left - state.panX) / state.zoom;
+            const y1 = (outputRect.top + outputRect.height / 2 - canvasRect.top - state.panY) / state.zoom;
+            const x2 = (inputRect.left + inputRect.width / 2 - canvasRect.left - state.panX) / state.zoom;
+            const y2 = (inputRect.top + inputRect.height / 2 - canvasRect.top - state.panY) / state.zoom;
+            
+            const path = calculateBezierPath(x1, y1, x2, y2);
+            connection.path.setAttribute('d', path);
+        }
+        
+        function updateAllConnections() {
+            state.connections.forEach(updateConnection);
+        }
+        
+        function calculateBezierPath(x1, y1, x2, y2) {
+            const dx = Math.abs(x2 - x1);
+            const tension = Math.min(dx * 0.5, 150);
+            const cp1x = x1 + tension;
+            const cp2x = x2 - tension;
+            
+            return `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
+        }
+        
+        function highlightCompatiblePorts(e) {
+            const ports = document.querySelectorAll('.port');
+            
+            ports.forEach(p => {
+                if (p !== state.connectingPort.port && p.dataset.type !== state.connectingPort.port.dataset.type) {
+                    const rect = p.getBoundingClientRect();
+                    const dist = Math.hypot(
+                        e.clientX - (rect.left + rect.width / 2),
+                        e.clientY - (rect.top + rect.height / 2)
+                    );
+                    
+                    if (dist < 30 && isValidConnection(state.connectingPort, p)) {
+                        p.classList.add('highlight');
+                    } else {
+                        p.classList.remove('highlight');
+                    }
+                }
+            });
+        }
+        
+        function isValidConnection(source, targetPort) {
+            if (source.port.dataset.type === targetPort.dataset.type) return false;
+            
+            if (targetPort.dataset.type === 'input' && targetPort.classList.contains('connected')) {
+                return false;
+            }
+            
+            const targetOwner = findPortOwner(targetPort);
+            if (source.owner.level && targetOwner && targetOwner.level) {
+                if (source.port.dataset.type === 'output' && source.owner.level >= 3) {
+                    return false;
+                }
+                
+                if (source.port.dataset.type === 'output' && targetPort.dataset.type === 'input') {
+                    const resultingLevel = source.owner.level + 1;
+                    if (resultingLevel > 3) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+        
+        function findPortOwner(port) {
+            for (let flow of state.flows) {
+                if (flow.ports && Object.values(flow.ports).includes(port)) return flow;
+            }
+            return null;
+        }
+        
+        // Selection
+        function startSelection(e) {
+            state.isSelecting = true;
+            state.canvas.classList.add('selecting');
+            
+            const rect = state.canvas.getBoundingClientRect();
+            const startX = (e.clientX - rect.left - state.panX) / state.zoom;
+            const startY = (e.clientY - rect.top - state.panY) / state.zoom;
+            
+            state.selectionBox = document.createElement('div');
+            state.selectionBox.className = 'selection-box';
+            state.canvas.appendChild(state.selectionBox);
+            
+            function updateSelection(e) {
+                const currentX = (e.clientX - rect.left - state.panX) / state.zoom;
+                const currentY = (e.clientY - rect.top - state.panY) / state.zoom;
+                
+                const left = Math.min(startX, currentX);
+                const top = Math.min(startY, currentY);
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+                
+                state.selectionBox.style.left = left + 'px';
+                state.selectionBox.style.top = top + 'px';
+                state.selectionBox.style.width = width + 'px';
+                state.selectionBox.style.height = height + 'px';
+                
+                selectItemsInBox(left, top, width, height);
+            }
+            
+            function endSelection() {
+                state.isSelecting = false;
+                state.canvas.classList.remove('selecting');
+                if (state.selectionBox) {
+                    state.selectionBox.remove();
+                    state.selectionBox = null;
+                }
+                document.removeEventListener('mousemove', updateSelection);
+                document.removeEventListener('mouseup', endSelection);
+            }
+            
+            document.addEventListener('mousemove', updateSelection);
+            document.addEventListener('mouseup', endSelection);
+        }
+        
+        function selectItemsInBox(x, y, w, h) {
+            state.selectedItems.clear();
+            
+            state.flows.forEach(flow => {
+                const el = flow.element;
+                const flowX = parseInt(el.style.left);
+                const flowY = parseInt(el.style.top);
+                const flowW = el.offsetWidth;
+                const flowH = el.offsetHeight;
+                
+                if (flowX < x + w && flowX + flowW > x &&
+                    flowY < y + h && flowY + flowH > y) {
+                    state.selectedItems.add(flow);
+                    el.classList.add('selected');
+                } else {
+                    el.classList.remove('selected');
+                }
+            });
+        }
+        
+        function deleteSelected() {
+            state.selectedItems.forEach(item => {
+                if (item.element) {
+                    state.connections = state.connections.filter(conn => {
+                        if (conn.outputOwner === item || conn.inputOwner === item) {
+                            conn.path.remove();
+                            conn.output.classList.remove('connected');
+                            conn.input.classList.remove('connected');
+                            return false;
+                        }
+                        return true;
+                    });
+                    
+                    item.element.remove();
+                    state.flows = state.flows.filter(f => f !== item);
+                }
+            });
+            
+            state.selectedItems.clear();
+        }
+        
+        // Modal
+        function openNodeModal(node) {
+            const modal = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+            
+            modal.style.display = 'flex';
+            modal.currentNode = node;
+            
+            switch(node.type) {
+                case 'role':
+                    title.textContent = 'Edit Role Node';
+                    content.innerHTML = `
+                        <div class="form-group">
+                            <label>Select Roles</label>
+                            <div class="multi-select" id="roleSelect">
+                                ${availableRoles.map(role => `
+                                    <div class="multi-select-item ${node.roles.includes(role) ? 'selected' : ''}">
+                                        <input type="checkbox" value="${role}" ${node.roles.includes(role) ? 'checked' : ''}>
+                                        <span>${role}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    
+                    content.querySelectorAll('.multi-select-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            if (e.target.tagName !== 'INPUT') {
+                                const checkbox = item.querySelector('input');
+                                checkbox.checked = !checkbox.checked;
+                                item.classList.toggle('selected');
+                            }
+                        });
+                    });
+                    break;
+                    
+                case 'transform':
+                    title.textContent = 'Edit Action Type';
+                    content.innerHTML = `
+                        <div class="form-group">
+                            <label>Action Type</label>
+                            <select id="transformType">
+                                <option value="Does" ${node.transformType === 'Does' ? 'selected' : ''}>Does</option>
+                                <option value="Okays" ${node.transformType === 'Okays' ? 'selected' : ''}>Okays</option>
+                                <option value="Shares" ${node.transformType === 'Shares' ? 'selected' : ''}>Shares</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'action':
+                    title.textContent = 'Edit Action';
+                    content.innerHTML = `
+                        <div class="form-group">
+                            <label>Action Description</label>
+                            <textarea id="actionText" placeholder="e.g., writes meeting notes, gives reports to...">${node.text}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="hasRoleAfter" ${node.hasRoleAfter ? 'checked' : ''}>
+                                A role is involved after this
+                            </label>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'operand':
+                    title.textContent = 'Edit Operand';
+                    content.innerHTML = `
+                        <div class="form-group">
+                            <label>Select Entity</label>
+                            <select id="operandEntity">
+                                ${availableEntities.map(entity => `
+                                    <option value="${entity}" ${node.entity === entity ? 'selected' : ''}>${entity}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+        
+        function updateRoleDisplay(node) {
+            const content = node.element.querySelector('.node-role-content');
+            const tags = node.element.querySelector('.node-role-tags');
+            
+            if (node.roles.length === 0) {
+                content.textContent = 'Select roles...';
+                tags.innerHTML = '';
+            } else {
+                content.textContent = node.roles[0];
+                tags.innerHTML = node.roles.map(role => 
+                    `<span class="role-tag">${role}</span>`
+                ).join('');
+            }
+        }
+        
+        // Export public functions
+        App.createNewFlow = function() {
+            const viewportCenterX = (window.innerWidth / 2 - state.panX) / state.zoom;
+            const viewportCenterY = (window.innerHeight / 2 - state.panY) / state.zoom;
+            
+            const x = viewportCenterX + (Math.random() - 0.5) * 100;
+            const y = viewportCenterY + (Math.random() - 0.5) * 100;
+            
+            const flow = createFlow(x, y, 1);
+            
+            const templates = [
+                { role: 'Manager', action: 'approves', text: 'budget requests' },
+                { role: 'Developer', action: 'shares', text: 'code updates', hasOperand: true },
+                { role: 'Designer', action: 'does', text: 'create mockups' },
+                { role: 'QA Engineer', action: 'okays', text: 'release builds' },
+                { role: 'Product Owner', action: 'shares', text: 'requirements', hasOperand: true }
+            ];
+            
+            const template = templates[Math.floor(Math.random() * templates.length)];
+            
+            if (flow.nodes[0]) flow.nodes[0].roles = [template.role];
+            if (flow.nodes[1]) flow.nodes[1].transformType = template.action.charAt(0).toUpperCase() + template.action.slice(1);
+            if (flow.nodes[2]) {
+                flow.nodes[2].text = template.text;
+                flow.nodes[2].hasRoleAfter = template.hasOperand || false;
+            }
+            
+            populateFlow(flow);
+            
+            return flow;
+        };
+        
+        App.zoomIn = function() {
+            state.zoom = Math.min(5, state.zoom * 1.2);
+            updateCanvasTransform();
+            updateZoomDisplay();
+        };
+        
+        App.zoomOut = function() {
+            state.zoom = Math.max(0.1, state.zoom / 1.2);
+            updateCanvasTransform();
+            updateZoomDisplay();
+        };
+        
+        App.resetZoom = function() {
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            updateCanvasTransform();
+            updateZoomDisplay();
+        };
+        
+        App.fitToContent = function() {
+            if (state.flows.length === 0) return;
+            
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+            
+            state.flows.forEach(flow => {
+                const x = parseInt(flow.element.style.left);
+                const y = parseInt(flow.element.style.top);
+                const w = flow.element.offsetWidth;
+                const h = flow.element.offsetHeight;
+                
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + w);
+                maxY = Math.max(maxY, y + h);
+            });
+            
+            const padding = 50;
+            const contentWidth = maxX - minX + padding * 2;
+            const contentHeight = maxY - minY + padding * 2;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            const scaleX = viewportWidth / contentWidth;
+            const scaleY = viewportHeight / contentHeight;
+            state.zoom = Math.min(scaleX, scaleY, 1);
+            
+            state.panX = (viewportWidth - contentWidth * state.zoom) / 2 - (minX - padding) * state.zoom;
+            state.panY = (viewportHeight - contentHeight * state.zoom) / 2 - (minY - padding) * state.zoom;
+            
+            updateCanvasTransform();
+            updateZoomDisplay();
+        };
+        
+        window.fitToContent = App.fitToContent;
+        
+        App.toggleLayer = function(level) {
+            state.layerVisibility[level] = !state.layerVisibility[level];
+            const btn = document.querySelector(`.layer-toggle.level-${level}`);
+            btn.classList.toggle('active');
+            
+            state.flows.forEach(flow => {
+                if (flow.level === level) {
+                    flow.element.style.display = state.layerVisibility[level] ? 'block' : 'none';
+                }
+            });
+            
+            updateAllConnections();
+        };
+        
+        App.toggleFlow = function(flowId) {
+            const flow = state.flows.find(f => f.id === flowId);
+            if (!flow) return;
+            
+            flow.collapsed = !flow.collapsed;
+            flow.element.classList.toggle('collapsed');
+            
+            const control = flow.element.querySelector('.flow-control');
+            control.textContent = flow.collapsed ? '▶' : '▼';
+            
+            updateAllConnections();
+        };
+        
+        App.groupSelected = function() {
+            if (state.selectedItems.size < 2) return;
+            
+            const group = {
+                id: 'group-' + state.groupIdCounter++,
+                items: Array.from(state.selectedItems),
+                element: null
+            };
+            
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+            
+            group.items.forEach(item => {
+                const el = item.element;
+                const x = parseInt(el.style.left);
+                const y = parseInt(el.style.top);
+                const w = el.offsetWidth;
+                const h = el.offsetHeight;
+                
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + w);
+                maxY = Math.max(maxY, y + h);
+            });
+            
+            const groupEl = document.createElement('div');
+            groupEl.className = 'group';
+            groupEl.style.left = (minX - 20) + 'px';
+            groupEl.style.top = (minY - 20) + 'px';
+            groupEl.style.width = (maxX - minX + 40) + 'px';
+            groupEl.style.height = (maxY - minY + 40) + 'px';
+            
+            groupEl.innerHTML = `<div class="group-header" contenteditable="true">Group ${state.groupIdCounter}</div>`;
+            
+            state.canvas.insertBefore(groupEl, state.canvas.firstChild);
+            group.element = groupEl;
+            state.groups.push(group);
+            
+            state.selectedItems.clear();
+            document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+        };
+        
+        App.closeModal = function() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        };
+        
+        App.saveModal = function() {
+            const modal = document.getElementById('modalOverlay');
+            const node = modal.currentNode;
+            
+            switch(node.type) {
+                case 'role':
+                    const selectedRoles = [];
+                    document.querySelectorAll('#roleSelect input:checked').forEach(cb => {
+                        selectedRoles.push(cb.value);
+                    });
+                    node.roles = selectedRoles;
+                    updateRoleDisplay(node);
+                    break;
+                    
+                case 'transform':
+                    node.transformType = document.getElementById('transformType').value;
+                    node.element.querySelector('.node-transform-content').textContent = node.transformType;
+                    node.element.className = 'node node-transform ' + node.transformType.toLowerCase();
+                    break;
+                    
+                case 'action':
+                    node.text = document.getElementById('actionText').value;
+                    node.element.querySelector('.node-action-content').textContent = node.text;
+                    const wasChecked = node.hasRoleAfter;
+                    node.hasRoleAfter = document.getElementById('hasRoleAfter').checked;
+                    node.element.querySelector('input[type="checkbox"]').checked = node.hasRoleAfter;
+                    
+                    if (wasChecked !== node.hasRoleAfter) {
+                        updateFlowOperand(node.flow, node);
+                    }
+                    break;
+                    
+                case 'operand':
+                    node.entity = document.getElementById('operandEntity').value;
+                    node.element.querySelector('.node-operand-content').textContent = node.entity;
+                    break;
+            }
+            
+            if (node.flow) {
+                updateFlowGrammar(node.flow);
+            }
+            
+            App.closeModal();
+        };
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
