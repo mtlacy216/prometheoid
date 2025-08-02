@@ -1551,6 +1551,7 @@ Please create this for my organization with:
                 organizationName: '',
                 people: [],
                 roles: [],
+                groups: [],
                 flows: [],
                 currentTheme: 'light',
                 autoSave: true,
@@ -1593,6 +1594,7 @@ Please create this for my organization with:
                             organizationName: parsed.organizationName || '',
                             people: parsed.people || [],
                             roles: parsed.roles || [],
+                            groups: parsed.groups || [],
                             flows: parsed.flows || [],
                             autoSave: parsed.autoSave !== undefined ? parsed.autoSave : true,
                             showInactive: parsed.showInactive || false,
@@ -1633,6 +1635,7 @@ Please create this for my organization with:
                 } else {
                     this.data.people = [];
                     this.data.roles = [];
+                    this.data.groups = [];
                     this.data.flows = [];
                 }
                 
@@ -1677,6 +1680,7 @@ Please create this for my organization with:
                 } else {
                     this.data.people = [];
                     this.data.roles = [];
+                    this.data.groups = [];
                     this.data.flows = [];
                 }
                 
@@ -1729,11 +1733,13 @@ Please create this for my organization with:
                             if (imported.data) {
                                 this.data.people = imported.data.people || [];
                                 this.data.roles = imported.data.roles || [];
+                                this.data.groups = imported.data.groups || [];
                                 this.data.flows = imported.data.flows || [];
                             } else {
                                 // Direct format
                                 this.data.people = imported.people || [];
                                 this.data.roles = imported.roles || [];
+                                this.data.groups = imported.groups || [];
                                 this.data.flows = imported.flows || [];
                             }
                             
@@ -1775,6 +1781,7 @@ Please create this for my organization with:
 
             // Load sample data
             loadSampleData() {
+                this.data.groups = [];
                 this.data.roles = [
                     {
                         id: 1,
@@ -2263,7 +2270,7 @@ Please create this for my organization with:
                     syncText.textContent = 'No downloads yet';
                     downloadBtn.className = 'download-btn has-changes';
                     
-                    if (this.data.people.length > 0 || this.data.roles.length > 0 || this.data.flows.length > 0) {
+                    if (this.data.people.length > 0 || this.data.roles.length > 0 || this.data.groups.length > 0 || this.data.flows.length > 0) {
                         reminder.style.display = 'flex';
                         reminderText.innerHTML = 'Download your data to save your work permanently.';
                     }
@@ -2338,6 +2345,7 @@ Please create this for my organization with:
                 // Initialize with empty data
                 this.data.people = [];
                 this.data.roles = [];
+                this.data.groups = [];
                 this.data.flows = [];
                 this.data.originalFileName = 'team-operations-archive.json';
                 
@@ -2428,14 +2436,17 @@ Please create this for my organization with:
             updateCounts() {
                 const peopleCount = this.data.people.length;
                 const rolesCount = this.data.roles.length;
+                const groupsCount = this.data.groups.length;
                 const flowsCount = this.data.flows.length;
-                
+
                 const peopleCountEl = document.getElementById('peopleCount');
                 const rolesCountEl = document.getElementById('rolesCount');
+                const groupsCountEl = document.getElementById('groupsCount');
                 const flowsCountEl = document.getElementById('flowsCount');
-                
+
                 if (peopleCountEl) peopleCountEl.textContent = peopleCount;
                 if (rolesCountEl) rolesCountEl.textContent = rolesCount;
+                if (groupsCountEl) groupsCountEl.textContent = groupsCount;
                 if (flowsCountEl) flowsCountEl.textContent = flowsCount;
                 
                 // Show AI assist hint for new users
@@ -2847,6 +2858,7 @@ Please create this for my organization with:
                     organizationName: this.data.organizationName,
                     people: this.data.people,
                     roles: this.data.roles,
+                    groups: this.data.groups,
                     flows: this.data.flows,
                     autoSave: this.data.autoSave,
                     showInactive: this.data.showInactive,
@@ -2867,6 +2879,7 @@ Please create this for my organization with:
                     data: {
                         people: this.data.people,
                         roles: this.data.roles,
+                        groups: this.data.groups,
                         flows: this.data.flows
                     }
                 };
@@ -3160,10 +3173,11 @@ Please create this for my organization with:
             // Clear all data
             clearAllData() {
                 if (confirm('Are you sure you want to delete all data? This cannot be undone!')) {
-                    if (confirm('This will permanently delete all people, roles, and flows. Are you really sure?')) {
+                    if (confirm('This will permanently delete all people, roles, groups, and flows. Are you really sure?')) {
                         this.data.organizationName = '';
                         this.data.people = [];
                         this.data.roles = [];
+                        this.data.groups = [];
                         this.data.flows = [];
                         this.data.lastDownloadTime = null;
                         this.data.hasChanges = false;
@@ -3198,11 +3212,13 @@ Please create this for my organization with:
                                 if (imported.data) {
                                     this.data.people = imported.data.people || [];
                                     this.data.roles = imported.data.roles || [];
+                                    this.data.groups = imported.data.groups || [];
                                     this.data.flows = imported.data.flows || [];
                                 } else {
                                     // Direct format
                                     this.data.people = imported.people || [];
                                     this.data.roles = imported.roles || [];
+                                    this.data.groups = imported.groups || [];
                                     this.data.flows = imported.flows || [];
                                 }
                                 
@@ -3276,11 +3292,13 @@ Please create this for my organization with:
                             if (imported.data) {
                                 this.data.people = [...this.data.people, ...(imported.data.people || [])];
                                 this.data.roles = [...this.data.roles, ...(imported.data.roles || [])];
+                                this.data.groups = [...this.data.groups, ...(imported.data.groups || [])];
                                 this.data.flows = [...this.data.flows, ...(imported.data.flows || [])];
                             } else {
                                 // Direct format
                                 this.data.people = [...this.data.people, ...(imported.people || [])];
                                 this.data.roles = [...this.data.roles, ...(imported.roles || [])];
+                                this.data.groups = [...this.data.groups, ...(imported.groups || [])];
                                 this.data.flows = [...this.data.flows, ...(imported.flows || [])];
                             }
                             
@@ -3296,10 +3314,11 @@ Please create this for my organization with:
                             const counts = {
                                 people: (imported.data?.people || imported.people || []).length,
                                 roles: (imported.data?.roles || imported.roles || []).length,
-                                flows: (imported.data?.flows || imported.flows || []).length
+                                flows: (imported.data?.flows || imported.flows || []).length,
+                                groups: (imported.data?.groups || imported.groups || []).length
                             };
-                            
-                            this.showNotification(`Imported ${counts.people} people, ${counts.roles} roles, and ${counts.flows} flows from ${file.name}`);
+
+                            this.showNotification(`Imported ${counts.people} people, ${counts.roles} roles, ${counts.flows} flows, and ${counts.groups} groups from ${file.name}`);
                         } catch (error) {
                             this.showNotification('Failed to import data. Please check the file format.');
                             console.error('Import error:', error);
@@ -3772,7 +3791,56 @@ Please create this for my organization with:
                 this.closeModal();
                 this.showNotification('Role updated successfully!');
             },
-            
+
+            // Group management
+            createGroup(name, parentGroupId = null) {
+                const newGroup = {
+                    id: Date.now(),
+                    name,
+                    roleIds: [],
+                    childGroupIds: [],
+                    parentId: parentGroupId
+                };
+                this.data.groups.push(newGroup);
+                if (parentGroupId) {
+                    const parent = this.data.groups.find(g => g.id === parentGroupId);
+                    if (parent && !parent.childGroupIds.includes(newGroup.id)) {
+                        parent.childGroupIds.push(newGroup.id);
+                    }
+                }
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+                return newGroup.id;
+            },
+
+            addRoleToGroup(roleId, groupId) {
+                const group = this.data.groups.find(g => g.id === groupId);
+                if (!group) return;
+                if (!group.roleIds.includes(roleId)) {
+                    group.roleIds.push(roleId);
+                    this.data.hasChanges = true;
+                    if (this.data.autoSave !== false) this.saveData();
+                }
+            },
+
+            addGroupToGroup(childGroupId, parentGroupId) {
+                const child = this.data.groups.find(g => g.id === childGroupId);
+                const parent = this.data.groups.find(g => g.id === parentGroupId);
+                if (!child || !parent) return;
+                // prevent circular nesting
+                let current = parent;
+                while (current) {
+                    if (current.id === childGroupId) return;
+                    current = this.data.groups.find(g => g.id === current.parentId);
+                }
+                child.parentId = parentGroupId;
+                if (!parent.childGroupIds.includes(childGroupId)) {
+                    parent.childGroupIds.push(childGroupId);
+                }
+                this.data.hasChanges = true;
+                if (this.data.autoSave !== false) this.saveData();
+            },
+
             // Delete flow
             deleteFlow(flowId) {
                 if (confirm('Are you sure you want to delete this flow?')) {
