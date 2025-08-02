@@ -1043,7 +1043,8 @@
             z-index: 5;
         }
 
-        .flow.hidden {
+        .flow.hidden,
+        .flow.viewport-hidden {
             display: none;
         }
 
@@ -1057,7 +1058,8 @@
             opacity: 0.2;
         }
 
-        .connection-group.hidden {
+        .connection-group.hidden,
+        .connection-group.viewport-hidden {
             display: none;
         }
 
@@ -1424,18 +1426,20 @@
             state.panX = x - (x - state.panX) * (newZoom / state.zoom);
             state.panY = y - (y - state.panY) * (newZoom / state.zoom);
             
-            state.zoom = newZoom;
-            updateCanvasTransform();
-            updateZoomDisplay();
+           state.zoom = newZoom;
+           updateCanvasTransform();
+           updateZoomDisplay();
             scheduleUpdate(() => {
                 updateAllConnections();
                 updateMinimap();
             });
+            scheduleUpdate(updateViewportFlows);
         }
 
         function updateCanvasTransform() {
             state.canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
             updateMinimap();
+            scheduleUpdate(updateViewportFlows);
         }
 
         function updateZoomDisplay() {
@@ -1495,6 +1499,28 @@
             viewport.style.top = ((vy - minY) * scale) + 'px';
             viewport.style.width = viewW * scale + 'px';
             viewport.style.height = viewH * scale + 'px';
+        }
+
+        function updateViewportFlows() {
+            const viewLeft = -state.panX / state.zoom;
+            const viewTop = -state.panY / state.zoom;
+            const viewRight = viewLeft + window.innerWidth / state.zoom;
+            const viewBottom = viewTop + window.innerHeight / state.zoom;
+
+            state.flows.forEach(flow => {
+                const x = parseFloat(flow.element.style.left) || 0;
+                const y = parseFloat(flow.element.style.top) || 0;
+                const w = flow.element.offsetWidth;
+                const h = flow.element.offsetHeight;
+                const inView = x + w > viewLeft && x < viewRight && y + h > viewTop && y < viewBottom;
+                flow.element.classList.toggle('viewport-hidden', !inView);
+            });
+
+            state.connections.forEach(conn => {
+                const outHidden = conn.outputOwner.element.classList.contains('viewport-hidden');
+                const inHidden = conn.inputOwner.element.classList.contains('viewport-hidden');
+                conn.group.classList.toggle('viewport-hidden', outHidden || inHidden);
+            });
         }
 
         function handleMinimapDown(e) {
