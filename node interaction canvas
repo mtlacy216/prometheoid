@@ -1388,6 +1388,7 @@
                     updateAllConnections();
                     updateMinimap();
                 });
+                scheduleUpdate(updateViewportFlows);
             });
             
             // Connection type selector
@@ -1431,11 +1432,13 @@
                 updateAllConnections();
                 updateMinimap();
             });
+            scheduleUpdate(updateViewportFlows);
         }
 
         function updateCanvasTransform() {
             state.canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
             updateMinimap();
+            scheduleUpdate(updateViewportFlows);
         }
 
         function updateZoomDisplay() {
@@ -1497,6 +1500,31 @@
             viewport.style.height = viewH * scale + 'px';
         }
 
+        function updateViewportFlows() {
+            const zoom = state.zoom;
+            const panX = state.panX;
+            const panY = state.panY;
+            const viewWidth = window.innerWidth;
+            const viewHeight = window.innerHeight;
+
+            const left = -panX / zoom;
+            const top = -panY / zoom;
+            const right = left + viewWidth / zoom;
+            const bottom = top + viewHeight / zoom;
+
+            state.flows.forEach(flow => {
+                const el = flow.element;
+                if (!el) return;
+                const width = el.offsetWidth;
+                const height = el.offsetHeight;
+                const inView = flow.x + width > left &&
+                               flow.x < right &&
+                               flow.y + height > top &&
+                               flow.y < bottom;
+                el.style.display = inView ? '' : 'none';
+            });
+        }
+
         function handleMinimapDown(e) {
             e.preventDefault();
             moveFromEvent(e);
@@ -1514,6 +1542,7 @@
                     updateAllConnections();
                     updateMinimap();
                 });
+                scheduleUpdate(updateViewportFlows);
             }
 
             function stop() {
@@ -1582,6 +1611,7 @@
                     updateAllConnections();
                     updateMinimap();
                 });
+                scheduleUpdate(updateViewportFlows);
             }, 16);
             
             function stopPanning() {
@@ -1697,6 +1727,7 @@
                 updateAllConnections();
                 updateMinimap();
             });
+            scheduleUpdate(updateViewportFlows);
 
             return flow;
         }
@@ -1899,6 +1930,7 @@
                 updateAllConnections();
                 updateMinimap();
             });
+            scheduleUpdate(updateViewportFlows);
         }
         
         // Dragging with performance optimizations
@@ -1939,6 +1971,7 @@
                         updateAllConnections();
                         updateMinimap();
                     });
+                    scheduleUpdate(updateViewportFlows);
                 }
             }, 16);
             
@@ -2734,7 +2767,11 @@
                 }
             });
 
-            scheduleUpdate(() => updateAllConnections());
+            scheduleUpdate(() => {
+                updateAllConnections();
+                updateMinimap();
+            });
+            scheduleUpdate(updateViewportFlows);
             App.fitToContent();
         };
         
@@ -2754,6 +2791,7 @@
                     updateAllConnections();
                     updateMinimap();
                 });
+                scheduleUpdate(updateViewportFlows);
             }, 50);
         };
         
