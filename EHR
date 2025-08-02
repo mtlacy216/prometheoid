@@ -2035,28 +2035,48 @@
             }
             
             collectDynamicData(type) {
+                const prefixMap = {
+                    'provider': 'provider',
+                    'medication': 'med',
+                    'condition': 'condition',
+                    'surgery': 'surgery',
+                    'past-surgery': 'past-surgery',
+                    'note': 'note',
+                    'emergency': 'emergency'
+                };
+                const prefix = prefixMap[type] || type;
+
                 const items = [];
-                const containers = document.querySelectorAll(`[data-${type}-id]`);
-                
+                const containers = document.querySelectorAll(`[data-${prefix}-id]`);
+
+                const toCamel = str => str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+
                 containers.forEach(container => {
-                    const id = container.dataset[`${type.replace('-', '')}Id`];
+                    const id = container.dataset[`${toCamel(prefix)}Id`];
                     if (!id) return;
-                    
+
                     const item = { id };
                     const inputs = container.querySelectorAll(`.dynamic-${type}`);
-                    
+                    let hasValue = false;
+
                     inputs.forEach(input => {
                         const field = input.dataset.field;
                         if (input.type === 'checkbox') {
-                            item[field] = input.checked;
+                            const value = input.checked;
+                            if (value) hasValue = true;
+                            item[field] = value;
                         } else {
-                            item[field] = input.value;
+                            const value = input.value;
+                            if (value.trim() !== '') hasValue = true;
+                            item[field] = value;
                         }
                     });
-                    
-                    items.push(item);
+
+                    if (hasValue || container.dataset.new === 'true') {
+                        items.push(item);
+                    }
                 });
-                
+
                 return items;
             }
             
@@ -2095,37 +2115,63 @@
                     'notes': 'notes-container',
                     'emergencyContacts': 'emergency-contacts-container'
                 };
-                
+
                 const container = document.getElementById(containerMap[type]);
                 if (container) container.innerHTML = '';
-                
+
                 // Reset dynamic data
                 this.dynamicData[type] = [];
-                
+
+                const addMethod = {
+                    'providers': () => this.addProvider(),
+                    'medications': () => this.addMedication(),
+                    'conditions': () => this.addCondition(),
+                    'surgeries': () => this.addSurgery(),
+                    'pastSurgeries': () => this.addPastSurgery(),
+                    'notes': () => this.addNote(),
+                    'emergencyContacts': () => this.addEmergencyContact()
+                };
+
+                const prefixMap = {
+                    providers: 'provider',
+                    medications: 'med',
+                    conditions: 'condition',
+                    surgeries: 'surgery',
+                    pastSurgeries: 'past-surgery',
+                    notes: 'note',
+                    emergencyContacts: 'emergency'
+                };
+
                 // Add items
                 items.forEach(itemData => {
-                    const addMethod = {
-                        'providers': () => this.addProvider(),
-                        'medications': () => this.addMedication(),
-                        'conditions': () => this.addCondition(),
-                        'surgeries': () => this.addSurgery(),
-                        'pastSurgeries': () => this.addPastSurgery(),
-                        'notes': () => this.addNote(),
-                        'emergencyContacts': () => this.addEmergencyContact()
-                    };
-                    
+                    if (!itemData) {
+                        return;
+                    }
+                    const temp = { ...itemData };
+                    delete temp.id;
+                    delete temp.active;
+                    const hasContent = Object.values(temp).some(value => {
+                        if (typeof value === 'boolean') return value;
+                        return value && String(value).trim() !== '';
+                    });
+                    if (!hasContent) {
+                        return;
+                    }
+
                     addMethod[type]();
-                    
+
                     // Load data into the newly created fields
                     const lastAdded = this.dynamicData[type][this.dynamicData[type].length - 1];
                     if (lastAdded) {
-                        Object.assign(lastAdded, itemData);
-                        
-                        // Update form fields
-                        const prefix = type.replace('s', '').replace('ie', 'y').replace('emergencyContact', 'emergency');
-                        const selector = `[data-${prefix.toLowerCase().replace('_', '-')}-id="${lastAdded.id}"]`;
+                        const { id: _unusedId, ...fields } = itemData;
+                        Object.assign(lastAdded, fields);
+
+                        const prefix = prefixMap[type] || type;
+                        const selector = `[data-${prefix}-id="${lastAdded.id}"]`;
+                        const element = document.querySelector(selector);
+                        if (element) element.dataset.new = 'false';
                         const inputs = document.querySelectorAll(`${selector} .form-data`);
-                        
+
                         inputs.forEach(input => {
                             const field = input.dataset.field;
                             if (itemData.hasOwnProperty(field)) {
@@ -2136,12 +2182,12 @@
                                 }
                             }
                         });
-                        
+
                         // Special handling for providers
                         if (type === 'providers' && !itemData.active) {
                             this.toggleProviderActive(lastAdded.id);
                         }
-                        
+
                         // Restore mood selection for notes
                         if (type === 'notes' && itemData.mood) {
                             const moodItem = document.querySelector(`[data-note-id="${lastAdded.id}"] .scale-item[data-value="${itemData.mood}"]`);
@@ -2149,12 +2195,12 @@
                         }
                     }
                 });
-                
+
                 // Update provider dropdowns after all providers loaded
                 if (type === 'providers') {
                     this.updateProviderDropdowns();
                 }
-                
+
                 // Sort notes after loading
                 if (type === 'notes') {
                     this.sortNotes();
@@ -2170,7 +2216,7 @@
                 this.dynamicData.providers.push({ id: providerId, active: true });
                 
                 const providerHtml = `
-                    <div class="provider-card" data-provider-id="${providerId}">
+                    <div class="provider-card" data-provider-id="${providerId}" data-new="true">
                         <button class="delete-btn no-print" data-provider-id="${providerId}">Remove</button>
                         <div class="provider-header">
                             <div>
@@ -2228,11 +2274,13 @@
                 container.insertAdjacentHTML('beforeend', providerHtml);
                 
                 // Add event listeners to new elements
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeProvider(providerId));
-                container.lastElementChild.querySelector('[data-field="name"]').addEventListener('change', () => this.updateProviderDropdowns());
-                container.lastElementChild.querySelector('[data-field="specialty"]').addEventListener('change', () => this.updateProviderDropdowns());
-                container.lastElementChild.querySelector('[data-field="safetyStatus"]').addEventListener('change', (e) => this.updateProviderSafety(e.target));
-                container.lastElementChild.querySelector('[data-field="active"]').addEventListener('change', () => this.toggleProviderActive(providerId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeProvider(providerId));
+                    container.lastElementChild.querySelector('[data-field="name"]').addEventListener('change', () => this.updateProviderDropdowns());
+                    container.lastElementChild.querySelector('[data-field="specialty"]').addEventListener('change', () => this.updateProviderDropdowns());
+                    container.lastElementChild.querySelector('[data-field="safetyStatus"]').addEventListener('change', (e) => this.updateProviderSafety(e.target));
+                    container.lastElementChild.querySelector('[data-field="active"]').addEventListener('change', () => this.toggleProviderActive(providerId));
+                }
                 
                 this.markAsChanged();
                 this.updateProviderDropdowns();
@@ -2327,7 +2375,7 @@
                 this.dynamicData.emergencyContacts.push({ id: contactId });
                 
                 const contactHtml = `
-                    <div class="list-item" data-emergency-id="${contactId}">
+                    <div class="list-item" data-emergency-id="${contactId}" data-new="true">
                         <button class="delete-btn no-print" data-emergency-id="${contactId}">Remove</button>
                         <div class="grid-2">
                             <div class="field">
@@ -2377,7 +2425,9 @@
                 container.insertAdjacentHTML('beforeend', contactHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeEmergencyContact(contactId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeEmergencyContact(contactId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2398,7 +2448,7 @@
                 this.dynamicData.medications.push({ id: medId });
                 
                 const medHtml = `
-                    <div class="list-item" data-med-id="${medId}">
+                    <div class="list-item" data-med-id="${medId}" data-new="true">
                         <button class="delete-btn no-print" data-med-id="${medId}">Remove</button>
                         <div class="grid-3">
                             <div class="field">
@@ -2424,7 +2474,9 @@
                 container.insertAdjacentHTML('beforeend', medHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeMedication(medId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeMedication(medId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2445,7 +2497,7 @@
                 this.dynamicData.conditions.push({ id: conditionId });
                 
                 const conditionHtml = `
-                    <div class="list-item" data-condition-id="${conditionId}">
+                    <div class="list-item" data-condition-id="${conditionId}" data-new="true">
                         <button class="delete-btn no-print" data-condition-id="${conditionId}">Remove</button>
                         <div class="grid-3">
                             <div class="field">
@@ -2471,7 +2523,9 @@
                 container.insertAdjacentHTML('beforeend', conditionHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeCondition(conditionId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeCondition(conditionId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2492,7 +2546,7 @@
                 this.dynamicData.surgeries.push({ id: surgeryId });
                 
                 const surgeryHtml = `
-                    <div class="list-item" data-surgery-id="${surgeryId}">
+                    <div class="list-item" data-surgery-id="${surgeryId}" data-new="true">
                         <button class="delete-btn no-print" data-surgery-id="${surgeryId}">Remove</button>
                         <div class="grid-2">
                             <div class="field">
@@ -2520,7 +2574,9 @@
                 container.insertAdjacentHTML('beforeend', surgeryHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeSurgery(surgeryId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeSurgery(surgeryId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2541,7 +2597,7 @@
                 this.dynamicData.pastSurgeries.push({ id: surgeryId });
                 
                 const surgeryHtml = `
-                    <div class="list-item" data-past-surgery-id="${surgeryId}">
+                    <div class="list-item" data-past-surgery-id="${surgeryId}" data-new="true">
                         <button class="delete-btn no-print" data-past-surgery-id="${surgeryId}">Remove</button>
                         <div class="grid-3">
                             <div class="field">
@@ -2567,7 +2623,9 @@
                 container.insertAdjacentHTML('beforeend', surgeryHtml);
                 
                 // Add event listener
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removePastSurgery(surgeryId));
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removePastSurgery(surgeryId));
+                }
                 
                 this.markAsChanged();
             }
@@ -2589,7 +2647,7 @@
                 
                 const today = new Date().toISOString().split('T')[0];
                 const noteHtml = `
-                    <div class="list-item" data-note-id="${noteId}">
+                    <div class="list-item" data-note-id="${noteId}" data-new="true">
                         <button class="delete-btn no-print" data-note-id="${noteId}">Remove</button>
                         <div class="grid-3">
                             <div class="field">
@@ -2649,10 +2707,12 @@
                 container.insertAdjacentHTML('beforeend', noteHtml);
                 
                 // Add event listeners
-                container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeNote(noteId));
-                container.lastElementChild.querySelectorAll('.scale-item').forEach(item => {
-                    item.addEventListener('click', (e) => this.selectMood(e.target, noteId));
-                });
+                if (container.lastElementChild) {
+                    container.lastElementChild.querySelector('.delete-btn').addEventListener('click', () => this.removeNote(noteId));
+                    container.lastElementChild.querySelectorAll('.scale-item').forEach(item => {
+                        item.addEventListener('click', (e) => this.selectMood(e.target, noteId));
+                    });
+                }
                 
                 this.markAsChanged();
                 this.updateProviderDropdowns();
