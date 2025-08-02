@@ -1,7 +1,13 @@
 <!-- Adapted from n8n's editor-ui under the Sustainable Use License. -->
 <template>
   <svg class="edge" :width="width" :height="height">
-    <path :d="path" :stroke="color" fill="none" stroke-width="2" />
+    <path
+      :d="path"
+      :stroke="color"
+      fill="none"
+      stroke-width="2"
+      vector-effect="non-scaling-stroke"
+    />
   </svg>
 </template>
 
@@ -29,5 +35,8 @@ export default defineComponent({
 <style scoped>
 .edge {
   overflow: visible;
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
 }
 </style>
