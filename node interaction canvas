@@ -1432,21 +1432,28 @@
         }
         
         function handleWheel(e) {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.9 : 1.1;
-            const newZoom = Math.max(0.1, Math.min(5, state.zoom * delta));
-            
-            const rect = state.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            state.panX = x - (x - state.panX) * (newZoom / state.zoom);
-            state.panY = y - (y - state.panY) * (newZoom / state.zoom);
-            
-            // Apply zoom and refresh visuals
-            state.zoom = newZoom;
+            if (e.ctrlKey) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const newZoom = Math.max(0.1, Math.min(5, state.zoom * delta));
+
+                const rect = state.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                state.panX = x - (x - state.panX) * (newZoom / state.zoom);
+                state.panY = y - (y - state.panY) * (newZoom / state.zoom);
+
+                // Apply zoom and refresh visuals
+                state.zoom = newZoom;
+                updateZoomDisplay();
+            } else {
+                e.preventDefault();
+                state.panX -= e.deltaX;
+                state.panY -= e.deltaY;
+            }
+
             updateCanvasTransform();
-            updateZoomDisplay();
             scheduleUpdate(() => {
                 updateAllConnections();
                 updateMinimap();
