@@ -276,12 +276,7 @@
       border-radius: 3px;
       margin-left: 0.5rem;
     }
-    
-    .source-badge.substack {
-      color: #f97316;
-      background: rgba(249, 115, 22, 0.1);
-    }
-    
+        
     .source-badge.airtable {
       color: #8b5cf6;
       background: rgba(139, 92, 246, 0.1);
@@ -659,7 +654,7 @@
       padding: 0;
     }
     
-    /* Legacy Substack cleanup */
+    /* Legacy markup cleanup */
     .article-content .captioned-image-container figure::after,
     .article-content .button-wrapper,
     .article-content .subscription-widget-wrap-editor,
