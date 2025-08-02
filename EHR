@@ -255,6 +255,25 @@
             padding: 10px 15px;
             border-left: 4px solid #3b82f6;
             margin-bottom: 15px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .section-header::after {
+            content: "\25BC";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.2s;
+        }
+
+        .section.collapsed .section-header::after {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .section.collapsed > :not(.section-header) {
+            display: none;
         }
         
         .section-header.gac {
@@ -1424,6 +1443,7 @@
             
             init() {
                 this.setupEventListeners();
+                this.setupSectionToggles();
                 this.trackActivity();
                 
                 // Show first time modal if needed
@@ -1527,7 +1547,30 @@
                     }
                 });
             }
-            
+
+            setupSectionToggles() {
+                const saved = JSON.parse(localStorage.getItem('sectionStates') || '{}');
+                document.querySelectorAll('.section').forEach(section => {
+                    const header = section.querySelector('.section-header');
+                    if (!header) return;
+                    header.addEventListener('click', () => {
+                        section.classList.toggle('collapsed');
+                        this.persistSectionStates();
+                    });
+                    if (saved[section.id]) {
+                        section.classList.add('collapsed');
+                    }
+                });
+            }
+
+            persistSectionStates() {
+                const states = {};
+                document.querySelectorAll('.section').forEach(section => {
+                    states[section.id] = section.classList.contains('collapsed');
+                });
+                localStorage.setItem('sectionStates', JSON.stringify(states));
+            }
+
             navigateToSection(e) {
                 const sectionId = e.target.dataset.section;
                 const section = document.getElementById(`${sectionId}-section`);
@@ -2030,7 +2073,13 @@
                 formData.pastSurgeries = this.collectDynamicData('past-surgery');
                 formData.notes = this.collectDynamicData('note');
                 formData.emergencyContacts = this.collectDynamicData('emergency');
-                
+
+                // Save section collapse state
+                formData.collapsedSections = {};
+                document.querySelectorAll('.section').forEach(section => {
+                    formData.collapsedSections[section.id] = section.classList.contains('collapsed');
+                });
+
                 return formData;
             }
             
@@ -2084,6 +2133,17 @@
                 this.loadDynamicData('pastSurgeries', data.pastSurgeries || []);
                 this.loadDynamicData('notes', data.notes || []);
                 this.loadDynamicData('emergencyContacts', data.emergencyContacts || []);
+
+                // Restore section collapse state
+                if (data.collapsedSections) {
+                    Object.entries(data.collapsedSections).forEach(([id, collapsed]) => {
+                        const section = document.getElementById(id);
+                        if (section) {
+                            section.classList.toggle('collapsed', collapsed);
+                        }
+                    });
+                    this.persistSectionStates();
+                }
             }
             
             loadDynamicData(type, items) {
