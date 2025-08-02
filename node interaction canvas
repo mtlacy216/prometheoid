@@ -731,6 +731,43 @@
             font-family: monospace;
         }
 
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            z-index: 900;
+            cursor: pointer;
+        }
+
+        #minimap .content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #minimap .minimap-flow {
+            position: absolute;
+            background: rgba(74, 158, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-sizing: border-box;
+        }
+
+        #minimap .minimap-viewport {
+            position: absolute;
+            border: 1px solid #fff;
+            background: rgba(255, 255, 255, 0.2);
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
         /* Connection Type Selector (Inline) */
         .connection-type-selector {
             position: fixed;
@@ -1072,7 +1109,7 @@
                 <button onclick="App.groupSelected()" title="Group selected flows">Group</button>
                 <button onclick="App.exportAsText()" title="Export as text">Export</button>
             </div>
-            
+
             <div class="control-group zoom-controls">
                 <button onclick="App.zoomOut()" title="Zoom out">−</button>
                 <span class="zoom-level">100%</span>
@@ -1082,7 +1119,12 @@
                 <button onclick="App.autoLayout()" title="Auto-arrange flows">Tidy</button>
             </div>
         </div>
-        
+
+        <div id="minimap">
+            <div class="content"></div>
+            <div class="minimap-viewport"></div>
+        </div>
+
         <div class="role-filter-bar">
             <div class="filter-label">Filter by role:</div>
             <div class="role-chips">
@@ -1200,6 +1242,12 @@
             isPanning: false,
             isSelecting: false,
             activeConnection: null,
+            minimap: null,
+            minimapContent: null,
+            minimapViewport: null,
+            minimapBounds: { minX: 0, minY: 0 },
+            minimapScale: 1,
+            minimapDragging: false,
             flowIdCounter: 0,
             nodeIdCounter: 0,
             groupIdCounter: 0,
@@ -1256,7 +1304,12 @@
                 return;
             }
             state.canvasRect = state.canvas.getBoundingClientRect();
-            
+            state.minimap = document.getElementById('minimap');
+            if (state.minimap) {
+                state.minimapContent = state.minimap.querySelector('.content');
+                state.minimapViewport = state.minimap.querySelector('.minimap-viewport');
+            }
+
             setupEventListeners();
             updateCanvasTransform();
             
@@ -1296,6 +1349,8 @@
             setTimeout(() => {
                 App.fitToContent();
             }, 100);
+
+            updateMinimap();
         }
         
         // Update flow icon based on content
@@ -1329,7 +1384,10 @@
             document.addEventListener('keydown', handleKeyDown);
             window.addEventListener('resize', () => {
                 state.canvasRect = state.canvas.getBoundingClientRect();
-                scheduleUpdate(() => updateAllConnections());
+                scheduleUpdate(() => {
+                    updateAllConnections();
+                    updateMinimap();
+                });
             });
             
             // Connection type selector
@@ -1341,13 +1399,17 @@
             // Click outside to close selector
             document.addEventListener('click', (e) => {
                 const selector = document.getElementById('connectionTypeSelector');
-                if (!e.target.closest('.connection-type-selector') && 
+                if (!e.target.closest('.connection-type-selector') &&
                     !e.target.closest('.connection-label') &&
                     selector.classList.contains('show')) {
                     selector.classList.remove('show');
                     state.activeConnection = null;
                 }
             });
+
+            if (state.minimap) {
+                state.minimap.addEventListener('mousedown', handleMinimapDown);
+            }
         }
         
         function handleWheel(e) {
@@ -1365,16 +1427,102 @@
             state.zoom = newZoom;
             updateCanvasTransform();
             updateZoomDisplay();
-            scheduleUpdate(() => updateAllConnections());
+            scheduleUpdate(() => {
+                updateAllConnections();
+                updateMinimap();
+            });
         }
-        
+
         function updateCanvasTransform() {
             state.canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+            updateMinimap();
         }
-        
+
         function updateZoomDisplay() {
             const percentage = Math.round(state.zoom * 100);
             document.querySelector('.zoom-level').textContent = percentage + '%';
+        }
+
+        function updateMinimap() {
+            if (!state.minimap) return;
+            const flows = state.flows;
+            const minimap = state.minimap;
+            const content = state.minimapContent;
+            const viewport = state.minimapViewport;
+            const width = minimap.clientWidth;
+            const height = minimap.clientHeight;
+
+            content.innerHTML = '';
+            if (flows.length === 0) {
+                viewport.style.display = 'none';
+                return;
+            }
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            flows.forEach(flow => {
+                const w = flow.element.offsetWidth;
+                const h = flow.element.offsetHeight;
+                minX = Math.min(minX, flow.x);
+                minY = Math.min(minY, flow.y);
+                maxX = Math.max(maxX, flow.x + w);
+                maxY = Math.max(maxY, flow.y + h);
+            });
+
+            const bboxWidth = maxX - minX;
+            const bboxHeight = maxY - minY;
+            const scale = Math.min(width / bboxWidth, height / bboxHeight);
+
+            state.minimapScale = scale;
+            state.minimapBounds = { minX, minY };
+
+            flows.forEach(flow => {
+                const rect = document.createElement('div');
+                rect.className = 'minimap-flow';
+                rect.style.left = ((flow.x - minX) * scale) + 'px';
+                rect.style.top = ((flow.y - minY) * scale) + 'px';
+                rect.style.width = (flow.element.offsetWidth * scale) + 'px';
+                rect.style.height = (flow.element.offsetHeight * scale) + 'px';
+                content.appendChild(rect);
+            });
+
+            const viewW = state.canvasRect.width / state.zoom;
+            const viewH = state.canvasRect.height / state.zoom;
+            const vx = -state.panX / state.zoom;
+            const vy = -state.panY / state.zoom;
+
+            viewport.style.display = 'block';
+            viewport.style.left = ((vx - minX) * scale) + 'px';
+            viewport.style.top = ((vy - minY) * scale) + 'px';
+            viewport.style.width = viewW * scale + 'px';
+            viewport.style.height = viewH * scale + 'px';
+        }
+
+        function handleMinimapDown(e) {
+            e.preventDefault();
+            moveFromEvent(e);
+
+            function moveFromEvent(ev) {
+                const rect = state.minimap.getBoundingClientRect();
+                const x = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
+                const y = Math.max(0, Math.min(rect.height, ev.clientY - rect.top));
+                const canvasX = x / state.minimapScale + state.minimapBounds.minX;
+                const canvasY = y / state.minimapScale + state.minimapBounds.minY;
+                state.panX = -canvasX * state.zoom + state.canvasRect.width / 2;
+                state.panY = -canvasY * state.zoom + state.canvasRect.height / 2;
+                updateCanvasTransform();
+                scheduleUpdate(() => {
+                    updateAllConnections();
+                    updateMinimap();
+                });
+            }
+
+            function stop() {
+                document.removeEventListener('mousemove', moveFromEvent);
+                document.removeEventListener('mouseup', stop);
+            }
+
+            document.addEventListener('mousemove', moveFromEvent);
+            document.addEventListener('mouseup', stop);
         }
         
         function handleCanvasMouseDown(e) {
@@ -1430,7 +1578,10 @@
                 state.panX = startPanX + (e.clientX - startX);
                 state.panY = startPanY + (e.clientY - startY);
                 updateCanvasTransform();
-                scheduleUpdate(() => updateAllConnections());
+                scheduleUpdate(() => {
+                    updateAllConnections();
+                    updateMinimap();
+                });
             }, 16);
             
             function stopPanning() {
@@ -1541,7 +1692,12 @@
             setupFlowInteractions(flow);
             state.flows.push(flow);
             populateFlow(flow);
-            
+
+            scheduleUpdate(() => {
+                updateAllConnections();
+                updateMinimap();
+            });
+
             return flow;
         }
         
@@ -1739,7 +1895,10 @@
             });
             
             flow.element.style.width = Math.max(600, totalWidth) + 'px';
-            scheduleUpdate(() => updateAllConnections());
+            scheduleUpdate(() => {
+                updateAllConnections();
+                updateMinimap();
+            });
         }
         
         // Dragging with performance optimizations
@@ -1775,8 +1934,11 @@
                     el.style.top = y + 'px';
                     flow.x = x;
                     flow.y = y;
-                    
-                    scheduleUpdate(() => updateAllConnections());
+
+                    scheduleUpdate(() => {
+                        updateAllConnections();
+                        updateMinimap();
+                    });
                 }
             }, 16);
             
@@ -2588,7 +2750,10 @@
             
             // Update connections after transition
             setTimeout(() => {
-                scheduleUpdate(() => updateAllConnections());
+                scheduleUpdate(() => {
+                    updateAllConnections();
+                    updateMinimap();
+                });
             }, 50);
         };
         
