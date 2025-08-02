@@ -1190,6 +1190,8 @@
             flows: [],
             connections: [],
             groups: [],
+            visibleFlows: [],
+            visibleConnections: [],
             selectedItems: new Set(),
             draggedItem: null,
             connectingPort: null,
@@ -1328,6 +1330,7 @@
                 state.canvasRect = state.canvas.getBoundingClientRect();
                 scheduleUpdate(() => updateAllConnections());
             });
+            window.addEventListener('scroll', () => scheduleUpdate(updateViewportFlows));
             
             // Connection type selector
             const selector = document.getElementById('connectionTypeSelector');
@@ -1363,10 +1366,12 @@
             updateCanvasTransform();
             updateZoomDisplay();
             scheduleUpdate(() => updateAllConnections());
+            scheduleUpdate(updateViewportFlows);
         }
         
         function updateCanvasTransform() {
             state.canvas.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+            scheduleUpdate(updateViewportFlows);
         }
         
         function updateZoomDisplay() {
@@ -1529,7 +1534,12 @@
             setupFlowInteractions(flow);
             state.flows.push(flow);
             populateFlow(flow);
-            
+
+            flow.width = el.offsetWidth;
+            flow.height = el.offsetHeight;
+            flow.mounted = true;
+            updateViewportFlows();
+
             return flow;
         }
         
@@ -1727,7 +1737,9 @@
             });
             
             flow.element.style.width = Math.max(600, totalWidth) + 'px';
+            flow.width = flow.element.offsetWidth;
             scheduleUpdate(() => updateAllConnections());
+            scheduleUpdate(updateViewportFlows);
         }
         
         // Dragging with performance optimizations
@@ -1765,6 +1777,7 @@
                     flow.y = y;
                     
                     scheduleUpdate(() => updateAllConnections());
+                    scheduleUpdate(updateViewportFlows);
                 }
             }, 16);
             
@@ -1951,13 +1964,15 @@
             connection.group = g;
             connection.labelBg = labelBg;
             connection.hitArea = hitArea;
-            
+
             state.svgElement.appendChild(g);
-            
+
             outputPort.classList.add('connected');
             inputPort.classList.add('connected');
-            
+
+            connection.mounted = true;
             state.connections.push(connection);
+            state.visibleConnections.push(connection);
             updateConnection(connection);
             
             // Click to remove
@@ -1994,6 +2009,10 @@
                 connection.group.remove();
                 connection.output.classList.remove('connected');
                 connection.input.classList.remove('connected');
+                const visibleIndex = state.visibleConnections.indexOf(connection);
+                if (visibleIndex > -1) {
+                    state.visibleConnections.splice(visibleIndex, 1);
+                }
             }
         }
         
@@ -2029,7 +2048,7 @@
         }
         
         function updateAllConnections() {
-            state.connections.forEach(updateConnection);
+            state.visibleConnections.forEach(updateConnection);
         }
         
         function calculateBezierPath(x1, y1, x2, y2) {
@@ -2127,7 +2146,7 @@
         function selectItemsInBox(x, y, w, h) {
             state.selectedItems.clear();
             
-            state.flows.forEach(flow => {
+            state.visibleFlows.forEach(flow => {
                 const el = flow.element;
                 const flowX = parseInt(el.style.left);
                 const flowY = parseInt(el.style.top);
@@ -2156,14 +2175,17 @@
                         }
                         return true;
                     });
-                    
+                    state.visibleConnections = state.visibleConnections.filter(conn => conn.outputOwner !== item && conn.inputOwner !== item);
+
                     item.element.remove();
                     state.flows = state.flows.filter(f => f !== item);
+                    state.visibleFlows = state.visibleFlows.filter(f => f !== item);
                 }
             });
-            
+
             state.selectedItems.clear();
             updateAvailableRoles(); // Update roles after deletion
+            scheduleUpdate(updateViewportFlows);
         }
         
         // Modal
@@ -2318,28 +2340,28 @@
         function applyRoleFilter() {
             const statusEl = document.querySelector('.filter-status');
             
+            const flowsToFilter = state.visibleFlows;
+
             if (state.activeRoles.has('all')) {
-                // Show all flows normally
-                state.flows.forEach(flow => {
+                flowsToFilter.forEach(flow => {
                     flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
                 });
-                state.connections.forEach(conn => {
+                state.visibleConnections.forEach(conn => {
                     conn.group.classList.remove('dimmed', 'hidden');
                 });
                 if (statusEl) statusEl.textContent = '';
                 return;
             }
-            
-            // Apply role-based filtering
+
             let visibleCount = 0;
-            let totalCount = state.flows.length;
-            
-            state.flows.forEach(flow => {
+            const totalCount = flowsToFilter.length;
+
+            flowsToFilter.forEach(flow => {
                 const flowRoles = getFlowRoles(flow);
                 const hasActiveRole = Array.from(state.activeRoles).some(role => flowRoles.has(role));
-                
+
                 flow.element.classList.remove('dimmed', 'hidden', 'highlighted');
-                
+
                 if (hasActiveRole) {
                     flow.element.classList.add('highlighted');
                     visibleCount++;
@@ -2352,32 +2374,73 @@
                     }
                 }
             });
-            
-            // Update connections based on flow visibility
-            state.connections.forEach(conn => {
+
+            state.visibleConnections.forEach(conn => {
                 const outputVisible = !conn.outputOwner.element.classList.contains('hidden');
                 const inputVisible = !conn.inputOwner.element.classList.contains('hidden');
                 const outputDimmed = conn.outputOwner.element.classList.contains('dimmed');
                 const inputDimmed = conn.inputOwner.element.classList.contains('dimmed');
-                
+
                 conn.group.classList.remove('dimmed', 'hidden');
-                
+
                 if (!outputVisible || !inputVisible) {
                     conn.group.classList.add('hidden');
                 } else if (outputDimmed && inputDimmed) {
                     conn.group.classList.add('dimmed');
                 }
             });
-            
-            // Update status text
+
             if (statusEl) {
                 if (state.filterMode === 'hide') {
                     statusEl.textContent = `Showing ${visibleCount} of ${totalCount} flows`;
                 } else {
-                    const highlightedCount = document.querySelectorAll('.flow.highlighted').length;
+                    const highlightedCount = flowsToFilter.filter(f => f.element.classList.contains('highlighted')).length;
                     statusEl.textContent = `${highlightedCount} relevant flows`;
                 }
             }
+        }
+
+        function updateViewportFlows() {
+            const margin = 400;
+            const viewLeft = (-state.panX / state.zoom) - margin;
+            const viewTop = (-state.panY / state.zoom) - margin;
+            const viewRight = viewLeft + window.innerWidth / state.zoom + margin * 2;
+            const viewBottom = viewTop + window.innerHeight / state.zoom + margin * 2;
+
+            state.visibleFlows = [];
+            state.flows.forEach(flow => {
+                const width = flow.width || flow.element.offsetWidth || 0;
+                const height = flow.height || flow.element.offsetHeight || 0;
+                const inView = flow.x + width > viewLeft && flow.x < viewRight &&
+                               flow.y + height > viewTop && flow.y < viewBottom;
+
+                if (inView) {
+                    if (!flow.mounted) {
+                        state.canvas.appendChild(flow.element);
+                        flow.mounted = true;
+                    }
+                    state.visibleFlows.push(flow);
+                } else if (flow.mounted) {
+                    flow.element.remove();
+                    flow.mounted = false;
+                }
+            });
+
+            state.visibleConnections = [];
+            state.connections.forEach(conn => {
+                if (conn.outputOwner.mounted && conn.inputOwner.mounted) {
+                    if (!conn.mounted) {
+                        state.svgElement.appendChild(conn.group);
+                        conn.mounted = true;
+                    }
+                    state.visibleConnections.push(conn);
+                } else if (conn.mounted) {
+                    conn.group.remove();
+                    conn.mounted = false;
+                }
+            });
+
+            applyRoleFilter();
         }
         
         // Export public functions
@@ -2446,8 +2509,8 @@
             state.flows.forEach(flow => {
                 const x = parseInt(flow.element.style.left);
                 const y = parseInt(flow.element.style.top);
-                const w = flow.element.offsetWidth;
-                const h = flow.element.offsetHeight;
+                const w = flow.width || flow.element.offsetWidth;
+                const h = flow.height || flow.element.offsetHeight;
                 
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
@@ -2484,7 +2547,10 @@
             
             // Update connections after transition
             setTimeout(() => {
+                flow.width = flow.element.offsetWidth;
+                flow.height = flow.element.offsetHeight;
                 scheduleUpdate(() => updateAllConnections());
+                scheduleUpdate(updateViewportFlows);
             }, 50);
         };
         
