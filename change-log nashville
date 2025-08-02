@@ -55,10 +55,6 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       animation: fadeIn 0.6s ease;
     }
-
-    .featured-post.no-image {
-      grid-template-columns: 1fr;
-    }
     
     @keyframes fadeIn {
       from { opacity: 0; }
@@ -185,11 +181,6 @@
       padding: 0;
       overflow: hidden;
     }
-
-    .post-card.no-image {
-      grid-column: span 1;
-      grid-row: span 1;
-    }
     
     .post-card-image {
       width: 100%;
@@ -276,7 +267,12 @@
       border-radius: 3px;
       margin-left: 0.5rem;
     }
-        
+    
+    .source-badge.substack {
+      color: #f97316;
+      background: rgba(249, 115, 22, 0.1);
+    }
+    
     .source-badge.airtable {
       color: #8b5cf6;
       background: rgba(139, 92, 246, 0.1);
@@ -654,7 +650,7 @@
       padding: 0;
     }
     
-    /* Legacy markup cleanup */
+    /* Hide Substack elements */
     .article-content .captioned-image-container figure::after,
     .article-content .button-wrapper,
     .article-content .subscription-widget-wrap-editor,
@@ -937,31 +933,118 @@
     // ================================================
     // Configuration:
     // 1. n8n webhook URL is already set
-    // 2. First 10 posts come from Airtable
+    // 2. First 10 posts come from Substack RSS
     // 3. After 10 posts, "View Archive" button appears
     // 4. Archive page shows all Airtable posts
     // 5. Test button commented out for production
     // ================================================
     
-    // Integrated Feed Manager - Airtable archive
+    // Substack Content Processor
+    class SubstackContentProcessor {
+      constructor() {
+        this.removeSelectors = [
+          '.pencraft',
+          '.image-link-expand',
+          '.button-wrapper',
+          '.subscription-widget-wrap-editor',
+          'button[aria-label*="Refresh"]',
+          'button[title*="Refresh"]'
+        ];
+      }
+      
+      process(contentHTML) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = contentHTML;
+        
+        this.removeUnwantedElements(wrapper);
+        this.processImages(wrapper);
+        this.processFootnotes(wrapper);
+        this.cleanupEmpty(wrapper);
+        
+        return wrapper.innerHTML;
+      }
+      
+      removeUnwantedElements(root) {
+        this.removeSelectors.forEach(selector => {
+          root.querySelectorAll(selector).forEach(el => el.remove());
+        });
+      }
+      
+      processImages(root) {
+        root.querySelectorAll('img').forEach(img => {
+          img.style.maxWidth = '100%';
+          img.style.height = 'auto';
+        });
+      }
+      
+      processFootnotes(root) {
+        const footnoteAnchors = root.querySelectorAll('a.footnote-anchor');
+        footnoteAnchors.forEach((anchor, index) => {
+          const span = document.createElement('span');
+          span.className = 'footnote-number';
+          span.textContent = anchor.textContent;
+          anchor.parentNode.replaceChild(span, anchor);
+        });
+        
+        const backLinks = root.querySelectorAll('.footnote a[href*="footnote-anchor"]');
+        backLinks.forEach(link => link.remove());
+        
+        const footnotes = root.querySelectorAll('.footnote');
+        if (footnotes.length > 0) {
+          const footnotesSection = document.createElement('div');
+          footnotesSection.className = 'footnotes-section';
+          footnotesSection.innerHTML = '<hr class="footnotes-divider" />';
+          
+          footnotes.forEach((footnote, index) => {
+            const number = document.createElement('span');
+            number.className = 'footnote-label';
+            number.textContent = `${index + 1}. `;
+            
+            const content = footnote.querySelector('.footnote-content') || footnote;
+            content.prepend(number);
+            
+            footnotesSection.appendChild(footnote);
+          });
+          
+          root.appendChild(footnotesSection);
+        }
+      }
+      
+      cleanupEmpty(root) {
+        root.querySelectorAll('p').forEach(p => {
+          if (!p.textContent.trim() && !p.querySelector('img')) {
+            p.remove();
+          }
+        });
+      }
+    }
+    
+    // Integrated Feed Manager - First 10 from Substack, then Airtable via n8n
     class IntegratedFeedManager {
       constructor() {
-        // Airtable webhook configuration
+        // Substack configuration
+        this.feedUrl = 'https://prometheoid.substack.com/feed';
+        this.apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(this.feedUrl);
+        
+        // N8n webhook configuration
         this.n8nWebhookUrl = 'https://n8n.intelechia.com/webhook/change-log';
-
+        
+        this.processor = new SubstackContentProcessor();
         this.refreshBtn = document.getElementById('refresh-commits');
         this.loadMoreBtn = document.getElementById('load-more');
         this.testAirtableBtn = document.getElementById('test-airtable');
         this.backToMainBtn = document.getElementById('back-to-main');
-
+        
         // View state
         this.currentView = 'main'; // 'main' or 'archive'
-
-        this.posts = [];
-        this.displayedPosts = 0;
+        
+        this.substackPosts = [];
+        this.airtablePosts = [];
+        this.displayedSubstack = 0;
+        this.displayedAirtable = 0;
         this.postsPerLoad = 6;
-        this.maxDisplay = 10;
-
+        this.maxSubstackDisplay = 10;
+        
         this.init();
       }
       
@@ -980,7 +1063,8 @@
       }
       
       handleLoadMore() {
-        if (this.displayedPosts >= Math.min(this.posts.length, this.maxDisplay)) {
+        // If we've shown all Substack posts, go to archive view
+        if (this.displayedSubstack >= Math.min(this.substackPosts.length, this.maxSubstackDisplay)) {
           this.showArchiveView();
         } else {
           this.loadMorePosts();
@@ -1006,8 +1090,8 @@
         // Update archive stats
         const statsEl = document.getElementById('archive-stats');
         if (statsEl) {
-          const totalPosts = this.posts.length;
-          const dateRange = this.getDateRange(this.posts);
+          const totalPosts = this.airtablePosts.length;
+          const dateRange = this.getDateRange(this.airtablePosts);
           statsEl.innerHTML = `
             <strong>${totalPosts}</strong> archived posts
             ${dateRange ? `<span class="mx-2">•</span> ${dateRange}` : ''}
@@ -1021,11 +1105,11 @@
         // Use setTimeout to show loading state briefly
         setTimeout(() => {
           archiveContainer.innerHTML = '';
-
-          if (this.posts.length === 0) {
+          
+          if (this.airtablePosts.length === 0) {
             archiveContainer.innerHTML = '<p class="text-center text-gray-500 py-8">No archived posts available.</p>';
           } else {
-            this.posts.forEach((post, index) => {
+            this.airtablePosts.forEach((post, index) => {
               const card = this.createPostCard(post, index);
               archiveContainer.appendChild(card);
             });
@@ -1087,8 +1171,8 @@
             
             alert(`Success! Found ${transformed.length} Airtable records. Click "View Archive" after loading all recent posts to see them.`);
             
-            // Update the stored posts
-            this.posts = transformed;
+            // Update the stored airtable posts
+            this.airtablePosts = transformed;
             this.updateLoadMoreButton();
           } else {
             alert('Connection successful but no records found');
@@ -1101,29 +1185,106 @@
       
       async fetchAllFeeds() {
         this.showLoading();
-
+        
         try {
-          this.posts = await this.fetchAirtableRecords();
-          this.posts.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-          console.log(`Loaded ${this.posts.length} posts from Airtable`);
-          this.displayedPosts = 0;
+          const [substackPosts, airtablePosts] = await Promise.all([
+            this.fetchSubstackFeed(),
+            this.fetchAirtableRecords()
+          ]);
+
+          this.substackPosts = substackPosts.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+          this.airtablePosts = airtablePosts.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+          
+          console.log(`Loaded ${this.substackPosts.length} posts from Substack`);
+          console.log(`Loaded ${this.airtablePosts.length} posts from Airtable`);
+          
+          this.displayedSubstack = 0;
+          this.displayedAirtable = 0;
           this.renderInitialPosts();
         } catch (error) {
           console.error('Feed error:', error);
           this.showError(error.message);
         }
       }
-
+      
+      async fetchSubstackFeed() {
+        try {
+          const response = await fetch(this.apiUrl);
+          const data = await response.json();
+          
+          if (data.status !== 'ok') {
+            throw new Error(data.message || 'Failed to load Substack posts');
+          }
+          
+          return data.items.slice(0, this.maxSubstackDisplay).map(item => ({
+            ...item,
+            source: 'substack'
+          }));
+        } catch (error) {
+          console.error('Substack error:', error);
+          return [];
+        }
+      }
+      
       async fetchAirtableRecords() {
         try {
-          const response = await fetch(this.n8nWebhookUrl);
+          console.log('Fetching Airtable records from:', this.n8nWebhookUrl);
+          
+          // Try a simpler request first
+          const testResponse = await fetch(this.n8nWebhookUrl, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+          
+          console.log('Test GET response:', testResponse.status);
+          
+          // Now try the POST request
+          const response = await fetch(this.n8nWebhookUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'fetchRecords',
+              maxRecords: 100,
+              sort: [{ field: 'Published', direction: 'desc' }]
+            })
+          });
+          
+          console.log('Airtable POST response status:', response.status);
+          
           if (!response.ok) {
-            throw new Error(`Webhook error: ${response.status}`);
+            const errorText = await response.text();
+            console.error('Webhook error response:', errorText);
+            throw new Error(`Webhook error: ${response.status} - ${errorText}`);
           }
-          const data = await response.json();
-          return this.transformAirtableRecords(data);
+          
+          const text = await response.text();
+          console.log('Raw response (first 500 chars):', text.substring(0, 500));
+          
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch (e) {
+            console.error('Failed to parse response as JSON:', e);
+            throw new Error('Invalid JSON response from webhook');
+          }
+          
+          console.log('Parsed Airtable data:', data);
+          console.log('Data type:', Array.isArray(data) ? 'array' : typeof data);
+          
+          const transformedRecords = this.transformAirtableRecords(data);
+          console.log(`Transformed ${transformedRecords.length} records`);
+          
+          return transformedRecords;
         } catch (error) {
           console.error('Error fetching from Airtable:', error);
+          // Return empty array instead of throwing to allow Substack to still work
           return [];
         }
       }
@@ -1141,13 +1302,13 @@
           // Map Airtable field names to expected format
           const transformed = {
             id: record.id || Math.random().toString(36).substr(2, 9),
-            title: record.Title || record.Notes || 'Untitled',
+            title: record.Title || 'Untitled',
             content: record.Excerpt || '',
             description: record.Excerpt || '',
             pubDate: record['ISO Date'] || record['Display Date'] || new Date().toISOString(),
             author: record.Authors || 'Staff',
             link: record.URL || '#',
-            categories: [],
+            categories: record.Tags ? (Array.isArray(record.Tags) ? record.Tags : [record.Tags]) : [],
             source: 'airtable',
             thumbnail: record['Preview Image URL'] || null
           };
@@ -1164,7 +1325,7 @@
         document.getElementById('featured-post').innerHTML = `
           <div class="loading-state">
             <div class="spinner"></div>
-            <p class="mt-3">Loading updates from archive...</p>
+            <p class="mt-3">Loading updates from multiple sources...</p>
           </div>
         `;
         document.getElementById('posts-grid').innerHTML = '';
@@ -1180,60 +1341,71 @@
       }
       
       renderInitialPosts() {
-        if (this.posts.length === 0) return;
-
-        this.renderFeaturedPost(this.posts[0]);
-        this.displayedPosts = 1;
-
+        if (this.substackPosts.length === 0 && this.airtablePosts.length === 0) return;
+        
+        if (this.substackPosts.length > 0) {
+          this.renderFeaturedPost(this.substackPosts[0]);
+          this.displayedSubstack = 1;
+        } else if (this.airtablePosts.length > 0) {
+          this.renderFeaturedPost(this.airtablePosts[0]);
+          this.displayedAirtable = 1;
+        }
+        
         // Clear grid before rendering
         document.getElementById('posts-grid').innerHTML = '';
-
+        
         // Hide archive elements in main view
         document.getElementById('archive-grid').style.display = 'none';
         document.getElementById('archive-divider').style.display = 'none';
-
+        
         this.renderNextBatch();
       }
-
+      
       renderNextBatch() {
         const gridContainer = document.getElementById('posts-grid');
-
+        
+        let postsToRender = [];
         let remainingSlots = this.postsPerLoad;
-
-        const available = this.posts.slice(
-          this.displayedPosts,
-          Math.min(this.displayedPosts + remainingSlots, this.maxDisplay, this.posts.length)
-        );
-
-        available.forEach((post, index) => {
+        
+        // Only show Substack posts in main view
+        if (this.displayedSubstack < this.maxSubstackDisplay) {
+          const availableSubstack = this.substackPosts.slice(
+            this.displayedSubstack,
+            Math.min(this.displayedSubstack + remainingSlots, this.maxSubstackDisplay, this.substackPosts.length)
+          );
+          postsToRender.push(...availableSubstack);
+          this.displayedSubstack += availableSubstack.length;
+        }
+        
+        postsToRender.forEach((post, index) => {
           const card = this.createPostCard(post, index);
           gridContainer.appendChild(card);
         });
-
-        this.displayedPosts += available.length;
+        
         this.updateLoadMoreButton();
       }
-
+      
       loadMorePosts() {
         const btn = document.getElementById('load-more');
         btn.classList.add('loading');
         btn.disabled = true;
-
+        
         setTimeout(() => {
           this.renderNextBatch();
           btn.classList.remove('loading');
           btn.disabled = false;
         }, 300);
       }
-
+      
       updateLoadMoreButton() {
         const btn = document.getElementById('load-more');
         const container = document.getElementById('load-more-container');
-
-        const maxToShow = Math.min(this.posts.length, this.maxDisplay);
-
-        if (this.displayedPosts >= maxToShow) {
-          if (this.posts.length > this.maxDisplay) {
+        
+        const maxSubstackToShow = Math.min(this.substackPosts.length, this.maxSubstackDisplay);
+        
+        if (this.displayedSubstack >= maxSubstackToShow) {
+          // All Substack posts shown, show archive button
+          if (this.airtablePosts.length > 0) {
             container.style.display = 'block';
             btn.innerHTML = `
               View Archive
@@ -1247,13 +1419,14 @@
           } else {
             container.innerHTML = `
               <p class="text-sm text-gray-500 font-medium">
-                You've reached the end • ${this.displayedPosts} posts loaded
+                You've reached the end • ${this.displayedSubstack} posts loaded
               </p>
             `;
           }
         } else {
+          // More Substack posts to show
           container.style.display = 'block';
-          const remaining = maxToShow - this.displayedPosts;
+          const remaining = maxSubstackToShow - this.displayedSubstack;
           btn.textContent = `Load More Stories (${remaining} remaining)`;
           btn.style.display = 'inline-block';
         }
@@ -1261,13 +1434,12 @@
       
       renderFeaturedPost(item) {
         const keywords = this.extractKeywords(item);
-        const imageUrl = item.thumbnail;
-        const hasImage = !!imageUrl;
+        const imageUrl = item.thumbnail || this.getImageFromContent(item.content || item.description);
         const excerpt = this.getExcerpt(item.description || item.content || '', 150);
-
+        
         const featured = document.getElementById('featured-post');
         featured.innerHTML = `
-          <div class="featured-post ${hasImage ? '' : 'no-image'}">
+          <div class="featured-post">
             <div class="featured-content">
               ${keywords.length > 0 ? `<div class="featured-tag">${keywords[0]}</div>` : ''}
               <h2 class="featured-title">${this.escapeHtml(item.title)}</h2>
@@ -1277,29 +1449,29 @@
                 <span class="source-badge ${item.source}">${item.source}</span>
               </div>
             </div>
-            ${hasImage ?
-              `<img class="featured-image" src="${imageUrl}" alt="${this.escapeHtml(item.title)}">` :
-              ''
+            ${imageUrl ? 
+              `<img class="featured-image" src="${imageUrl}" alt="${this.escapeHtml(item.title)}">` : 
+              `<div class="featured-image placeholder">📄</div>`
             }
           </div>
         `;
-
+        
         featured.querySelector('.featured-post').addEventListener('click', () => this.openPost(item));
       }
       
       createPostCard(item, index) {
         const card = document.createElement('div');
         const keywords = this.extractKeywords(item);
-        const imageUrl = item.thumbnail;
-        const hasImage = !!imageUrl;
+        const imageUrl = item.thumbnail || this.getImageFromContent(item.content || item.description);
         const excerpt = this.getExcerpt(item.description || item.content || '', 100);
-
+        
         const sizeClasses = ['', 'large', '', 'tall', '', ''];
-        const sizeClass = hasImage && window.innerWidth > 1024 ? sizeClasses[index % sizeClasses.length] : '';
-
-        card.className = `post-card ${sizeClass} ${hasImage ? 'with-image' : 'no-image'}`;
+        const sizeClass = window.innerWidth > 1024 ? sizeClasses[index % sizeClasses.length] : '';
+        const hasImage = imageUrl && (index % 3 === 0);
+        
+        card.className = `post-card ${sizeClass} ${hasImage ? 'with-image' : ''}`;
         card.style.animationDelay = `${0.1 + (index % 6) * 0.05}s`;
-
+        
         card.innerHTML = `
           ${hasImage ? `<img class="post-card-image" src="${imageUrl}" alt="${this.escapeHtml(item.title)}">` : ''}
           <div class="post-card-content">
@@ -1316,7 +1488,7 @@
             </div>
           </div>
         `;
-
+        
         card.addEventListener('click', () => this.openPost(item));
         return card;
       }
@@ -1330,7 +1502,9 @@
         const modal = document.createElement('div');
         modal.className = 'modal';
         
-        const processedContent = item.content || item.description;
+        const processedContent = item.source === 'substack' 
+          ? this.processor.process(item.content || item.description)
+          : item.content || item.description;
         
         modal.innerHTML = `
           <div class="modal-header">
@@ -1362,9 +1536,9 @@
               ${item.author || 'Staff'} • ${new Date(item.pubDate).toLocaleDateString()}
               <span class="source-badge ${item.source}">${item.source}</span>
             </span>
-            ${item.link && item.link !== '#' ?
+            ${item.link && item.link !== '#' ? 
               `<a href="${item.link}" target="_blank" class="modal-link">
-                Read original →
+                Read on ${item.source === 'substack' ? 'Substack' : 'original source'} →
               </a>` : ''}
           </div>
         `;
@@ -1423,6 +1597,24 @@
         const allKeywords = [...new Set([...categories, ...foundKeywords])];
         
         return allKeywords.slice(0, 3);
+      }
+      
+      getImageFromContent(content) {
+        if (!content) return null;
+        const temp = document.createElement('div');
+        temp.innerHTML = content;
+        const img = temp.querySelector('img');
+        
+        if (img && img.src) {
+          try {
+            new URL(img.src);
+            return img.src;
+          } catch (e) {
+            return null;
+          }
+        }
+        
+        return null;
       }
       
       getExcerpt(html, length) {
