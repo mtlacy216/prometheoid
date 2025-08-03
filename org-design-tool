@@ -172,6 +172,37 @@
             color: var(--text-secondary);
         }
 
+        .flow-statement {
+            font-size: 1.75rem;
+            line-height: 1.4;
+            margin-bottom: calc(var(--spacing) * 5);
+            color: var(--text-primary);
+        }
+
+        .flow-statement .editable {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            margin: 0 4px;
+        }
+
+        .flow-statement .role-tag { background: var(--accent-blue); color: #fff; }
+        .flow-statement .action-tag { background: var(--accent-green); color: #fff; }
+        .flow-statement .object-tag { background: var(--accent-yellow); color: #fff; }
+
+        .flow-details {
+            background: var(--bg-secondary);
+            padding: calc(var(--spacing) * 2);
+            border-radius: 8px;
+            margin-bottom: calc(var(--spacing) * 6);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-item { margin-right: calc(var(--spacing) * 3); }
+        .detail-label { font-weight: 600; color: var(--text-primary); }
+
         .app-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
@@ -2245,6 +2276,7 @@ Please create this for my organization with:
     </div>
 
     <script src="eo-role-scorer.js"></script>
+    <script src="eo-terms.js"></script>
     <script>
         // Debug mode
         const DEBUG = false;
@@ -2278,23 +2310,7 @@ Please create this for my organization with:
             scorer: null,
 
             // E.O. operator definitions
-                operators: {
-                    // Legacy operators (backward compatibility)
-                    okays: { symbol: "✓", name: "Okays", userTerm: "Approves/authorizes", legacy: true },
-                    does: { symbol: "→", name: "Does", userTerm: "Performs/executes", legacy: true },
-                    shares: { symbol: "↗", name: "Shares", userTerm: "Communicates/reports", legacy: true },
-                    
-                    // E.O. operators
-                    INS: { symbol: "△", name: "Instances", userTerm: "Embodies patterns from", category: "identity" },
-                    DES: { symbol: "⊡", name: "Designates", userTerm: "Has authority over", category: "identity" },
-                    REC: { symbol: "⟳", name: "Recurses", userTerm: "Reviews/validates", category: "identity" },
-                    SEG: { symbol: "|", name: "Segments", userTerm: "Maintains boundaries with", category: "space" },
-                    NUL: { symbol: "∅", name: "Nullifies", userTerm: "Can stop/cancel", category: "space" },
-                    SYN: { symbol: "*", name: "Synthesizes", userTerm: "Creates new from", category: "space" },
-                    ALT: { symbol: "∿", name: "Alternates", userTerm: "Switches between", category: "time" },
-                    SUP: { symbol: "※", name: "Superposes", userTerm: "Holds options for", category: "time" },
-                    CON: { symbol: "☯", name: "Constitutes", userTerm: "Partners with", category: "time" }
-                },
+                operators: window.EO_TERMS,
                 
                 // Navigation
                 currentView: 'overview',
@@ -2407,6 +2423,21 @@ Please create this for my organization with:
                     } else {
                         // For new users, analytics is enabled by default
                         this.data.analyticsEnabled = true;
+
+                        fetch('team-operations-archive.json')
+                            .then(r => r.json())
+                            .then(defaultData => {
+                                this.data = { ...this.data, ...defaultData };
+                                this.updateOrgNameDisplay();
+                                this.updateCounts();
+                                this.updateSyncStatus();
+                                this.updateAnalyticsIndicator();
+                                this.render();
+                                if (this.data.analyticsEnabled) {
+                                    this.runAnalytics();
+                                }
+                            })
+                            .catch(err => console.error('Failed to load default data', err));
                     }
                     
                     // Track changes
@@ -4166,47 +4197,21 @@ Please create this for my organization with:
                     const role = this.data.roles.find(r => r.id === flow.roleId);
                     const peopleInRole = role ? this.data.people.filter(p => p.roleId === role.id) : [];
                     const operator = this.operators[flow.operator] || this.operators[flow.action];
-                    
+                    const counterpartName = flow.counterpartRoleNames && flow.counterpartRoleNames[0] ? flow.counterpartRoleNames[0] : '';
+                    const counterpartCount = flow.counterpartRoleIds && flow.counterpartRoleIds[0] ? this.data.people.filter(p => p.roleId === flow.counterpartRoleIds[0]).length : 0;
+
                     const content = document.getElementById('flowProfileContent');
                     content.innerHTML = `
-                        <div class="profile-header">
-                            <h1 class="profile-title">
-                                ${role ? role.name : 'Unknown Role'} 
-                                <span class="badge badge-${flow.operator || flow.action}" style="font-size: 1.5rem; vertical-align: middle;">
-                                    ${operator ? operator.symbol : ''} ${operator ? operator.userTerm : flow.action}
-                                </span>
-                            </h1>
-                            <p class="profile-subtitle">${flow.connection}</p>
-                            <div class="profile-meta">
-                                <div class="profile-meta-item">
-                                    <span class="profile-meta-label">Last Updated</span>
-                                    <span class="profile-meta-value">${flow.updated}</span>
-                                </div>
-                                <div class="profile-meta-item">
-                                    <span class="profile-meta-label">Flow Type</span>
-                                    <span class="profile-meta-value">${flow.counterpartType || 'Role-based'}</span>
-                                </div>
-                                ${flow.frequency ? `
-                                <div class="profile-meta-item">
-                                    <span class="profile-meta-label">Frequency</span>
-                                    <span class="profile-meta-value">${flow.frequency}</span>
-                                </div>
-                                ` : ''}
-                                ${flow.strength !== undefined ? `
-                                <div class="profile-meta-item">
-                                    <span class="profile-meta-label">Strength</span>
-                                    <span class="profile-meta-value">${Math.round(flow.strength * 100)}%</span>
-                                </div>
-                                ` : ''}
-                                ${flow.isTemplate ? `
-                                <div class="profile-meta-item">
-                                    <span class="profile-meta-label">Type</span>
-                                    <span class="profile-meta-value">
-                                        <span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary);">SAMPLE DATA</span>
-                                    </span>
-                                </div>
-                                ` : ''}
-                            </div>
+                        <div class="flow-statement">
+                            When <span class="editable role-tag">${role ? role.name : 'Unknown Role'}</span>
+                            <span class="editable action-tag">${flow.action || (operator ? operator.userTerm : '')}</span>
+                            <span class="editable object-tag">${flow.connection}</span>
+                            ${counterpartName ? `<span class="editable role-tag">${counterpartName}</span> can proceed.` : ''}
+                            <div class="metadata">${role ? role.code : ''} • ${peopleInRole.length} person initiates${counterpartName ? ` → ${counterpartName} • ${counterpartCount} person responds` : ''}</div>
+                        </div>
+                        <div class="flow-details">
+                            <span class="detail-item"><span class="detail-label">Last updated:</span> ${flow.updated}</span>
+                            <span class="detail-item"><span class="detail-label">Flow type:</span> ${flow.counterpartType || 'roles'}</span>
                         </div>
 
                         <div class="profile-section">
@@ -4242,11 +4247,11 @@ Please create this for my organization with:
 
                         <div class="profile-section">
                             <h2 class="profile-section-title">Counterpart Roles</h2>
-                            ${flow.counterpartRoleIds && flow.counterpartRoleIds.length > 0 ? 
+                            ${flow.counterpartRoleIds && flow.counterpartRoleIds.length > 0 ?
                                 flow.counterpartRoleIds.map((roleId, index) => {
                                     const counterpartRole = this.data.roles.find(r => r.id === roleId);
                                     const counterpartPeople = counterpartRole ? this.data.people.filter(p => p.roleId === counterpartRole.id) : [];
-                                    
+
                                     return counterpartRole ? `
                                         <div class="card">
                                             <div class="card-header">

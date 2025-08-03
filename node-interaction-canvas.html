@@ -1116,6 +1116,7 @@
             color: #fff;
         }
     </style>
+    <script src="eo-terms.js"></script>
 </head>
 <body>
     <div id="canvas-container">
@@ -1347,46 +1348,27 @@
 
             setupEventListeners();
             updateCanvasTransform();
-            
-            // Create sample flows
-            const flow1 = createFlow(150, 200);
-            flow1.label = 'Manager approves budget';
-            flow1.element.querySelector('.flow-label').textContent = flow1.label;
-            if (flow1.nodes[0]) flow1.nodes[0].roles = ['Manager'];
-            updateFlowIcon(flow1);
-            updateRoleDisplay(flow1.nodes[0]);
-            
-            const flow2 = createFlow(500, 100);
-            flow2.label = 'Finance processes payment';
-            flow2.element.querySelector('.flow-label').textContent = flow2.label;
-            if (flow2.nodes[0]) flow2.nodes[0].roles = ['Finance'];
-            updateFlowIcon(flow2);
-            updateRoleDisplay(flow2.nodes[0]);
-            
-            const flow3 = createFlow(500, 300);
-            flow3.label = 'Accounting logs transaction';
-            flow3.element.querySelector('.flow-label').textContent = flow3.label;
-            if (flow3.nodes[0]) flow3.nodes[0].roles = ['Accounting'];
-            updateFlowIcon(flow3);
-            updateRoleDisplay(flow3.nodes[0]);
-            
-            // Update filters after creating flows
-            updateAvailableRoles();
-            updateAvailableGroups();
-            
-            // Create a demo connection
-            setTimeout(() => {
-                if (flow1.ports.output && flow2.ports.input) {
-                    createConnection(flow1.ports.output, flow2.ports.input, flow1, flow2, 'designation');
-                }
-            }, 500);
-            
-            // Auto-fit to content
-            setTimeout(() => {
-                App.fitToContent();
-            }, 100);
 
-            updateMinimap();
+            fetch('team-operations-archive.json')
+                .then(r => r.json())
+                .then(data => {
+                    data.flows.forEach((flow, index) => {
+                        const x = 150 + index * 350;
+                        const y = 200;
+                        const f = createFlow(x, y);
+                        const roleName = data.roles.find(r => r.id === flow.roleId)?.name || '';
+                        f.label = `${roleName} ${flow.action} ${flow.connection}`;
+                        f.element.querySelector('.flow-label').textContent = f.label;
+                        if (f.nodes[0]) f.nodes[0].roles = [roleName];
+                        updateFlowIcon(f);
+                        updateRoleDisplay(f.nodes[0]);
+                    });
+                    updateAvailableRoles();
+                    updateAvailableGroups();
+                    updateMinimap();
+                    setTimeout(() => { App.fitToContent(); }, 100);
+                })
+                .catch(err => console.error('Failed to load flows', err));
         }
         
         // Update flow icon based on content
