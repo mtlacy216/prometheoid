@@ -1796,6 +1796,7 @@
                         <button class="nav-tab" onclick="window.app.showView('groups')">Groups</button>
                         <button class="nav-tab" onclick="window.app.showView('flows')">Flows</button>
                         <button class="nav-tab" onclick="window.app.showView('ai-assist')">AI Assist</button>
+                        <button class="nav-tab" onclick="window.app.openCanvas()">Canvas</button>
                     </nav>
                 </div>
                 <div class="header-right">
@@ -4476,7 +4477,13 @@ Please create this for my organization with:
                 goBack() {
                     this.showView(this.previousView);
                 },
-                
+
+                openCanvas() {
+                    const file = this.data.originalFileName || 'team-operations-archive.json';
+                    const url = `node-interaction-canvas.html?json=${encodeURIComponent(file)}`;
+                    window.open(url, '_blank');
+                },
+
                 // Show AI Assist from welcome screen
                 showAIAssistFromWelcome() {
                     // Initialize with empty data

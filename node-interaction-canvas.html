@@ -1349,7 +1349,10 @@
             setupEventListeners();
             updateCanvasTransform();
 
-            fetch('team-operations-archive.json')
+            const params = new URLSearchParams(window.location.search);
+            const dataFile = params.get('json') || 'team-operations-archive.json';
+
+            fetch(dataFile)
                 .then(r => r.json())
                 .then(data => {
                     data.flows.forEach((flow, index) => {
