@@ -1,12 +1,12 @@
-const { Store } = require('./store');
+const { Store, clone } = require('./store');
 
 class FlowMapper {
   constructor(initialFlows = {}) {
-    this.store = new Store({ flows: structuredClone(initialFlows) });
+    this.store = new Store({ flows: clone(initialFlows) });
   }
 
   addFlow(id, label = '') {
-    const flows = structuredClone(this.store.getState().flows);
+    const flows = clone(this.store.getState().flows);
     if (flows[id]) throw new Error(`Flow ${id} already exists`);
     flows[id] = {
       id,
@@ -22,7 +22,7 @@ class FlowMapper {
   }
 
   setRole(flowId, role, value) {
-    const flows = structuredClone(this.store.getState().flows);
+    const flows = clone(this.store.getState().flows);
     if (!flows[flowId]) throw new Error(`Flow ${flowId} missing`);
     if (!['INS', 'P', 'REC'].includes(role)) throw new Error(`Invalid role ${role}`);
     flows[flowId].roles[role] = value;
