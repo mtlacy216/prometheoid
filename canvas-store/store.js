@@ -1,6 +1,11 @@
+const clone = (obj) =>
+  typeof structuredClone === 'function'
+    ? structuredClone(obj)
+    : JSON.parse(JSON.stringify(obj));
+
 class Store {
   constructor(initialState = {}) {
-    this.state = structuredClone(initialState);
+    this.state = clone(initialState);
     this.listeners = new Set();
     this.history = [];
     this.future = [];
@@ -19,7 +24,7 @@ class Store {
 
   setState(partial) {
     // Save snapshot for undo
-    this.history.push(structuredClone(this.state));
+    this.history.push(clone(this.state));
     // Clear redo stack
     this.future.length = 0;
     Object.assign(this.state, partial);
@@ -27,9 +32,9 @@ class Store {
   }
 
   replaceState(nextState) {
-    this.history.push(structuredClone(this.state));
+    this.history.push(clone(this.state));
     this.future.length = 0;
-    this.state = structuredClone(nextState);
+    this.state = clone(nextState);
     this.notify();
   }
 
@@ -40,7 +45,7 @@ class Store {
   undo() {
     if (this.history.length === 0) return;
     const prev = this.history.pop();
-    this.future.push(structuredClone(this.state));
+    this.future.push(clone(this.state));
     this.state = prev;
     this.notify();
   }
@@ -48,10 +53,10 @@ class Store {
   redo() {
     if (this.future.length === 0) return;
     const next = this.future.pop();
-    this.history.push(structuredClone(this.state));
+    this.history.push(clone(this.state));
     this.state = next;
     this.notify();
   }
 }
 
-module.exports = { Store };
+module.exports = { Store, clone };
