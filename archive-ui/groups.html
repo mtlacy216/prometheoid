@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Groups</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="breadcrumb">Team Operations // Archive</div>
+      <div class="header-tabs">
+        <a href="overview.html" class="tab">Overview</a>
+        <a href="people.html" class="tab">People</a>
+        <a href="roles.html" class="tab">Roles</a>
+        <a href="groups.html" class="tab active">Groups</a>
+        <a href="flows.html" class="tab">Flows</a>
+      </div>
+    </div>
+    <div class="main-content">
+      <h2>Groups</h2>
+      <div id="group-list" class="people-narrative"></div>
+    </div>
+  </div>
+  <script src="archive.js"></script>
+  <script>
+  (async function(){
+    const data = await loadArchive();
+    const list = document.getElementById('group-list');
+    if(data.groups.length===0){
+      list.textContent = 'No groups recorded.';
+    }
+    data.groups.forEach(g=>{
+      const a=document.createElement('a');
+      a.href=`group.html?id=${g.id}`;
+      a.className='person-item';
+      a.innerHTML=`<div class="person-details"><div class="person-name">${g.name}</div></div>`;
+      list.appendChild(a);
+    });
+  })();
+  </script>
+</body>
+</html>

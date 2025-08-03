@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Group</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="groups.html" class="back-link">← Back</a>
+    <div class="header">
+      <div class="breadcrumb">Team Operations // Archive</div>
+      <div class="header-tabs">
+        <a href="overview.html" class="tab">Overview</a>
+        <a href="people.html" class="tab">People</a>
+        <a href="roles.html" class="tab">Roles</a>
+        <a href="groups.html" class="tab active">Groups</a>
+        <a href="flows.html" class="tab">Flows</a>
+      </div>
+    </div>
+    <div class="main-content">
+      <h2 id="group-name">Group</h2>
+    </div>
+  </div>
+  <script src="archive.js"></script>
+  <script>
+  (async function(){
+    const data = await loadArchive();
+    const id = parseInt(getQueryParam('id'),10);
+    const group = data.groups.find(g=>g.id===id);
+    if(!group){
+      document.getElementById('group-name').textContent='Group not found';
+      return;
+    }
+    document.getElementById('group-name').textContent = group.name;
+  })();
+  </script>
+</body>
+</html>

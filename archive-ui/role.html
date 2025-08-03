@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Role</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <a href="roles.html" class="back-link">← Back</a>
+    <div class="header">
+      <div class="breadcrumb">Team Operations // Archive</div>
+      <div class="header-tabs">
+        <a href="overview.html" class="tab">Overview</a>
+        <a href="people.html" class="tab">People</a>
+        <a href="roles.html" class="tab active">Roles</a>
+        <a href="groups.html" class="tab">Groups</a>
+        <a href="flows.html" class="tab">Flows</a>
+      </div>
+    </div>
+    <div class="main-content">
+      <h2 id="role-name">Role</h2>
+      <div id="role-code" class="people-narrative"></div>
+      <h3 class="people-header">Flows</h3>
+      <div id="role-flows"></div>
+    </div>
+  </div>
+  <script src="archive.js"></script>
+  <script>
+  (async function(){
+    const data = await loadArchive();
+    const id = parseInt(getQueryParam('id'),10);
+    const role = data.roles.find(r=>r.id===id);
+    if(!role){
+      document.getElementById('role-name').textContent = 'Role not found';
+      return;
+    }
+    document.getElementById('role-name').textContent = role.name;
+    document.getElementById('role-code').textContent = `Code: ${role.code}`;
+    const flows = data.flows.filter(f=>f.roleId===id || f.counterpartRoleIds.includes(id));
+    const container = document.getElementById('role-flows');
+    if(flows.length===0){
+      container.innerHTML = '<p class="people-narrative">No flows recorded.</p>';
+    }
+    flows.forEach(f=>{
+      const otherId = f.roleId===id ? f.counterpartRoleIds[0] : f.roleId;
+      const otherRole = data.roles.find(r=>r.id===otherId);
+      const a = document.createElement('a');
+      a.href = `flow.html?id=${f.id}`;
+      a.className = 'person-item';
+      a.innerHTML = `<div class="person-details"><div class="person-name">${role.name} ↔ ${otherRole.name}</div><div class="person-dept">${f.action} ${f.connection}</div></div>`;
+      container.appendChild(a);
+    });
+  })();
+  </script>
+</body>
+</html>
