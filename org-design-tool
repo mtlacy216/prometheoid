@@ -2244,6 +2244,7 @@ Please create this for my organization with:
         <div class="modal-content" id="modalContent"></div>
     </div>
 
+    <script src="eo-role-scorer.js"></script>
     <script>
         // Debug mode
         const DEBUG = false;
@@ -2525,10 +2526,14 @@ Please create this for my organization with:
                 // Run analytics
                 runAnalytics() {
                     if (!this.data.analyticsEnabled) return;
-                    
+
+                    const scorer = new EoRoleScorer(this.data);
+
                     // Calculate formalization for all roles
                     this.data.roles.forEach(role => {
                         role.phasepost = this.calculateFormalization(role);
+                        role.phasepost.coordinates = scorer.calculatePhasepostCoordinates(role);
+                        role.phasepost.bdf = scorer.analyzeBDFDynamic(role);
                     });
                     
                     // Calculate maturity for all groups
@@ -3763,6 +3768,12 @@ Please create this for my organization with:
                                         </span>
                                     </span>
                                 </div>
+                                ${role.phasepost.coordinates ? `
+                                <div class="profile-meta-item">
+                                    <span class="profile-meta-label">Phase Coordinates</span>
+                                    <span class="profile-meta-value">[${role.phasepost.coordinates.identity}, ${role.phasepost.coordinates.space}, ${role.phasepost.coordinates.time}]</span>
+                                </div>
+                                ` : ''}
                                 ` : ''}
                                 ${role.isTemplate ? `
                                 <div class="profile-meta-item">
