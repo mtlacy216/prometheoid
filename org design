@@ -1137,6 +1137,7 @@
                         <button class="nav-tab" onclick="window.app.showView('people')">People</button>
                         <button class="nav-tab" onclick="window.app.showView('roles')">Roles</button>
                         <button class="nav-tab" onclick="window.app.showView('flows')">Flows</button>
+                        <button class="nav-tab" onclick="window.app.showView('canvas')">Canvas</button>
                         <button class="nav-tab" onclick="window.app.showView('ai-assist')">AI Assist</button>
                     </nav>
                 </div>
@@ -1284,6 +1285,15 @@
             </div>
 
             <div class="list" id="flowsList"></div>
+        </div>
+
+        <!-- Canvas View -->
+        <div id="canvas-view" class="view-container">
+            <div class="page-header">
+                <h1 class="page-title">Canvas</h1>
+                <p class="page-description">Visual overview of flows</p>
+            </div>
+            <iframe src="node-interaction-canvas.html" style="width:100%; height:80vh; border:none;"></iframe>
         </div>
 
         <!-- Person Profile View -->
@@ -2216,7 +2226,7 @@ Please create this for my organization with:
                     });
                     
                     const tabs = document.querySelectorAll('.nav-tab');
-                    const tabNames = ['overview', 'people', 'roles', 'flows', 'ai-assist'];
+                    const tabNames = ['overview', 'people', 'roles', 'flows', 'canvas', 'ai-assist'];
                     const tabIndex = tabNames.indexOf(viewName);
                     if (tabIndex !== -1 && tabs[tabIndex]) {
                         tabs[tabIndex].classList.add('active');
