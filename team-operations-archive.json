@@ -1,0 +1,22 @@
+{
+  "organizationName": "Team Operations",
+  "people": [],
+  "roles": [
+    {"id": 1, "name": "Manager", "code": "MGR"},
+    {"id": 2, "name": "Sales Associate", "code": "SALES"}
+  ],
+  "groups": [],
+  "flows": [
+    {
+      "id": 1,
+      "roleId": 1,
+      "connection": "discounts",
+      "operator": "DES",
+      "action": "approves",
+      "counterpartRoleNames": ["Sales Associate"],
+      "counterpartRoleIds": [2],
+      "updated": "2024-01-14"
+    }
+  ],
+  "shadowFunctions": []
+}
