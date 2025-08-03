@@ -674,6 +674,10 @@
             transition: all 0.2s ease;
         }
 
+        .relationship-card.pinned {
+            border-left: 4px solid var(--accent-yellow);
+        }
+
         .relationship-card:hover {
             background: var(--bg-tertiary);
             transform: translateX(2px);
@@ -1075,6 +1079,10 @@
             transition: all 0.2s ease;
             overflow: hidden;
             word-wrap: break-word;
+        }
+
+        .card.pinned {
+            border-left: 4px solid var(--accent-yellow);
         }
 
         .card:hover {
@@ -1994,8 +2002,13 @@
 
             <div class="action-bar">
                 <div class="search-box">
-                    <input type="text" placeholder="Search flows...">
+                    <input type="text" id="flowSearch" placeholder="Search flows...">
                 </div>
+                <select id="flowSort" class="form-select" style="max-width: 180px;">
+                    <option value="updated">Sort by Updated</option>
+                    <option value="role">Sort by Role</option>
+                    <option value="operator">Sort by Operator</option>
+                </select>
                 <button class="btn-primary" onclick="window.app.showAddFlowModal()">
                     + Add Flow
                 </button>
@@ -2076,7 +2089,7 @@
         "id": unique_number,
         "name": "Role Name",
         "code": "SHORT_CODE",
-        "purpose": "Brief purpose statement",
+        "description": "Brief role description (max 240 characters)",
         "responsibilities": ["responsibility 1", "responsibility 2"],
         "ownership": ["ownership area 1", "ownership area 2"],
         "operators": {
@@ -2183,7 +2196,7 @@ Please create this for my organization with:
                         <li><strong>id</strong>: A unique number</li>
                         <li><strong>name</strong>: Role title (e.g., "Engineering Manager")</li>
                         <li><strong>code</strong>: Short code (e.g., "ENG_MGR")</li>
-                        <li><strong>purpose</strong>: Brief statement of why this role exists</li>
+                        <li><strong>description</strong>: Brief statement of why this role exists (max 240 characters)</li>
                         <li><strong>responsibilities</strong>: Array of what they're responsible for</li>
                         <li><strong>ownership</strong>: Array of what they own/control</li>
                     </ul>
@@ -2315,11 +2328,16 @@ Please create this for my organization with:
                 // Navigation
                 currentView: 'overview',
                 previousView: 'overview',
+                flowSearch: '',
+                flowSort: 'updated',
                 
                 // Temporary data for form builders - initialized here
                 tempResponsibilities: [],
                 tempOwnership: [],
                 tempRelationships: [],
+                tempRoleName: '',
+                tempRoleCode: '',
+                tempRoleDescription: '',
                 currentRoleStep: 1,
                 detectedOperators: {
                     identity: { INS: [], DES: [], REC: [] },
@@ -2440,6 +2458,22 @@ Please create this for my organization with:
                             .catch(err => console.error('Failed to load default data', err));
                     }
                     
+                    // Setup flow search and sort
+                    const flowSearchInput = document.getElementById('flowSearch');
+                    if (flowSearchInput) {
+                        flowSearchInput.addEventListener('input', (e) => {
+                            this.flowSearch = e.target.value.toLowerCase();
+                            this.renderFlows();
+                        });
+                    }
+                    const flowSortSelect = document.getElementById('flowSort');
+                    if (flowSortSelect) {
+                        flowSortSelect.addEventListener('change', (e) => {
+                            this.flowSort = e.target.value;
+                            this.renderFlows();
+                        });
+                    }
+
                     // Track changes
                     setInterval(() => this.updateSyncStatus(), 10000); // Update every 10 seconds
 
@@ -2480,8 +2514,13 @@ Please create this for my organization with:
                             role.modified = role.created || new Date().toISOString();
                             migrated = true;
                         }
-                        if (!role.purpose) {
-                            role.purpose = '';
+                        if (role.purpose && !role.description) {
+                            role.description = role.purpose;
+                            delete role.purpose;
+                            migrated = true;
+                        }
+                        if (!role.description) {
+                            role.description = '';
                             migrated = true;
                         }
                     });
@@ -2520,6 +2559,10 @@ Please create this for my organization with:
                         }
                         if (!flow.lastActive) {
                             flow.lastActive = flow.updated || new Date().toISOString();
+                            migrated = true;
+                        }
+                        if (flow.pinned === undefined) {
+                            flow.pinned = false;
                             migrated = true;
                         }
                     });
@@ -2600,7 +2643,7 @@ Please create this for my organization with:
                     details.assignment = assignedPeople.length;
                     
                     // 2. Definition quality (15 points)
-                    if (role.purpose?.length > 20) score += 5;
+                    if (role.description?.length > 20) score += 5;
                     if (role.responsibilities?.length > 0) score += 5;
                     if (role.responsibilities?.length > 3) score += 5;
                     details.definition = role.responsibilities?.length || 0;
@@ -3162,8 +3205,8 @@ Please create this for my organization with:
                                     <input type="text" class="form-input" name="code" required placeholder="e.g., INNOV_LEAD" style="text-transform: uppercase;">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Purpose</label>
-                                    <textarea class="form-input" name="purpose" placeholder="What is this role's purpose?"></textarea>
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-input" name="description" maxlength="240" placeholder="Brief role description (max 240 characters)"></textarea>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Responsibilities</label>
@@ -3194,7 +3237,7 @@ Please create this for my organization with:
                         id: Date.now(),
                         name: form.name.value.trim(),
                         code: form.code.value.toUpperCase().trim(),
-                        purpose: form.purpose.value.trim(),
+                        description: form.description.value.trim(),
                         responsibilities: [...this.tempResponsibilities],
                         ownership: [],
                         isTemplate: false,
@@ -3503,7 +3546,7 @@ Please create this for my organization with:
                             id: 1,
                             name: "Manager",
                             code: "MGR",
-                            purpose: "Lead store operations and team",
+                            description: "Lead store operations and team",
                             responsibilities: ["Oversee daily operations", "Approve discounts", "Set schedules"],
                             ownership: ["Daily reports", "Staff scheduling", "Customer escalations"],
                             operators: {
@@ -3531,7 +3574,7 @@ Please create this for my organization with:
                             id: 2,
                             name: "Sales Associate",
                             code: "SALES",
-                            purpose: "Serve customers and drive sales",
+                            description: "Serve customers and drive sales",
                             responsibilities: ["Assist customers", "Process transactions", "Maintain store"],
                             ownership: ["Customer service", "POS operations", "Product knowledge"],
                             operators: {
@@ -3594,6 +3637,7 @@ Please create this for my organization with:
                             strength: 0.8,
                             frequency: "daily",
                             lastActive: new Date().toISOString(),
+                            pinned: false,
                             isTemplate: true
                         }
                     ];
@@ -3683,10 +3727,10 @@ Please create this for my organization with:
                                             </span>
                                         ` : ''}
                                     </div>
-                                    ${role.purpose ? `
+                                    ${role.description ? `
                                         <div class="info-group">
-                                            <div class="info-label">Purpose</div>
-                                            <div>${role.purpose}</div>
+                                            <div class="info-label">Description</div>
+                                            <div>${role.description}</div>
                                         </div>
                                     ` : ''}
                                     <div class="info-group">
@@ -3841,10 +3885,10 @@ Please create this for my organization with:
                         </div>
                         ` : ''}
 
-                        ${role.purpose ? `
+                        ${role.description ? `
                         <div class="profile-section">
-                            <h2 class="profile-section-title">Purpose</h2>
-                            <p>${role.purpose}</p>
+                            <h2 class="profile-section-title">Description</h2>
+                            <p>${role.description}</p>
                         </div>
                         ` : ''}
 
@@ -3959,7 +4003,12 @@ Please create this for my organization with:
                             grouped['OTHER'].flows.push(flow);
                         }
                     });
-                    
+
+                    // Sort flows within groups with pinned first
+                    Object.values(grouped).forEach(group => {
+                        group.flows.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+                    });
+
                     return grouped;
                 },
 
@@ -3983,11 +4032,11 @@ Please create this for my organization with:
                     }
                     
                     return `
-                        <div class="relationship-card">
+                        <div class="relationship-card${flow.pinned ? ' pinned' : ''}">
                             <div class="relationship-icon">${icon}</div>
                             <div class="relationship-details">
                                 <div class="relationship-description">
-                                    ${flow.connection} ${targetDisplay}
+                                    ${flow.pinned ? '📌 ' : ''}${flow.connection} ${targetDisplay}
                                 </div>
                                 <div class="relationship-meta" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
                                     ${flow.frequency ? `<span>${flow.frequency}</span> • ` : ''}
@@ -4656,10 +4705,10 @@ Please create this for my organization with:
                                         </button>
                                     </div>
                                 </div>
-                                ${role.purpose ? `
+                                ${role.description ? `
                                     <div class="info-group" style="cursor: pointer;" onclick="window.app.showRoleProfile(${role.id})">
-                                        <div class="info-label">Purpose</div>
-                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">${role.purpose}</div>
+                                        <div class="info-label">Description</div>
+                                        <div style="font-size: 0.875rem; color: var(--text-secondary);">${role.description}</div>
                                     </div>
                                 ` : ''}
                                 <div class="info-group" style="cursor: pointer;" onclick="window.app.showRoleProfile(${role.id})">
@@ -4820,15 +4869,41 @@ Please create this for my organization with:
                     const list = document.getElementById('flowsList');
                     if (!list) return;
 
-                    if (this.data.flows.length === 0) {
-                        list.innerHTML = '<div class="card"><p style="text-align: center; color: var(--text-tertiary);">No flows defined yet</p></div>';
+                    let flowsToShow = [...this.data.flows];
+
+                    if (this.flowSearch) {
+                        const term = this.flowSearch.toLowerCase();
+                        flowsToShow = flowsToShow.filter(flow => {
+                            const role = this.data.roles.find(r => r.id === flow.roleId);
+                            const counterpartNames = flow.counterpartRoleNames ? flow.counterpartRoleNames.join(' ') : '';
+                            return flow.connection.toLowerCase().includes(term) ||
+                                (role && role.name.toLowerCase().includes(term)) ||
+                                counterpartNames.toLowerCase().includes(term);
+                        });
+                    }
+
+                    flowsToShow.sort((a, b) => {
+                        if (a.pinned && !b.pinned) return -1;
+                        if (!a.pinned && b.pinned) return 1;
+                        if (this.flowSort === 'role') {
+                            const roleA = this.data.roles.find(r => r.id === a.roleId)?.name || '';
+                            const roleB = this.data.roles.find(r => r.id === b.roleId)?.name || '';
+                            return roleA.localeCompare(roleB);
+                        } else if (this.flowSort === 'operator') {
+                            return (a.operator || '').localeCompare(b.operator || '');
+                        }
+                        return (b.updated || '').localeCompare(a.updated || '');
+                    });
+
+                    if (flowsToShow.length === 0) {
+                        list.innerHTML = '<div class="card"><p style="text-align: center; color: var(--text-tertiary);">No flows match your search</p></div>';
                         return;
                     }
 
-                    list.innerHTML = this.data.flows.map(flow => {
+                    list.innerHTML = flowsToShow.map(flow => {
                         const role = this.data.roles.find(r => r.id === flow.roleId);
                         const operator = this.operators[flow.operator] || this.operators[flow.action];
-                        
+
                         // Handle both old format (single counterpart) and new format (multiple counterparts)
                         let counterpartDisplay = '';
                         if (flow.counterpartRoleNames && flow.counterpartRoleNames.length > 0) {
@@ -4844,19 +4919,19 @@ Please create this for my organization with:
                         } else {
                             counterpartDisplay = '<span style="color: var(--text-tertiary); font-style: italic;">(No counterpart)</span>';
                         }
-                        
+
                         return `
-                            <div class="card clickable" onclick="window.app.showFlowProfile(${flow.id})">
+                            <div class="card${flow.pinned ? ' pinned' : ''} clickable" onclick="window.app.showFlowProfile(${flow.id})">
                                 <div class="card-header">
                                     <div style="flex: 1;">
                                         <h3 class="card-title">${role ? `<span class="entity-link" onclick="event.stopPropagation(); window.app.showRoleProfile(${role.id})">${role.name}</span>` : 'Unknown Role'}</h3>
                                         <p class="card-subtitle">
                                             <span class="badge badge-${flow.operator || flow.action}">${operator ? operator.symbol : ''} ${operator ? operator.userTerm : flow.action}</span>
-                                            ${flow.connection} ${counterpartDisplay}
+                                            ${flow.pinned ? '📌 ' : ''}${flow.connection} ${counterpartDisplay}
                                         </p>
                                         ${flow.counterpartRoleNames && flow.counterpartRoleNames.length > 1 ? `
                                             <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 8px;">
-                                                Applies to: ${flow.counterpartRoleNames.map((name, i) => 
+                                                Applies to: ${flow.counterpartRoleNames.map((name, i) =>
                                                     `<span class="entity-link" onclick="event.stopPropagation(); window.app.showRoleProfile(${flow.counterpartRoleIds[i]})">${name}</span>`
                                                 ).join(', ')}
                                             </p>
@@ -4867,7 +4942,8 @@ Please create this for my organization with:
                                         <div>${flow.updated}</div>
                                         ${flow.frequency ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">${flow.frequency}</div>` : ''}
                                         ${flow.isTemplate ? '<div style="margin-top: 4px;"><span class="badge" style="background: var(--bg-tertiary); color: var(--text-tertiary); font-size: 0.7rem;">SAMPLE</span></div>' : ''}
-                                        <div style="margin-top: 8px;">
+                                        <div style="margin-top: 8px; display: flex; gap: 4px; justify-content: flex-end;">
+                                            <button class="btn-icon" onclick="event.stopPropagation(); window.app.toggleFlowPin(${flow.id})" title="${flow.pinned ? 'Unpin flow' : 'Pin flow'}">${flow.pinned ? '📌' : '📍'}</button>
                                             <button class="btn-secondary" style="padding: 4px 12px; font-size: 0.75rem;" onclick="event.stopPropagation(); window.app.editFlow(${flow.id})">Edit</button>
                                         </div>
                                     </div>
@@ -4875,6 +4951,15 @@ Please create this for my organization with:
                             </div>
                         `;
                     }).join('');
+                },
+
+                toggleFlowPin(flowId) {
+                    const flow = this.data.flows.find(f => f.id == flowId);
+                    if (!flow) return;
+                    flow.pinned = !flow.pinned;
+                    this.data.hasChanges = true;
+                    if (this.data.autoSave) this.saveData();
+                    this.renderFlows();
                 },
 
                 // Modal management
@@ -4963,6 +5048,9 @@ Please create this for my organization with:
                     this.tempResponsibilities = [];
                     this.tempOwnership = [];
                     this.tempRelationships = [];
+                    this.tempRoleName = '';
+                    this.tempRoleCode = '';
+                    this.tempRoleDescription = '';
                     this.detectedOperators = {
                         identity: { INS: [], DES: [], REC: [] },
                         space: { SEG: [], NUL: [], SYN: [] },
@@ -5011,8 +5099,8 @@ Please create this for my organization with:
                                             <input type="text" class="form-input" id="roleCode" name="code" required placeholder="e.g., ENG_MGR" style="text-transform: uppercase;">
                                         </div>
                                         <div class="form-group">
-                                            <label class="form-label">Purpose</label>
-                                            <textarea class="form-input" id="rolePurpose" name="purpose" placeholder="What is this role's purpose?"></textarea>
+                                            <label class="form-label">Description</label>
+                                            <textarea class="form-input" id="roleDescription" name="description" maxlength="240" placeholder="Brief role description (max 240 characters)"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -5207,8 +5295,8 @@ Please create this for my organization with:
                         // Save basic info
                         this.tempRoleName = form.name.value.trim();
                         this.tempRoleCode = form.code.value.toUpperCase().trim();
-                        this.tempRolePurpose = form.purpose.value.trim();
-                        
+                        this.tempRoleDescription = form.description.value.trim();
+
                         this.showRoleWizardStep(2);
                     } else if (this.currentRoleStep === 2) {
                         // Validate responsibilities
@@ -5345,7 +5433,7 @@ Please create this for my organization with:
                         id: Date.now(),
                         name: this.tempRoleName,
                         code: this.tempRoleCode,
-                        purpose: this.tempRolePurpose,
+                        description: this.tempRoleDescription,
                         responsibilities: [...this.tempResponsibilities],
                         ownership: [...this.tempOwnership],
                         operators: this.detectedOperators,
@@ -5370,7 +5458,8 @@ Please create this for my organization with:
                             strength: 0.5,
                             frequency: 'adhoc',
                             lastActive: new Date().toISOString(),
-                            updated: new Date().toISOString().substring(0, 10)
+                            updated: new Date().toISOString().substring(0, 10),
+                            pinned: false
                         };
                         
                         this.data.flows.push(newFlow);
@@ -5746,6 +5835,7 @@ Please create this for my organization with:
                         frequency: form.frequency.value,
                         strength: parseFloat(form.strength.value),
                         lastActive: new Date().toISOString(), updated: new Date().toISOString().substring(0, 10),
+                        pinned: false,
                         isTemplate: false
                     };
                     
@@ -5929,8 +6019,8 @@ Please create this for my organization with:
                                     <input type="text" class="form-input" name="code" value="${role.code}" required style="text-transform: uppercase;">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Purpose</label>
-                                    <textarea class="form-input" name="purpose">${role.purpose || ''}</textarea>
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-input" name="description" maxlength="240">${role.description || ''}</textarea>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Responsibilities</label>
@@ -6041,7 +6131,7 @@ Please create this for my organization with:
 
                     role.name = form.name.value.trim();
                     role.code = form.code.value.toUpperCase().trim();
-                    role.purpose = form.purpose.value.trim();
+                    role.description = form.description.value.trim();
                     role.responsibilities = [...this.tempResponsibilities];
                     role.ownership = [...this.tempOwnership];
                     role.modified = new Date().toISOString();
