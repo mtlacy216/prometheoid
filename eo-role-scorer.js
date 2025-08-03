@@ -1,4 +1,3 @@
-  q<script type="module">
     class EoRoleScorer {
       constructor(data) {
         this.data = data;
@@ -725,4 +724,3 @@
 
     // Export
     window.EoRoleScorer = EoRoleScorer;
-  </script>

@@ -2244,6 +2244,7 @@ Please create this for my organization with:
         <div class="modal-content" id="modalContent"></div>
     </div>
 
+    <script src="eo-role-scorer.js"></script>
     <script>
         // Debug mode
         const DEBUG = false;
@@ -2270,11 +2271,13 @@ Please create this for my organization with:
                     lastDownloadTime: null,
                     hasChanges: false,
                     originalFileName: null,
-                    includesSampleData: false,
-                    analyticsEnabled: true  // Default to true for new users
-                },
-                
-                // E.O. operator definitions
+                includesSampleData: false,
+                analyticsEnabled: true  // Default to true for new users
+            },
+
+            scorer: null,
+
+            // E.O. operator definitions
                 operators: {
                     // Legacy operators (backward compatibility)
                     okays: { symbol: "✓", name: "Okays", userTerm: "Approves/authorizes", legacy: true },
@@ -2633,28 +2636,24 @@ Please create this for my organization with:
                     // Calculate phasepost position (1-27)
                     const position = Math.ceil((percentage / 100) * 27);
                     
+                    // E.O. phase coordinates and BDF metrics
+                    const coords = this.scorer.calculatePhasepostCoordinates(role);
+                    const bdf = this.scorer.analyzeBDFDynamic(role);
+
                     // Generate recommendations
                     const recommendations = this.generateRecommendations(role, { percentage, category });
-                    
+
                     return {
                         score,
                         percentage,
                         category,
                         position,
-                        coords: this.calculatePhasepostCoords(position),
+                        coords,
+                        bdf,
                         details,
                         recommendations,
                         lastCalculated: new Date().toISOString()
                     };
-                },
-
-                // Calculate phasepost coordinates
-                calculatePhasepostCoords(position) {
-                    // Simple mapping for now
-                    const identity = position < 10 ? -1 : position < 20 ? 1 : 'μ';
-                    const space = position < 10 ? -1 : position < 20 ? 1 : '√2';
-                    const time = position < 10 ? -1 : position < 20 ? 1 : 'τ';
-                    return [identity, space, time];
                 },
 
                 // Detect feedback loop
@@ -6837,13 +6836,15 @@ Please create this for my organization with:
                         this.showNotification('Failed to copy');
                     }
                     
-                    document.body.removeChild(textArea);
-                }
-            };
-            
-            // Wait for DOM and initialize
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
+                document.body.removeChild(textArea);
+            }
+        };
+        
+        app.scorer = new EoRoleScorer(app.data);
+
+        // Wait for DOM and initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
                     // Update loading status
                     const loadingStatus = document.getElementById('loadingStatus');
                     if (loadingStatus) {
