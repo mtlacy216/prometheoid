@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>E.O. Role Scoring</title>
+</head>
+<body>
+  <script type="module">
+    class EoRoleScorer {
+      constructor(data) {
+        this.data = data;
+      }
+
+      calculatePhasepostCoordinates(role) {
+        const identity = this.calculateIdentityPosition(role);
+        const space = this.calculateSpacePosition(role);
+        const time = this.calculateTimePosition(role);
+        return { identity, space, time };
+      }
+
+      calculateIdentityPosition(role) {
+        const hasPattern = role.responsibilities?.length > 0;
+        const hasInstances = this.data.people.filter(p => p.roleId === role.id).length > 0;
+        const isExplicitlyNamed = role.id && role.name && role.code;
+        const hasExternalValidation = this.getIncomingFlows(role, 'DES').length > 0;
+        const hasFeedbackLoops = this.detectFeedbackLoops(role);
+        const selfMaintains = this.hasOperator(role, 'REC');
+        if (selfMaintains && hasFeedbackLoops) return 'μ';
+        if (hasInstances && isExplicitlyNamed) return '+1';
+        return '-1';
+      }
+
+      calculateSpacePosition(role) {
+        const hasBoundaries = role.ownership?.length > 0;
+        const maintainsSeparation = this.hasOperator(role, 'SEG');
+        const hasNullificationPower = this.hasOperator(role, 'NUL');
+        const inConflictZones = this.detectConflictingFlows(role);
+        const createsSynthesis = this.hasOperator(role, 'SYN');
+        const hasEmergentProperties = this.detectEmergentPatterns(role);
+        if (hasEmergentProperties && createsSynthesis) return '√2';
+        if (hasBoundaries || hasNullificationPower) return '+1';
+        return '-1';
+      }
+
+      calculateTimePosition(role) {
+        const hasRhythms = this.detectAlternatingPatterns(role);
+        const maintainsMultipleStates = this.detectSuperposition(role);
+        const hasMutualConstitution = this.detectConstitutiveRelationships(role);
+        const coEvolutionaryDynamics = this.hasOperator(role, 'CON');
+        if (hasMutualConstitution && coEvolutionaryDynamics) return 'τ';
+        if (hasRhythms || maintainsMultipleStates) return '+1';
+        return '-1';
+      }
+
+      applyOperatorTransition(role, operator, targetRole) {
+        const currentPos = role.phasepost || this.calculatePhasepostCoordinates(role);
+        const newPos = { ...currentPos };
+        switch (operator) {
+          case 'DES':
+            if (currentPos.identity === '-1') newPos.identity = '+1';
+            break;
+          case 'REC':
+            if (currentPos.identity === '+1') newPos.identity = 'μ';
+            break;
+          case 'CON':
+            if (currentPos.time === '+1') newPos.time = 'τ';
+            break;
+          case 'NUL':
+            return { identity: '-1', space: '-1', time: '-1' };
+        }
+        return newPos;
+      }
+
+      processFlowInteraction(flow) {
+        const sourceRole = this.data.roles.find(r => r.id === flow.roleId);
+        const targetRoles = flow.counterpartRoleIds.map(id => this.data.roles.find(r => r.id === id));
+        switch (flow.operator) {
+          case 'CON':
+            sourceRole.phasepost = this.shiftTowardConstitution(sourceRole.phasepost);
+            targetRoles.forEach(t => {
+              t.phasepost = this.shiftTowardConstitution(t.phasepost);
+            });
+            break;
+          case 'DES':
+            targetRoles.forEach(t => {
+              if (t.phasepost.identity === '-1') t.phasepost.identity = '+1';
+            });
+            break;
+          case 'SYN':
+            if (sourceRole.phasepost.space === '+1') sourceRole.phasepost.space = '√2';
+            break;
+        }
+      }
+
+      detectEmanons() {
+        const emanons = [];
+        this.data.flows.forEach(flow => {
+          if (/gets done|happens|is handled/i.test(flow.connection)) {
+            emanons.push({
+              type: 'passive-function',
+              evidence: flow.connection,
+              suggestedRole: this.inferRoleFromFlow(flow),
+              position: ['-1', '-1', '+1']
+            });
+          }
+        });
+        this.data.roles.forEach(role => {
+          if (role.phasepost?.identity === 'μ' &&
+            this.data.people.filter(p => p.roleId === role.id).length === 0) {
+            emanons.push({
+              type: 'phantom-validator',
+              role,
+              position: ['-1', '+1', '+1']
+            });
+          }
+        });
+        return emanons;
+      }
+
+      generateRecommendations(role) {
+        const pos = role.phasepost;
+        const recommendations = [];
+        if (pos.identity === '-1' && pos.space === '-1' && pos.time === '-1') {
+          recommendations.push({
+            priority: 'CRITICAL',
+            operator: 'DES',
+            action: 'This role needs external designation - have leadership formally recognize it'
+          });
+        }
+        if (pos.identity === '+1' && pos.space === '+1' && pos.time === '+1') {
+          recommendations.push({
+            priority: 'HIGH',
+            operator: 'REC',
+            action: 'Add feedback loops and self-validation mechanisms'
+          });
+        }
+        if (pos.time === '-1' && pos.identity === 'μ') {
+          recommendations.push({
+            priority: 'HIGH',
+            operator: 'CON',
+            action: 'Identify co-evolutionary partnerships with other roles'
+          });
+        }
+        return recommendations;
+      }
+
+      checkHelicalProgress(role) {
+        const operators = this.getActiveOperators(role);
+        const helicalOrder = ['NUL', 'DES', 'INS', 'SEG', 'CON', 'SYN', 'ALT', 'SUP', 'REC'];
+        let highestIndex = -1;
+        operators.forEach(op => {
+          const index = helicalOrder.indexOf(op);
+          if (index > highestIndex) highestIndex = index;
+        });
+        if (highestIndex < helicalOrder.length - 1) {
+          const nextOperator = helicalOrder[highestIndex + 1];
+          return {
+            currentProgress: highestIndex + 1,
+            nextOperator,
+            recommendation: this.getOperatorActivationGuide(nextOperator)
+          };
+        }
+      }
+
+      detectOmegaEvents(timeWindow = 30) {
+        const recentShifts = this.getRecentPhasepostShifts(timeWindow);
+        if (recentShifts.length >= 3) {
+          const shiftVectors = recentShifts.map(s => ({
+            identity: s.newPos.identity !== s.oldPos.identity,
+            space: s.newPos.space !== s.oldPos.space,
+            time: s.newPos.time !== s.oldPos.time
+          }));
+          const correlation = this.calculateVectorCorrelation(shiftVectors);
+          if (correlation > 0.7) {
+            return {
+              type: 'omega',
+              pattern: this.identifyPhasePattern(recentShifts),
+              affected: recentShifts.length,
+              recommendation: 'System-wide transformation underway'
+            };
+          }
+        }
+      }
+
+      identifyHolons() {
+        const holons = [];
+        this.data.roles.forEach(role => {
+          if (role.phasepost?.identity === 'μ' &&
+              role.phasepost?.space === '√2' &&
+              role.phasepost?.time === 'τ' &&
+              this.hasExplicitINS(role) &&
+              this.hasExplicitDES(role) &&
+              this.hasExplicitREC(role)) {
+            holons.push({
+              role,
+              grain: this.calculateGrainLevel(role),
+              canReenter: true
+            });
+          }
+        });
+        return holons;
+      }
+
+      calculateGrainLevel(role) {
+        let grain = 1;
+        const componentHolons = this.getComponentHolons(role);
+        if (componentHolons.length > 0) {
+          grain = Math.max(...componentHolons.map(h => h.grain)) + 1;
+        }
+        return grain;
+      }
+
+      getComponentHolons(role) {
+        const components = [];
+        const synFlows = this.data.flows.filter(f => f.roleId === role.id && f.operator === 'SYN');
+        synFlows.forEach(flow => {
+          flow.counterpartRoleIds.forEach(id => {
+            const counterpartRole = this.data.roles.find(r => r.id === id);
+            if (this.isHolon(counterpartRole)) components.push(counterpartRole);
+          });
+        });
+        return components;
+      }
+
+      detectReentryPatterns() {
+        const reentries = [];
+        this.data.flows.forEach(flow => {
+          if (flow.operator === 'INS') {
+            const sourceRole = this.data.roles.find(r => r.id === flow.roleId);
+            if (this.isHolon(sourceRole)) {
+              flow.counterpartRoleIds.forEach(targetId => {
+                const targetRole = this.data.roles.find(r => r.id === targetId);
+                if (this.calculateGrainLevel(targetRole) > this.calculateGrainLevel(sourceRole)) {
+                  reentries.push({
+                    holon: sourceRole,
+                    higherPattern: targetRole,
+                    grainJump: this.calculateGrainLevel(targetRole) - this.calculateGrainLevel(sourceRole)
+                  });
+                }
+              });
+            }
+          }
+        });
+        return reentries;
+      }
+
+      calculateDepth(role) {
+        if (!this.isHolon(role)) {
+          return {
+            depth: 0,
+            type: 'incomplete',
+            potential: this.calculateHolonPotential(role)
+          };
+        }
+        const reentries = this.countReentries(role);
+        const contained = this.calculateContainedDepth(role);
+        return {
+          depth: reentries + contained,
+          type: 'holon',
+          upwardReentries: reentries,
+          downwardNesting: contained,
+          grainLevel: this.calculateGrainLevel(role)
+        };
+      }
+
+      countReentries(role) {
+        let count = 0;
+        let currentRole = role;
+        while (true) {
+          const higherPatterns = this.findHigherPatterns(currentRole);
+          if (higherPatterns.length === 0) break;
+          count++;
+          currentRole = higherPatterns[0];
+        }
+        return count;
+      }
+
+      calculateContainedDepth(role) {
+        const components = this.getComponentHolons(role);
+        if (components.length === 0) return 0;
+        const componentDepths = components.map(c => this.calculateDepth(c).depth);
+        return 1 + Math.max(...componentDepths);
+      }
+
+      calculateGroupDepth(group) {
+        let depth = 0;
+        let current = group;
+        while (current.parentId) {
+          depth++;
+          current = this.data.groups.find(g => g.id === current.parentId);
+          if (!current) break;
+        }
+        const childDepth = this.calculateMaxChildDepth(group);
+        return {
+          depth: Math.max(depth, childDepth),
+          upwardNesting: depth,
+          downwardNesting: childDepth,
+          isRecursive: this.hasRecursiveGroupStructure(group)
+        };
+      }
+
+      calculateMaxChildDepth(group) {
+        if (!group.childGroupIds || group.childGroupIds.length === 0) return 0;
+        const childDepths = group.childGroupIds.map(id => {
+          const child = this.data.groups.find(g => g.id === id);
+          return child ? 1 + this.calculateMaxChildDepth(child) : 0;
+        });
+        return Math.max(...childDepths);
+      }
+
+      analyzeSystemDepth() {
+        const analysis = {
+          maxDepth: 0,
+          depthDistribution: {},
+          recursiveStructures: [],
+          grainLevels: new Set(),
+          deepestPath: null
+        };
+        this.data.roles.forEach(role => {
+          const depth = this.calculateDepth(role);
+          analysis.maxDepth = Math.max(analysis.maxDepth, depth.depth);
+          analysis.depthDistribution[depth.depth] = (analysis.depthDistribution[depth.depth] || 0) + 1;
+          if (depth.grainLevel) analysis.grainLevels.add(depth.grainLevel);
+        });
+        analysis.recursiveStructures = this.findRecursivePatterns();
+        analysis.deepestPath = this.traceDeepestPath();
+        return analysis;
+      }
+
+      generateDepthRecommendations(role) {
+        const depth = this.calculateDepth(role);
+        const recommendations = [];
+        if (depth.type === 'incomplete') {
+          if (depth.potential > 0.8) {
+            recommendations.push({
+              priority: 'HIGH',
+              action: 'This role is close to achieving holon status. Focus on reaching [μ,√2,τ]',
+              operators: this.getMissingOperatorsForHolon(role)
+            });
+          }
+        } else if (depth.type === 'holon') {
+          if (depth.upwardReentries === 0) {
+            recommendations.push({
+              priority: 'MEDIUM',
+              action: 'This holon could serve as INS in higher-order patterns',
+              suggestion: 'Look for emerging patterns this role could instance'
+            });
+          }
+          if (depth.downwardNesting === 0) {
+            recommendations.push({
+              priority: 'MEDIUM',
+              action: 'This holon could integrate other holons as components',
+              suggestion: 'Identify smaller holons that could be synthesized'
+            });
+          }
+        }
+        return recommendations;
+      }
+
+      detectDepthPathologies() {
+        const pathologies = [];
+        const deepNarrowRoles = this.data.roles.filter(r => {
+          const d = this.calculateDepth(r);
+          const b = this.calculateBreadth(r);
+          return d.depth > 3 && b.breadth < 2;
+        });
+        if (deepNarrowRoles.length > 0) {
+          pathologies.push({
+            type: 'brittle-depth',
+            severity: 'HIGH',
+            affected: deepNarrowRoles,
+            risk: 'Deep structures without lateral support are fragile'
+          });
+        }
+        const emanonDepth = this.detectEmanonRecursion();
+        if (emanonDepth.length > 0) {
+          pathologies.push({
+            type: 'phantom-depth',
+            severity: 'CRITICAL',
+            affected: emanonDepth,
+            risk: 'Recursive structures built on unclaimed roles will collapse'
+          });
+        }
+        const rigidDepth = this.data.roles.filter(r => {
+          const d = this.calculateDepth(r);
+          const f = this.calculateFlow(r);
+          return d.depth > 2 && f.flow < 0.3;
+        });
+        if (rigidDepth.length > 0) {
+          pathologies.push({
+            type: 'rigid-depth',
+            severity: 'MEDIUM',
+            affected: rigidDepth,
+            risk: 'Deep structures without flow become brittle hierarchies'
+          });
+        }
+        return pathologies;
+      }
+
+      calculateBreadth(role) {
+        const triads = this.identifyActiveTriads(role);
+        const coherence = this.assessCoherenceUnderLoad(role, triads);
+        const distribution = this.analyzeDistributedPresence(role);
+        return {
+          breadth: triads.length,
+          coherence,
+          distribution,
+          sustainability: this.calculateSustainabilityThreshold(role)
+        };
+      }
+
+      identifyActiveTriads(role) {
+        const triads = [];
+        const asINS = this.data.flows.filter(f => f.roleId === role.id && ['INS', 'does', 'shares'].includes(f.operator));
+        asINS.forEach(flow => {
+          const triad = this.constructTriadFromINS(role, flow);
+          if (this.isCompleteTriad(triad)) triads.push(triad);
+        });
+        const asDES = this.data.flows.filter(f =>
+          f.counterpartRoleIds?.includes(role.id) && ['DES', 'okays'].includes(f.operator));
+        asDES.forEach(flow => {
+          const triad = this.constructTriadFromDES(role, flow);
+          if (this.isCompleteTriad(triad)) triads.push(triad);
+        });
+        const asREC = this.data.flows.filter(f =>
+          f.counterpartRoleIds?.includes(role.id) && ['REC', 'reviews'].includes(f.operator));
+        asREC.forEach(flow => {
+          const triad = this.constructTriadFromREC(role, flow);
+          if (this.isCompleteTriad(triad)) triads.push(triad);
+        });
+        return this.deduplicateTriads(triads);
+      }
+
+      assessCoherenceUnderLoad(role, triads) {
+        const base = 1.0;
+        const degradation = 0.1;
+        const strongIdentity = role.phasepost?.identity === 'μ';
+        const emergentStructure = role.phasepost?.space === '√2';
+        const temporalStability = role.phasepost?.time === 'τ';
+        let coherence = base - (triads.length * degradation);
+        if (strongIdentity) coherence += 0.3;
+        if (emergentStructure) coherence += 0.2;
+        if (temporalStability) coherence += 0.2;
+        const conflicts = this.detectRoleConflicts(role, triads);
+        coherence -= conflicts * 0.15;
+        return Math.max(0, Math.min(1, coherence));
+      }
+
+      analyzeDistributedPresence(role) {
+        const contexts = new Set();
+        const presenceMap = {};
+        this.data.flows.forEach(flow => {
+          if (flow.roleId === role.id || flow.counterpartRoleIds?.includes(role.id)) {
+            const context = this.extractContext(flow);
+            contexts.add(context);
+            if (!presenceMap[context]) {
+              presenceMap[context] = { strength: 0, operators: new Set() };
+            }
+            presenceMap[context].strength += flow.strength || 0.5;
+            presenceMap[context].operators.add(flow.operator);
+          }
+        });
+        return {
+          contextCount: contexts.size,
+          distribution: presenceMap,
+          consistency: this.calculatePresenceConsistency(presenceMap)
+        };
+      }
+
+      detectBreadthPatterns(role) {
+        const b = this.calculateBreadth(role);
+        const patterns = [];
+        if (b.breadth > 5 && b.coherence > 0.7) {
+          patterns.push({
+            type: 'hub',
+            description: 'Central connector maintaining coherence',
+            risk: 'Potential bottleneck',
+            opportunity: 'Natural coordination point'
+          });
+        }
+        if (b.distribution.contextCount > 3 && b.distribution.consistency > 0.6) {
+          patterns.push({
+            type: 'distributed',
+            description: 'Effective presence across multiple contexts',
+            risk: 'Identity dilution',
+            opportunity: 'Cross-functional integration'
+          });
+        }
+        if (b.breadth > 7 && b.coherence < 0.5) {
+          patterns.push({
+            type: 'overextended',
+            description: 'Too many relationships, losing coherence',
+            risk: 'Imminent breakdown',
+            recommendation: 'Reduce concurrent relationships or strengthen identity'
+          });
+        }
+        return patterns;
+      }
+
+      calculateFlow(role) {
+        const transitionRate = this.calculateTransitionRate(role);
+        const operatorFlexibility = this.calculateOperatorFlexibility(role);
+        const roleFluidity = this.calculateRoleFluidity(role);
+        const flowScore = transitionRate * operatorFlexibility * roleFluidity;
+        const locks = this.detectFlowLocks(role);
+        return {
+          flow: flowScore,
+          components: { transitionRate, operatorFlexibility, roleFluidity },
+          locks,
+          pattern: this.identifyFlowPattern(flowScore, locks)
+        };
+      }
+
+      calculateTransitionRate(role) {
+        const history = this.getPhasepostHistory(role);
+        if (history.length < 2) return 0;
+        let transitions = 0;
+        for (let i = 1; i < history.length; i++) {
+          if (this.hasPositionChanged(history[i - 1], history[i])) transitions++;
+        }
+        const span = history[history.length - 1].timestamp - history[0].timestamp;
+        const rate = span > 0 ? transitions / span : 0;
+        const smoothness = this.assessTransitionSmoothness(history);
+        return rate * smoothness;
+      }
+
+      calculateOperatorFlexibility(role) {
+        const acceptedOperators = new Set();
+        const rejectedOperators = new Set();
+        this.data.flows.forEach(flow => {
+          if (flow.roleId === role.id || flow.counterpartRoleIds?.includes(role.id)) {
+            acceptedOperators.add(flow.operator);
+          }
+        });
+        const resistancePatterns = this.detectOperatorResistance(role);
+        resistancePatterns.forEach(op => rejectedOperators.add(op));
+        const totalOperators = 9;
+        const flexibility = acceptedOperators.size / totalOperators;
+        const resistance = rejectedOperators.size / totalOperators;
+        return Math.max(0, flexibility - (resistance * 0.5));
+      }
+
+      calculateRoleFluidity(role) {
+        const counts = { INS: 0, DES: 0, REC: 0 };
+        this.data.flows.forEach(flow => {
+          if (flow.roleId === role.id) {
+            if (['INS', 'does', 'shares'].includes(flow.operator)) counts.INS++;
+            else if (['DES', 'okays'].includes(flow.operator)) counts.DES++;
+          }
+          if (flow.counterpartRoleIds?.includes(role.id)) {
+            if (['REC', 'reviews'].includes(flow.operator)) counts.REC++;
+          }
+        });
+        const total = counts.INS + counts.DES + counts.REC;
+        if (total === 0) return 0;
+        let entropy = 0;
+        Object.values(counts).forEach(c => {
+          if (c > 0) {
+            const p = c / total;
+            entropy -= p * Math.log2(p);
+          }
+        });
+        const maxEntropy = Math.log2(3);
+        return entropy / maxEntropy;
+      }
+
+      detectFlowLocks(role) {
+        const locks = [];
+        const roleFlex = this.calculateRoleFluidity(role);
+        if (roleFlex < 0.2) {
+          locks.push({
+            type: 'role-rigidity',
+            severity: 'HIGH',
+            description: 'Role stuck in single position (INS/DES/REC)',
+            remedy: 'Practice role rotation exercises'
+          });
+        }
+        const operatorFlex = this.calculateOperatorFlexibility(role);
+        if (operatorFlex < 0.3) {
+          locks.push({
+            type: 'operator-resistance',
+            severity: 'MEDIUM',
+            description: 'Role resists multiple operator types',
+            remedy: 'Create safe spaces for operator experimentation'
+          });
+        }
+        const transitionRate = this.calculateTransitionRate(role);
+        if (transitionRate < 0.1) {
+          locks.push({
+            type: 'frozen-position',
+            severity: 'HIGH',
+            description: 'Role hasnt moved in phase space',
+            remedy: 'Inject perturbation or trickster energy'
+          });
+        }
+        const emanonLoad = this.calculateEmanonLoad(role);
+        if (emanonLoad > 3) {
+          locks.push({
+            type: 'emanon-overload',
+            severity: 'CRITICAL',
+            description: 'Too many phantom roles blocking movement',
+            remedy: 'Name and claim emanonic functions'
+          });
+        }
+        return locks;
+      }
+
+      identifyFlowPattern(flowScore, locks) {
+        if (flowScore > 0.7 && locks.length === 0) {
+          return { pattern: 'fluid', description: 'Healthy flow, natural adaptability', intervention: 'Maintain current practices' };
+        }
+        if (flowScore > 0.4 && locks.length < 2) {
+          return { pattern: 'viscous', description: 'Some flow but resistance present', intervention: 'Address specific locks' };
+        }
+        if (flowScore < 0.2 || locks.length > 3) {
+          return { pattern: 'frozen', description: 'Ontological death - system cannot adapt', intervention: 'Urgent: Introduce trickster energy' };
+        }
+        if (locks.some(l => l.type === 'emanon-overload')) {
+          return { pattern: 'haunted', description: 'Phantom roles preventing movement', intervention: 'Emanon tending required before flow work' };
+        }
+      }
+
+      injectTricksterEnergy(role) {
+        return [
+          {
+            type: 'role-swap',
+            description: 'Temporarily swap INS and REC positions',
+            risk: 'MEDIUM',
+            reward: 'Breaks role rigidity'
+          },
+          {
+            type: 'operator-carnival',
+            description: 'Day where all operators are tried',
+            risk: 'HIGH',
+            reward: 'Discovers hidden flexibilities'
+          },
+          {
+            type: 'emanon-naming-ceremony',
+            description: 'Ritual to surface and name phantom roles',
+            risk: 'MEDIUM',
+            reward: 'Converts emanons to protogons'
+          }
+        ];
+      }
+
+      analyzeBDFDynamic(role) {
+        const breadth = this.calculateBreadth(role);
+        const depth = this.calculateDepth(role);
+        const flow = this.calculateFlow(role);
+        const patterns = [];
+        if (breadth.breadth > 5 && depth.depth < 2) {
+          patterns.push({
+            type: 'flat-network',
+            description: 'Lots of connections but no recursive structure',
+            risk: 'Shallow, unstable',
+            intervention: 'Build depth through holon formation'
+          });
+        }
+        if (depth.depth > 3 && breadth.breadth < 2) {
+          patterns.push({
+            type: 'ivory-tower',
+            description: 'Deep recursion but isolated',
+            risk: 'Brittle, disconnected',
+            intervention: 'Expand lateral connections'
+          });
+        }
+        if (breadth.breadth > 3 && depth.depth > 2 && flow.flow < 0.3) {
+          patterns.push({
+            type: 'beautiful-fossil',
+            description: 'Impressive structure but cannot adapt',
+            risk: 'Organizational death',
+            intervention: 'URGENT: Restore flow through role flexibility'
+          });
+        }
+        if (breadth.breadth > 3 && depth.depth > 2 && flow.flow > 0.6) {
+          patterns.push({
+            type: 'thriving-system',
+            description: 'Balanced BDF - resilient and adaptive',
+            opportunity: 'Can handle complex challenges',
+            advice: 'Maintain the dance'
+          });
+        }
+        return {
+          metrics: { breadth, depth, flow },
+          patterns,
+          visualization: this.generateBDFVisualization(breadth, depth, flow)
+        };
+      }
+
+      // --- helper stubs ---
+      getIncomingFlows(role, operator) { return []; }
+      detectFeedbackLoops(role) { return false; }
+      hasOperator(role, op) { return false; }
+      detectConflictingFlows(role) { return false; }
+      detectEmergentPatterns(role) { return false; }
+      detectAlternatingPatterns(role) { return false; }
+      detectSuperposition(role) { return false; }
+      detectConstitutiveRelationships(role) { return false; }
+      shiftTowardConstitution(pos) { return pos; }
+      inferRoleFromFlow(flow) { return null; }
+      getActiveOperators(role) { return []; }
+      getOperatorActivationGuide(op) { return ''; }
+      getRecentPhasepostShifts(timeWindow) { return []; }
+      calculateVectorCorrelation(vectors) { return 0; }
+      identifyPhasePattern(shifts) { return ''; }
+      hasExplicitINS(role) { return true; }
+      hasExplicitDES(role) { return true; }
+      hasExplicitREC(role) { return true; }
+      isHolon(role) { return false; }
+      calculateHolonPotential(role) { return 0; }
+      findHigherPatterns(role) { return []; }
+      findRecursivePatterns() { return []; }
+      traceDeepestPath() { return []; }
+      getMissingOperatorsForHolon(role) { return []; }
+      detectEmanonRecursion() { return []; }
+      calculateSustainabilityThreshold(role) { return 1; }
+      constructTriadFromINS(role, flow) { return {}; }
+      constructTriadFromDES(role, flow) { return {}; }
+      constructTriadFromREC(role, flow) { return {}; }
+      isCompleteTriad(triad) { return false; }
+      deduplicateTriads(triads) { return triads; }
+      detectRoleConflicts(role, triads) { return 0; }
+      extractContext(flow) { return 'default'; }
+      calculatePresenceConsistency(map) { return 0; }
+      calculateEmanonLoad(role) { return 0; }
+      getPhasepostHistory(role) { return []; }
+      hasPositionChanged(a, b) { return false; }
+      assessTransitionSmoothness(history) { return 1; }
+      detectOperatorResistance(role) { return []; }
+      generateBDFVisualization(breadth, depth, flow) { return null; }
+    }
+
+    // Export
+    window.EoRoleScorer = EoRoleScorer;
+  </script>
+</body>
+</html>
