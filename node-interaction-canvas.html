@@ -1350,10 +1350,24 @@
             updateCanvasTransform();
 
             const params = new URLSearchParams(window.location.search);
+            const source = params.get('source');
             const dataFile = params.get('json') || 'team-operations-archive.json';
 
-            fetch(dataFile)
-                .then(r => r.json())
+            const loadData = () => {
+                if (source === 'local') {
+                    const stored = localStorage.getItem('teamOpsData');
+                    if (stored) {
+                        try {
+                            return Promise.resolve(JSON.parse(stored));
+                        } catch (e) {
+                            console.error('Failed to parse stored data', e);
+                        }
+                    }
+                }
+                return fetch(dataFile).then(r => r.json());
+            };
+
+            loadData()
                 .then(data => {
                     data.flows.forEach((flow, index) => {
                         const x = 150 + index * 350;

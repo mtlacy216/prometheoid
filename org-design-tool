@@ -1778,11 +1778,11 @@
                 <br><span id="loadingStatus" style="font-size: 0.75rem; margin-top: 8px; display: block; color: var(--text-tertiary);">Loading application...</span>
             </p>
             <div class="welcome-options">
-                <div class="welcome-option" onclick="if(window.app && window.app.startBlank) window.app.startBlank(); else alert('Please wait for the page to fully load');" style="cursor: pointer;">
+                <div class="welcome-option" id="startFreshOption" style="cursor: pointer;">
                     <div class="welcome-option-title">Start Fresh</div>
                     <div class="welcome-option-desc">Begin with a blank workspace</div>
                 </div>
-                <div class="welcome-option" onclick="if(window.app && window.app.uploadData) window.app.uploadData(); else alert('Please wait for the page to fully load');" style="cursor: pointer;">
+                <div class="welcome-option" id="uploadFileOption" style="cursor: pointer;">
                     <div class="welcome-option-title">Upload Existing File</div>
                     <div class="welcome-option-desc">Continue working on previously saved data</div>
                 </div>
@@ -2381,6 +2381,12 @@ Please create this for my organization with:
                     this.tempResponsibilities = [];
                     this.tempOwnership = [];
                     this.tempRelationships = [];
+
+                    // Hook up welcome screen actions once DOM is ready
+                    const startFresh = document.getElementById('startFreshOption');
+                    if (startFresh) startFresh.addEventListener('click', () => this.startBlank());
+                    const uploadFile = document.getElementById('uploadFileOption');
+                    if (uploadFile) uploadFile.addEventListener('click', () => this.uploadData());
                     
                     // Ensure data arrays are initialized
                     if (!Array.isArray(this.data.people)) this.data.people = [];
@@ -4516,9 +4522,10 @@ Please create this for my organization with:
                 },
 
                 openCanvas() {
-                    const file = this.data.originalFileName || 'team-operations-archive.json';
-                    const url = `node-interaction-canvas.html?json=${encodeURIComponent(file)}`;
-                    window.open(url, '_blank');
+                    // Persist current data and open canvas using localStorage
+                    this.saveData();
+                    const url = 'node-interaction-canvas.html?source=local';
+                    window.location.href = url;
                 },
 
                 // Show AI Assist from welcome screen
