@@ -25,6 +25,15 @@ const assert = require('assert');
     'flow-3 should be incomplete'
   );
 
+  // group flows
+  mapper.addGroup('g1', 'Group 1');
+  mapper.addFlowToGroup('flow-1', 'g1');
+  assert.deepStrictEqual(mapper.getGroup('g1').flows, ['flow-1']);
+  mapper.addFlowToGroup('flow-2', 'g1');
+  assert.strictEqual(mapper.getFlowsInGroup('g1').length, 2);
+  mapper.removeFlowFromGroup('flow-1', 'g1');
+  assert.deepStrictEqual(mapper.getGroup('g1').flows, ['flow-2']);
+
   console.log('flowMapper tests passed');
 })();
 
