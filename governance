@@ -1873,6 +1873,51 @@
                         exported: new Date().toISOString(),
                         theme: this.data.currentTheme
                     },
+                    schema: {
+                        metadata: {
+                            version: "string",
+                            exported: "ISO8601 timestamp string",
+                            theme: "string"
+                        },
+                        terminology: {
+                            appTitle: "string",
+                            rolesSection: "string",
+                            standardsSection: "string",
+                            permissionsSection: "string",
+                            responsibilities: "string",
+                            ownership: "string",
+                            roleColumn: "string",
+                            actionColumn: "string",
+                            taskColumn: "string",
+                            counterpartColumn: "string",
+                            actionTypes: {
+                                approves: "string",
+                                executes: "string",
+                                communicates: "string"
+                            }
+                        },
+                        roles: [
+                            {
+                                id: "number",
+                                name: "string",
+                                responsibilities: ["string"],
+                                ownership: ["string"]
+                            }
+                        ],
+                        standards: ["string"],
+                        permissions: [
+                            {
+                                id: "number",
+                                roleId: "number",
+                                action: ["approves", "executes", "communicates"],
+                                task: "string",
+                                counterpart: "string",
+                                status: "string",
+                                updated: "ISO date string (YYYY-MM-DD)"
+                            }
+                        ]
+                    },
+                    aiInstructions: "Convert natural language descriptions of team operations into a JSON object that matches the provided schema. Use exact property names, double quotes, arrays for lists, and ISO date formats. Return only valid JSON.",
                     terminology: this.data.terminology,
                     roles: this.data.roles,
                     standards: this.data.standards,
