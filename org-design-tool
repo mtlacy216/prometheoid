@@ -3010,9 +3010,10 @@ Please create this for my organization with:
                     
                     // From role responsibilities
                     this.data.roles.forEach(role => {
-                        role.responsibilities?.forEach(r => {
-                            // Extract key phrases
-                            const phrases = this.extractKeyPhrases(r);
+                        role.responsibilities?.forEach(id => {
+                            const flow = this.data.flows.find(f => f.id === id);
+                            if (!flow) return;
+                            const phrases = this.extractKeyPhrases(flow.connection);
                             phrases.forEach(p => work.add(p));
                         });
                     });
@@ -3036,10 +3037,12 @@ Please create this for my organization with:
                             const phrases = this.extractKeyPhrases(o);
                             phrases.forEach(p => assigned.add(p));
                         });
-                        
+
                         // Also consider responsibilities as assigned
-                        role.responsibilities?.forEach(r => {
-                            const phrases = this.extractKeyPhrases(r);
+                        role.responsibilities?.forEach(id => {
+                            const flow = this.data.flows.find(f => f.id === id);
+                            if (!flow) return;
+                            const phrases = this.extractKeyPhrases(flow.connection);
                             phrases.forEach(p => assigned.add(p));
                         });
                     });
@@ -3208,7 +3211,9 @@ Please create this for my organization with:
                     if (!shadow) return;
                     
                     // Pre-fill the role creation form
-                    this.tempResponsibilities = [shadow.name];
+                    this.tempResponsibilities = this.data.flows
+                        .filter(f => f.pinned)
+                        .map(f => f.id);
                     this.tempOwnership = [];
                     
                     this.showModal(`
@@ -3232,13 +3237,17 @@ Please create this for my organization with:
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Responsibilities</label>
-                                    <div id="responsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px;">
-                                        ${this.tempResponsibilities.map((r, i) => `
-                                            <div style="padding: 4px;">${r}</div>
-                                        `).join('')}
+                                    <div id="responsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px; max-height: 200px; overflow-y: auto;">
+                                        ${this.data.flows.length === 0 ? '<p style="color: var(--text-tertiary); text-align: center; margin: 8px;">No flows available.</p>' :
+                                            this.data.flows.map(flow => `
+                                                <label style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+                                                    <input type="checkbox" value="${flow.id}" ${this.tempResponsibilities.includes(flow.id) ? 'checked' : ''} onchange="window.app.toggleTempResponsibility(${flow.id}, this.checked)">
+                                                    ${flow.pinned ? '📌 ' : ''}${this.escapeHtml(flow.connection)}
+                                                </label>
+                                            `).join('')}
                                     </div>
                                     <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">
-                                        Pre-filled from detected function. Add more if needed after creation.
+                                        Responsibilities default to pinned flows. Adjust as needed.
                                     </p>
                                 </div>
                             </div>
@@ -3377,8 +3386,8 @@ Please create this for my organization with:
                     
                     // Add to role
                     if (assignType === 'responsibility') {
-                        if (!role.responsibilities.includes(shadow.name)) {
-                            role.responsibilities.push(shadow.name);
+                        if (shadow.flowId && !role.responsibilities.includes(shadow.flowId)) {
+                            role.responsibilities.push(shadow.flowId);
                         }
                     } else {
                         if (!role.ownership.includes(shadow.name)) {
@@ -3759,7 +3768,10 @@ Please create this for my organization with:
                                     <div class="info-group">
                                         <div class="info-label">Responsibilities</div>
                                         <ul class="info-list">
-                                            ${role.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                                            ${role.responsibilities.map(id => {
+                                                const f = this.data.flows.find(fl => fl.id === id);
+                                                return f ? `<li>${this.escapeHtml(f.connection)}</li>` : '';
+                                            }).join('')}
                                         </ul>
                                     </div>
                                     <div class="info-group">
@@ -3918,7 +3930,10 @@ Please create this for my organization with:
                         <div class="profile-section">
                             <h2 class="profile-section-title">Responsibilities</h2>
                             <ul class="info-list">
-                                ${role.responsibilities.map(r => `<li>${r}</li>`).join('')}
+                                ${role.responsibilities.map(id => {
+                                    const f = this.data.flows.find(fl => fl.id === id);
+                                    return f ? `<li>${this.escapeHtml(f.connection)}</li>` : '';
+                                }).join('')}
                             </ul>
                         </div>
 
@@ -4743,7 +4758,10 @@ Please create this for my organization with:
                                 <div class="info-group" style="cursor: pointer;" onclick="window.app.showRoleProfile(${role.id})">
                                     <div class="info-label">Responsibilities</div>
                                     <ul class="info-list">
-                                        ${role.responsibilities.slice(0, 3).map(r => `<li>${r}</li>`).join('')}
+                                        ${role.responsibilities.slice(0, 3).map(id => {
+                                            const f = this.data.flows.find(fl => fl.id === id);
+                                            return f ? `<li>${this.escapeHtml(f.connection)}</li>` : '';
+                                        }).join('')}
                                         ${role.responsibilities.length > 3 ? `<li style="color: var(--text-tertiary);">...and ${role.responsibilities.length - 3} more</li>` : ''}
                                     </ul>
                                 </div>
@@ -5142,7 +5160,9 @@ Please create this for my organization with:
                 showAddRoleModal() {
                     // Reset wizard state
                     this.currentRoleStep = 1;
-                    this.tempResponsibilities = [];
+                    this.tempResponsibilities = this.data.flows
+                        .filter(f => f.pinned)
+                        .map(f => f.id);
                     this.tempOwnership = [];
                     this.tempRelationships = [];
                     this.tempRoleName = '';
@@ -5153,7 +5173,7 @@ Please create this for my organization with:
                         space: { SEG: [], NUL: [], SYN: [] },
                         time: { ALT: [], SUP: [], CON: [] }
                     };
-                    
+
                     this.showRoleWizardStep(1);
                 },
 
@@ -5208,31 +5228,28 @@ Please create this for my organization with:
                             </form>
                         `;
                     } else if (step === 2) {
+                        const flows = [...this.data.flows].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
                         content += `
                             <form id="roleWizardForm" onsubmit="window.app.nextRoleStep(event)">
                                 <div class="modal-body">
                                     <div class="wizard-content active">
-                                        <h3 style="margin-bottom: 16px;">What does this role do?</h3>
-                                        
+                                        <h3 style="margin-bottom: 16px;">What flows is this role responsible for?</h3>
+
                                         <div class="form-group">
-                                            <label class="form-label">Add Responsibilities</label>
-                                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                                <input type="text" class="form-input" id="newResponsibility" placeholder="e.g., Review code quality, Manage team performance...">
-                                                <button type="button" class="btn-primary" onclick="window.app.addTempResponsibility()" style="padding: 8px 16px;">Add</button>
-                                            </div>
-                                            <div id="responsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px; min-height: 60px;">
-                                                ${this.tempResponsibilities.length === 0 ? 
-                                                    '<p style="color: var(--text-tertiary); text-align: center; margin: 8px;">No responsibilities added yet. Add at least one.</p>' :
-                                                    this.tempResponsibilities.map((r, i) => `
-                                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                                            <span>${this.escapeHtml(r)}</span>
-                                                            <button type="button" class="btn-icon btn-danger" onclick="window.app.removeTempResponsibility(${i})" style="width: 24px; height: 24px; padding: 0;">×</button>
-                                                        </div>
+                                            <label class="form-label">Select Responsibilities</label>
+                                            <div id="responsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px; max-height: 200px; overflow-y: auto;">
+                                                ${flows.length === 0 ?
+                                                    '<p style="color: var(--text-tertiary); text-align: center; margin: 8px;">No flows available.</p>' :
+                                                    flows.map(flow => `
+                                                        <label style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+                                                            <input type="checkbox" value="${flow.id}" ${this.tempResponsibilities.includes(flow.id) ? 'checked' : ''} onchange="window.app.toggleTempResponsibility(${flow.id}, this.checked)">
+                                                            ${flow.pinned ? '📌 ' : ''}${this.escapeHtml(flow.connection)}
+                                                        </label>
                                                     `).join('')
                                                 }
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-group">
                                             <label class="form-label">Key Functions (Optional)</label>
                                             <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">
@@ -5356,19 +5373,7 @@ Please create this for my organization with:
                     this.showModal(content);
                     
                     // Add enter key support
-                    if (step === 2) {
-                        setTimeout(() => {
-                            const respInput = document.getElementById('newResponsibility');
-                            if (respInput) {
-                                respInput.addEventListener('keypress', (e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        this.addTempResponsibility();
-                                    }
-                                });
-                            }
-                        }, 100);
-                    }
+                    // No extra input handlers needed for step 2 since responsibilities are selected from flows
                 },
 
                 // Toggle operator input
@@ -5448,7 +5453,9 @@ Please create this for my organization with:
                     }
                     
                     // Also detect from responsibilities
-                    this.tempResponsibilities.forEach(resp => {
+                    this.tempResponsibilities.forEach(id => {
+                        const flow = this.data.flows.find(f => f.id === id);
+                        const resp = flow ? flow.connection : '';
                         if (resp.match(/approve|decide|authorize/i)) {
                             this.detectedOperators.identity.DES.push(resp);
                         }
@@ -5964,54 +5971,13 @@ Please create this for my organization with:
                 },
 
                 // Add temp responsibility
-                addTempResponsibility() {
-                    const input = document.getElementById('newResponsibility');
-                    if (!input || !input.value.trim()) {
-                        this.showNotification('Please enter a responsibility', 2000);
-                        return;
-                    }
-                    
-                    const responsibility = input.value.trim();
-                    
-                    // Check for duplicates
-                    if (this.tempResponsibilities.includes(responsibility)) {
-                        this.showNotification('This responsibility already exists', 2000);
-                        return;
-                    }
-                    
-                    this.tempResponsibilities.push(responsibility);
-                    input.value = '';
-                    
-                    // Update the list display
-                    const listEl = document.getElementById('responsibilitiesList');
-                    if (listEl) {
-                        listEl.innerHTML = this.tempResponsibilities.map((r, i) => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                <span>${this.escapeHtml(r)}</span>
-                                <button type="button" class="btn-icon btn-danger" onclick="window.app.removeTempResponsibility(${i})" style="width: 24px; height: 24px; padding: 0;">×</button>
-                            </div>
-                        `).join('');
-                    }
-                    
-                    input.focus();
-                },
-
-                // Remove temp responsibility
-                removeTempResponsibility(index) {
-                    this.tempResponsibilities.splice(index, 1);
-                    
-                    const listEl = document.getElementById('responsibilitiesList');
-                    if (listEl) {
-                        if (this.tempResponsibilities.length === 0) {
-                            listEl.innerHTML = '<p style="color: var(--text-tertiary); text-align: center; margin: 8px;">No responsibilities added yet. Add at least one.</p>';
-                        } else {
-                            listEl.innerHTML = this.tempResponsibilities.map((r, i) => `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                    <span>${this.escapeHtml(r)}</span>
-                                    <button type="button" class="btn-icon btn-danger" onclick="window.app.removeTempResponsibility(${i})" style="width: 24px; height: 24px; padding: 0;">×</button>
-                                </div>
-                            `).join('');
+                toggleTempResponsibility(flowId, checked) {
+                    if (checked) {
+                        if (!this.tempResponsibilities.includes(flowId)) {
+                            this.tempResponsibilities.push(flowId);
                         }
+                    } else {
+                        this.tempResponsibilities = this.tempResponsibilities.filter(id => id !== flowId);
                     }
                 },
 
@@ -6111,6 +6077,13 @@ Please create this for my organization with:
                     this.tempResponsibilities = [...role.responsibilities];
                     this.tempOwnership = [...role.ownership];
 
+                    const flowOptions = this.data.flows.map(flow => `
+                        <label style="display: flex; align-items: center; gap: 8px; margin: 4px 0;">
+                            <input type="checkbox" value="${flow.id}" ${this.tempResponsibilities.includes(flow.id) ? 'checked' : ''} onchange="window.app.toggleEditResponsibility(${flow.id}, this.checked)">
+                            ${flow.pinned ? '📌 ' : ''}${this.escapeHtml(flow.connection)}
+                        </label>
+                    `).join('');
+
                     this.showModal(`
                         <div class="modal-header">
                             <h2 class="modal-title">Edit Role</h2>
@@ -6132,17 +6105,8 @@ Please create this for my organization with:
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Responsibilities</label>
-                                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                                        <input type="text" class="form-input" id="newEditResponsibility" placeholder="Add new responsibility...">
-                                        <button type="button" class="btn-primary" onclick="window.app.addEditResponsibility()">Add</button>
-                                    </div>
-                                    <div id="editResponsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px; min-height: 60px;">
-                                        ${this.tempResponsibilities.map((r, i) => `
-                                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                                <span>${this.escapeHtml(r)}</span>
-                                                <button type="button" class="btn-icon btn-danger" onclick="window.app.removeEditResponsibility(${i})">×</button>
-                                            </div>
-                                        `).join('')}
+                                    <div id="editResponsibilitiesList" style="background: var(--bg-secondary); border-radius: 4px; padding: 8px; max-height: 200px; overflow-y: auto;">
+                                        ${flowOptions || '<p style="color: var(--text-tertiary); text-align: center; margin: 8px;">No flows available</p>'}
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -6168,35 +6132,13 @@ Please create this for my organization with:
                         </form>
                     `);
                 },
-
-                addEditResponsibility() {
-                    const input = document.getElementById('newEditResponsibility');
-                    if (!input || !input.value.trim()) return;
-                    
-                    this.tempResponsibilities.push(input.value.trim());
-                    input.value = '';
-                    
-                    const listEl = document.getElementById('editResponsibilitiesList');
-                    if (listEl) {
-                        listEl.innerHTML = this.tempResponsibilities.map((r, i) => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                <span>${this.escapeHtml(r)}</span>
-                                <button type="button" class="btn-icon btn-danger" onclick="window.app.removeEditResponsibility(${i})">×</button>
-                            </div>
-                        `).join('');
-                    }
-                },
-
-                removeEditResponsibility(index) {
-                    this.tempResponsibilities.splice(index, 1);
-                    const listEl = document.getElementById('editResponsibilitiesList');
-                    if (listEl) {
-                        listEl.innerHTML = this.tempResponsibilities.map((r, i) => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; margin: 4px 0; background: var(--bg-primary); border-radius: 4px;">
-                                <span>${this.escapeHtml(r)}</span>
-                                <button type="button" class="btn-icon btn-danger" onclick="window.app.removeEditResponsibility(${i})">×</button>
-                            </div>
-                        `).join('');
+                toggleEditResponsibility(flowId, checked) {
+                    if (checked) {
+                        if (!this.tempResponsibilities.includes(flowId)) {
+                            this.tempResponsibilities.push(flowId);
+                        }
+                    } else {
+                        this.tempResponsibilities = this.tempResponsibilities.filter(id => id !== flowId);
                     }
                 },
 
