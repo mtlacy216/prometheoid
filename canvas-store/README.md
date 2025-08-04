@@ -24,7 +24,7 @@ node store.test.js
 
 ## Flow Mapper
 
-`flowMapper.js` builds on the store to model flows with triadic roles. Each role (INS, P, REC) can embed an inline value or reference another flow by id.
+`flowMapper.js` builds on the store to model flows with triadic roles and optional grouping. Each role (INS, P, REC) can embed an inline value or reference another flow by id. Groups are simple containers with x/y coordinates that hold a list of flow ids.
 
 ### Example
 ```js
@@ -36,6 +36,9 @@ mapper.setRole('f1', 'INS', { type: 'inline', value: 'Manager' });
 mapper.setRole('f1', 'P', { type: 'flow', reference: 'f2' });
 mapper.setRole('f1', 'REC', { type: 'inline', value: 'Report' });
 console.log(mapper.isTriadComplete('f1')); // true
+mapper.addGroup('team', 'Team A', 100, 100);
+mapper.addFlowToGroup('f1', 'team');
+console.log(mapper.getGroup('team'));
 ```
 
 Run tests:
