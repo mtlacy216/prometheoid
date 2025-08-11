@@ -1,0 +1,226 @@
+
+<style>
+.citations-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.citations-header {
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    color: #2c3e50;
+    font-size: 2em;
+    font-weight: 700;
+}
+
+.citation-section {
+    margin-bottom: 35px;
+    background: linear-gradient(to left, transparent, #f8f9fa 3px, #f8f9fa calc(100% - 3px), transparent);
+    border-left: 4px solid #3498db;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.citation-section h3 {
+    color: #2c3e50;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.3em;
+    font-weight: 600;
+    position: relative;
+    padding-left: 0;
+}
+
+.citation-section h3::before {
+    content: "▸ ";
+    color: #3498db;
+    font-weight: bold;
+}
+
+.citation-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.citation-list li {
+    margin-bottom: 12px;
+    padding-left: 25px;
+    position: relative;
+    line-height: 1.7;
+}
+
+.citation-list li::before {
+    content: "•";
+    color: #3498db;
+    font-weight: bold;
+    position: absolute;
+    left: 8px;
+}
+
+.citation-list strong {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.citation-list a {
+    color: #3498db;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.citation-list a:hover {
+    color: #2980b9;
+    border-bottom: 1px solid #2980b9;
+}
+
+.citation-list a::after {
+    content: " ↗";
+    font-size: 0.8em;
+    opacity: 0.5;
+}
+
+.citation-note {
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 15px 20px;
+    margin-top: 40px;
+    border-radius: 4px;
+    font-style: italic;
+    color: #856404;
+}
+
+.citation-note strong {
+    color: #856404;
+    font-weight: 600;
+}
+
+hr.citation-divider {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+    margin: 40px 0;
+}
+</style>
+
+<div class="citations-container">
+
+<h2 class="citations-header">📚 Sources & Citations</h2>
+
+<div class="citation-section">
+<h3>Homelessness & Enforcement</h3>
+<ul class="citation-list">
+<li><strong>209 Arrests Investigation:</strong> <a href="https://www.wsmv.com/2025/05/29/shadow-police-force-removing-homeless-downtown-nashville-state-trooper-says/" target="_blank">WSMV4 Investigates: 'Shadow' police force removing homeless from downtown Nashville</a> (May 29, 2025)</li>
+<li><strong>Council Response:</strong> <a href="https://www.wsmv.com/2025/07/16/critics-complain-metro-council-shadow-police-force-downtown-nashville/" target="_blank">Critics complain to Metro Council of 'shadow police' force</a> (July 16, 2025)</li>
+<li><strong>Solaren Risk Management:</strong> <a href="https://www.wsmv.com/2025/07/18/solaren-ceo-details-mission-accused-shadow-police-force-downtown-nashville/" target="_blank">Solaren CEO details mission of accused 'shadow police' force</a> (July 18, 2025)</li>
+<li><strong>Old Tent City Closure:</strong> <a href="https://nashvillebanner.com/2025/04/11/old-tent-city-closure/" target="_blank">Nashville Banner: Old Tent City closure</a> (April 11, 2025); <a href="https://nashvillebanner.com/2025/06/03/nashville-closes-old-tent-city-transitions/" target="_blank">Transitions after closure</a> (June 3, 2025)</li>
+<li><strong>July 4th Sweep:</strong> <a href="https://www.wsmv.com/2025/07/02/homeless-removed-downtown-nashville-july-4th-celebration/" target="_blank">Homeless removed for July 4th celebration</a> (July 2, 2025); <a href="https://www.newschannel5.com/news/nashville-moves-homeless-camp-from-fireworks-fallout-zone-for-safety" target="_blank">NewsChannel 5: Safety zone requirements</a></li>
+<li><strong>Historical Context:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/nashville-moves-toward-decriminalizing-homelessness/article_31594632-c834-575c-8346-dff87a28e60c.html" target="_blank">Nashville Scene: Decriminalizing Homelessness</a> (2021 arrest pattern analysis)</li>
+<li><strong>ARPA Funding:</strong> Metro Council records showing $50 million total ARPA allocation for homelessness response</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Downtown Partnership & DMC Structure</h3>
+<ul class="citation-list">
+<li><strong>Legal Requirements:</strong> <a href="https://legisarchive.nashville.gov/mc/ordinances/term_1995_1999/o98_1037.htm" target="_blank">Metro Ordinance O98-1037</a> requiring annual budget review and approval</li>
+<li><strong>Budget Oversight Issues:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/council-vote-central-business-improvement-district/article_3eb1445d-e743-5a5d-b8a0-d4dd7713afa9.html" target="_blank">Nashville Scene: Council vote on Central Business Improvement District</a></li>
+<li><strong>Metro Council Actions:</strong> <a href="https://nashvillebanner.com/2025/07/02/metro-council-budget-zoning-debate/" target="_blank">Budget and zoning debate</a> (July 2, 2025); <a href="https://nashvillebanner.com/2025/07/09/metro-council-continues-legal-challenge/" target="_blank">Continuing legal challenges</a> (July 9, 2025)</li>
+<li><strong>Expansion Approval:</strong> <a href="https://www.nashvillepost.com/business/metro-approves-central-business-improvement-district-expansion/article_f19010bf-1bae-4c22-a9f2-05a92ec3b5cd.html" target="_blank">Nashville Post: Metro approves CBID expansion</a></li>
+<li><strong>Deep Dive Analysis:</strong> <a href="https://prometheoid.substack.com/p/downtown-partnerships-specially-assessed" target="_blank">Prometheoid: Downtown Partnership's shadow government</a></li>
+<li><strong>CEO Compensation:</strong> <a href="https://projects.propublica.org/nonprofits/organizations/621774641" target="_blank">ProPublica Nonprofit Explorer</a>, Form 990 filing: Thomas D. Turner total compensation $485,196 (FY 2023)</li>
+<li><strong>20-Year Oversight Gap:</strong> Tom Turner testimony to Metro Budget Committee; Metro Council records showing no budget approval since 2004; Councilmember Sean Parker statements on non-compliance</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Mayor O'Connell Administration</h3>
+<ul class="citation-list">
+<li><strong>Surveillance Position History:</strong> Metro Council voting record, August 15, 2023 (vote against ALPRs)</li>
+<li><strong>Surveillance Reversal:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/freddie-oconnell-on-fusus/article_320f6fc2-f942-11ef-9753-dba358b5cb56.html" target="_blank">Nashville Scene: O'Connell on Fusus</a>; <a href="https://wpln.org/post/after-a-year-of-uncertainty-nashvilles-council-rejects-fusus-police-surveillance-tool/" target="_blank">WPLN: Council rejects Fusus</a>; <a href="https://www.axios.com/local/nashville/2024/12/04/after-fusus-loss-oconnell-continues-push-for-police-tools" target="_blank">Axios: Continued push post-loss</a></li>
+<li><strong>Fusus Vote Tally:</strong> Metro Council vote, December 3, 2024 (20-18, failed with 21 needed)</li>
+<li><strong>Participatory Budgeting Failure:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/frustrating-conclusion-for-a-10-million-budget-experiment/article_1ff9b070-908b-11ee-a7f6-37315ebe91f4.html" target="_blank">Nashville Scene: $10 million experiment fails</a> - 13,365 votes vs 20,000 goal; $600,000 marketing budget</li>
+<li><strong>Chief of Staff Appointment:</strong> <a href="https://www.nashville.gov/departments/mayor/news/mayor-freddie-oconnell-announces-new-chief-staff-chief-strategy-officer" target="_blank">Official: Masami Tyson appointment</a> (July 2025); <a href="https://pridepublishinggroup.com/2025/07/17/mayor-freddie-oconnell-announces-new-chief-of-staff-chief-strategy-officer/" target="_blank">Pride Publishing coverage</a></li>
+<li><strong>Tyson Background:</strong> <a href="https://www.usjapancouncil.org/news/masami-tyson-speaks-about-tennessee-foreign-investment-and-trade/" target="_blank">Tennessee Department of Economic and Community Development</a> (2018-2022 under Governor Bill Lee); House Speaker Cameron Sexton Airport Authority appointment</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Immigration Enforcement</h3>
+<ul class="citation-list">
+<li><strong>ICE/THP Operation Data:</strong> <a href="https://www.wsmv.com/2025/05/07/thp-releases-new-arrest-data-traffic-stops-involving-ice-agents/" target="_blank">WSMV: THP releases arrest data</a> (May 7, 2025); <a href="https://www.ice.gov/news/releases/ice-announces-results-targeted-enforcement-operation-nashville-area" target="_blank">ICE official announcement</a> - 369 traffic stops, 196 arrests</li>
+<li><strong>Belonging Fund:</strong> <a href="https://www.nashville.gov/departments/mayor/news/belonging-fund-launches-provide-emergency-support-immigrants-nashville" target="_blank">Official: Belonging Fund launches</a> (explicitly excludes legal services)</li>
+<li><strong>State Law Context:</strong> Tennessee Code Annotated - sanctuary policies classified as Class E felony (up to 6 years)</li>
+<li><strong>Metro Legal Position:</strong> <a href="https://www.wsmv.com/2025/01/31/new-sanctuary-city-law-could-send-nashville-leaders-prison/" target="_blank">WSMV: Wally Dietz on sanctuary law</a>; <a href="https://wpln.org/post/state-and-local-officials-clash-over-nashville-ice-raid/" target="_blank">WPLN: State and local officials clash</a></li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Community Oversight Board Elimination</h3>
+<ul class="citation-list">
+<li><strong>Voter Approval:</strong> November 2018 election results - 134,371 votes (58.81% approval)</li>
+<li><strong>Whistleblower Complaint:</strong> <a href="https://wpln.org/post/wpln-obtained-a-detailed-61-page-complaint-alleging-a-pattern-of-leadership-misconduct-at-mnpd-heres-what-we-know/" target="_blank">WPLN: 61-page MNPD misconduct complaint</a>; <a href="https://nashvillebanner.com/2024/05/31/nashville-police-oversight-complaint/" target="_blank">Nashville Banner coverage</a></li>
+<li><strong>Board Dissolution:</strong> <a href="https://nashvillebanner.com/2023/10/03/community-oversight-board-gone-by-months-end/" target="_blank">Community Oversight Board eliminated</a> (October 27, 2023); <a href="https://www.newschannel5.com/news/community-oversight-board-vote" target="_blank">NewsChannel 5 coverage</a></li>
+<li><strong>MNPD Internal Award:</strong> <a href="https://www.wkrn.com/news/local-news/nashville/police-oversight-board-calls-for-doj-investigation-mnpd-staff-to-be-placed-on-administrative-leave/" target="_blank">WKRN: "acrylic star" award to Deputy Chief Gilder</a>; <a href="https://www.newschannel5.com/news/independent-investigation-launched-into-former-lieutenants-claims-about-mnpd" target="_blank">NewsChannel 5: Independent investigation launched</a></li>
+<li><strong>Reconstruction Efforts:</strong> <a href="https://wpln.org/post/metro-council-introduces-a-plan-to-reconstruct-nashvilles-community-oversight-board-after-states-effort-to-abolish-it/" target="_blank">WPLN: Council reconstruction plan</a></li>
+<li><strong>Mayor's Response:</strong> <a href="https://www.nashville.gov/departments/mayor/news/mayor-freddie-oconnell-provides-update-transition-community-oversight-board" target="_blank">O'Connell transition update</a>; Ed Stanton appointment to investigate Davidson allegations</li>
+<li><strong>Davidson Arrest:</strong> <a href="https://www.wsmv.com/2025/05/06/tbi-charges-former-nashville-officer-involved-covenant-school-shooters-writings-leak/" target="_blank">WSMV: TBI charges former officer</a> (May 6, 2025); <a href="https://nashvillebanner.com/2025/05/06/former-nashville-police-lieutenant-arrested/" target="_blank">Nashville Banner: Police whistleblower arrested</a></li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Vanderbilt University</h3>
+<ul class="citation-list">
+<li><strong>$10.2 Billion Endowment:</strong> <a href="https://vanderbilthustler.com/2025/02/20/vanderbilt-endowment-up-9-2-after-two-years-of-negative-returns/" target="_blank">Vanderbilt Hustler: Endowment reaches $10.2 billion</a> (2024 financial report)</li>
+<li><strong>Service Worker Wages:</strong> <a href="https://vanderbilthustler.com/2021/11/18/new-three-year-contract-for-campus-service-workers-negotiated-between-the-university-and-vanderbilt-works-union/" target="_blank">Vanderbilt Hustler: $16.50/hour wage negotiations</a></li>
+<li><strong>Living Wage Gap:</strong> <a href="https://livingwage.mit.edu/counties/47037" target="_blank">MIT Living Wage Calculator: Davidson County requires $25.41/hour</a></li>
+<li><strong>Union Busting:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/vanderbilt-grad-student-union-vote/article_6503432c-8282-11ef-8503-976aebd055c7.html" target="_blank">Nashville Scene: Grad union opposition</a>; Littler Mendelson retention (world's largest anti-union law firm)</li>
+<li><strong>Graduate Student Position:</strong> University declaration that "graduate students do not meet the definition of 'employee'" (2024)</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Vanderbilt University Medical Center</h3>
+<ul class="citation-list">
+<li><strong>Pride Month Layoffs:</strong> <a href="https://www.nashvillescene.com/news/pithinthewind/vumc-layoffs-lgbtq-programs/article_95d2a150-c540-4488-a3dd-53821d2baa91.html" target="_blank">Nashville Scene: LGBTQ Programs gutted</a> (July 7, 2025); <a href="https://vanderbilthustler.com/2025/07/08/vanderbilt-program-for-lgbtq-health-lays-off-5-staff-members-trans-buddy-program-halted/" target="_blank">Vanderbilt Hustler: Trans Buddy Program halted</a>; <a href="https://nashvillebanner.com/2025/07/10/vanderbilt-medical-center-cuts-lgbtq-program/" target="_blank">Nashville Banner: VUMC cuts LGBTQ program</a></li>
+<li><strong>June 24, 2025 Layoffs:</strong> <a href="https://tennesseelookout.com/2025/07/08/lgbtq-community-leaders-decry-layoffs-at-vumc-office-supporting-access-to-lgbtq-care/" target="_blank">Tennessee Lookout: Entire LGBTQ Health Program staff eliminated</a> (director, assistant director, chaplain, Trans Buddy coordinator)</li>
+<li><strong>Community Response:</strong> Metro LGBTQ Caucus letter of no confidence (July 1, 2025); <a href="https://www.nashvillepost.com/business/health_care/vumc-layoffs-lgbtq-programs/article_a7334bf8-0c27-5542-95f5-468f5a0f2d5d.html" target="_blank">Nashville Post coverage</a></li>
+<li><strong>Trans Patient Records Release:</strong> <a href="https://www.nbcnews.com/nbc-out/out-health-and-wellness/hospital-turns-transgender-patient-records-tennessee-attorney-general-rcna90294" target="_blank">NBC News: VUMC turns over transgender patient records</a> (June 21, 2023); <a href="https://wpln.org/post/im-definitely-feeling-scared-transgender-patients-want-answers-after-tennessees-ag-obtained-their-medical-records/" target="_blank">WPLN: Patients express fear</a> (June 28, 2023)</li>
+<li><strong>174 Patients Affected:</strong> <a href="https://www.advocate.com/news/tennessee-ag-medical-records-transgender" target="_blank">The Advocate: 174 patient records obtained</a> including intimate photographs and mental health records (released December 2022, patients notified June 2023)</li>
+<li><strong>Patient Lawsuit:</strong> <a href="https://www.timesfreepress.com/news/2023/jul/26/transgender-patients-sue-the-hospital-that-provided-their-records-to-tennessees-attorney-general-tfp/" target="_blank">Times Free Press: Patients sue VUMC</a> (July 26, 2023); Davidson County Chancery Court class action</li>
+<li><strong>Investigation Context:</strong> <a href="https://thehill.com/homenews/ap/ap-u-s-news/tennessee-attorney-general-says-seeking-clinics-transgender-patient-records-part-of-fraud-probe/" target="_blank">The Hill: AG says records part of fraud probe</a>; <a href="https://www.newschannel5.com/news/tennessee-attorney-general-requests-transgender-clinic-patient-records-in-medicaid-fraud-probe" target="_blank">NewsChannel 5: Medicaid fraud investigation</a></li>
+<li><strong>HRC Awards Irony:</strong> <a href="https://news.vumc.org/2018/04/05/vumc-leader-lgbtq-healthcare-equality/" target="_blank">VUMC: Seven-time HRC Healthcare Equality Leader</a> while eliminating LGBTQ services</li>
+<li><strong>$300 Million Budget Cuts:</strong> 650 total VUMC layoffs attributed to funding cuts</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>HCA Healthcare</h3>
+<ul class="citation-list">
+<li><strong>CARES Act Funding:</strong> <a href="https://www.beckershospitalreview.com/finance/1-7b-in-cares-act-cash-went-to-hca.html" target="_blank">Becker's: $1.7B in grants</a>; <a href="https://www.modernhealthcare.com/hospital-systems/hca-return-6b-cares-act-funds-accelerated-payments" target="_blank">Modern Healthcare: $6B total returned</a>; <a href="https://www.fiercehealthcare.com/hospitals/hca-to-return-6b-cares-act-funding" target="_blank">Fierce Healthcare analysis</a> (October 2020)</li>
+<li><strong>Total CARES Benefits:</strong> $1.6-1.7 billion in grants plus $4.4 billion in Medicare advances (voluntarily returned)</li>
+<li><strong>Anti-Union During COVID:</strong> Department of Labor disclosures - Crossroads Group consultants at $400/hour, Mission Hospital, March 2020</li>
+<li><strong>Union-Busting During Surge:</strong> <a href="https://hcacarecrisis.org/at-hca-shareholder-meeting-nurses-other-workers-call-for-transparency-into-political-spending-by-nations-largest-hospital-corporation/" target="_blank">HCA Care Crisis: Workers demand transparency</a> - nurses pulled from patient care for mandatory meetings</li>
+<li><strong>Chronic Understaffing:</strong> <a href="https://www.nbcnews.com/health/health-news/workers-us-hospital-giant-hca-say-puts-profits-patient-care-rcna64122" target="_blank">NBC News: HCA staffing 30% below national average</a>; <a href="https://seiu.org/2022/01/new-national-survey-of-nurses-and-healthcare-workers-at-hca-hospitals-sounds-alarm-bells-nearly-80-percent-of-respondents-report-short-staffing-is-jeopardizing-patient-care-at-americas-largest-for-profit-hospital-corporation" target="_blank">SEIU analysis of federal data</a> - 19 of 20 states below average</li>
+<li><strong>Quality Issues:</strong> <a href="https://hcacarecrisis.org/new-report-exposes-nationwide-staffing-crisis-at-americas-largest-hospital-corporation/" target="_blank">HCA Care Crisis: CMS data shows twice the rate of quality issues</a> compared to national averages</li>
+<li><strong>Political Spending:</strong> <a href="https://hcacarecrisis.org/at-hca-shareholder-meeting-nurses-other-workers-call-for-transparency-into-political-spending-by-nations-largest-hospital-corporation/" target="_blank">HCA Care Crisis: $7+ million to DeSantis PACs since 2017</a>; <a href="https://www.sun-sentinel.com/news/politics/fl-ne-hca-workers-rally-against-politicaldonations-20220421-qhvmwfcma5fp3jnxjswuoythbi-story.html" target="_blank">Sun Sentinel: 75% of FL political spending to pro-DeSantis groups</a></li>
+<li><strong>DeSantis Opposition:</strong> Governor's opposition to Medicaid expansion that could benefit hospitals</li>
+</ul>
+</div>
+
+<div class="citation-section">
+<h3>Financial Transparency Models</h3>
+<ul class="citation-list">
+<li><strong>Best Practices:</strong> <a href="https://checkbook.atlantaga.gov/" target="_blank">Checkbook Atlanta</a> (real-time spending data); <a href="https://www.checkbooknyc.com/" target="_blank">Checkbook NYC</a> (all payments over $20 publicly searchable)</li>
+<li><strong>Metro Transparency Refusal:</strong> Metro government refusing to provide vendor information to transparency organizations citing "confidentiality"</li>
+<li><strong>Legal Framework:</strong> <a href="https://comptroller.tn.gov/office-functions/open-records-counsel/open-meetings/frequently-asked-questions/tennessee-open-meetings-act-faqs.html" target="_blank">Tennessee Open Meetings Act</a>; <a href="https://comptroller.tn.gov/office-functions/open-records-counsel/open-meetings/frequently-asked-questions/tennessee-public-records-act-faqs.html" target="_blank">Tennessee Open Records Act</a>; <a href="https://comptroller.tn.gov/" target="_blank">Tennessee State Comptroller reporting requirements</a></li>
+<li><strong>Additional Coverage:</strong> <a href="https://statescoop.com/nashville-tennessee-police-surveillance-fusus/" target="_blank">StateScoop: Nashville surveillance analysis</a></li>
+</ul>
+</div>
+
+<hr class="citation-divider">
