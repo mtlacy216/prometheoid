@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nashville CoC Funding & Housing Impact Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-dark: #16a34a;
+            --secondary: #3b82f6;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --success: #10b981;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-600: #4b5563;
+            --gray-800: #1f2937;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            opacity: 0.95;
+            font-size: 0.95rem;
+        }
+
+        nav {
+            background: var(--gray-50);
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            background: white;
+            color: var(--gray-600);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--gray-200);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 1rem;
+            padding-left: 0.75rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-color: var(--warning);
+            color: #92400e;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border-color: var(--secondary);
+            color: #1e40af;
+        }
+
+        .alert h4 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--gray-200);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-bottom: 0.25rem;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .metric-change {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            margin-top: 0.25rem;
+        }
+
+        .chart-container {
+            position: relative;
+            margin: 0 auto 2rem auto;
+            min-height: 400px;
+            max-width: 1000px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chart-subtitle {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            margin-top: -0.5rem;
+            margin-bottom: 1rem;
+            padding-left: 1.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        thead {
+            background: var(--gray-100);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        th {
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-800);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-muted {
+            color: var(--gray-600);
+            font-size: 0.75rem;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 0.75rem;
+            background: rgba(31, 41, 55, 0.95);
+            color: white;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.25rem 0;
+        }
+
+        .tooltip-label {
+            margin-right: 1rem;
+            opacity: 0.8;
+        }
+
+        .tooltip-value {
+            font-weight: 600;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 0.25rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-item {
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+            border: 1px solid var(--gray-200);
+        }
+
+        .info-item h4 {
+            color: var(--primary-dark);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .sources {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+        }
+
+        .source-link {
+            display: inline-block;
+            margin: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            background: white;
+            color: var(--secondary);
+            border-radius: 0.25rem;
+            text-decoration: none;
+            font-size: 0.875rem;
+            border: 1px solid var(--gray-200);
+            transition: all 0.2s;
+        }
+
+        .source-link:hover {
+            background: var(--secondary);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .source-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+            border: 1px solid var(--gray-200);
+        }
+
+        .source-year {
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .source-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .source-list li {
+            margin: 0.5rem 0;
+            padding-left: 1rem;
+            border-left: 2px solid var(--gray-200);
+        }
+
+        .source-list a {
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .source-list a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 1rem;
+            }
+            
+            .metric-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Nashville CoC Funding & Housing Impact Dashboard</h1>
+            <div class="subtitle">
+                Verified Funding Data by Fiscal Year (FY2020-FY2024) • TN-504 Continuum of Care<br>
+                <small style="opacity: 0.8;">Office of Homeless Services / Metro Homeless Impact Division</small>
+            </div>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" onclick="showView('dashboard')">📊 Dashboard</button>
+            <button class="nav-btn" onclick="showView('strobel')">🏢 Strobel House</button>
+            <button class="nav-btn" onclick="showView('about')">ℹ️ About</button>
+            <button class="nav-btn" onclick="showView('data')">📋 Data Table</button>
+            <button class="nav-btn" onclick="showView('sources')">📚 Sources</button>
+        </nav>
+
+        <div class="content">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="view active">
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Funding Surged</div>
+                        <div class="metric-value">$126.9M Total</div>
+                        <div class="metric-change">↑ 428% from FY2020</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Homelessness Unchanged</div>
+                        <div class="metric-value">Still 2,094</div>
+                        <div class="metric-change">↑ 3.8% since 2020</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Efficiency Collapsed</div>
+                        <div class="metric-value">$24,491/person</div>
+                        <div class="metric-change">FY24 (was $9,058 in FY20)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">ROI Declining</div>
+                        <div class="metric-value">95% more housed</div>
+                        <div class="metric-change">428% more spent</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Funding vs. Outcomes: Indexed to FY2020 Baseline</h3>
+                    <div class="chart-subtitle">Tracking investment growth against housing outcomes and PIT counts</div>
+                    <div id="indexed-chart" class="chart-container"></div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Funding Sources by Fiscal Year</h3>
+                    <div class="chart-subtitle">Breakdown of verified funding by source</div>
+                    <div id="stacked-chart" class="chart-container"></div>
+                    <div id="stacked-legend" class="legend"></div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Cost Efficiency: Investment per Person Housed</h3>
+                    <div class="chart-subtitle">Lower is better - FY2021 shows impact of rapid COVID relief deployment</div>
+                    <div id="efficiency-chart" class="chart-container"></div>
+                </div>
+
+                <div class="card" style="background: linear-gradient(135deg, rgba(34,197,94,0.05) 0%, rgba(255,255,255,1) 100%); border: 2px solid #22c55e;">
+                    <h3 class="card-title">Strobel House: $35M to House 6% of Chronically Homeless</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 1rem; align-items: center;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2.5rem; font-weight: 800; color: #16a34a;">6.1%</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">90 units serve only<br>90 of Nashville's 1,472<br>chronically homeless</div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-around; margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Capital Cost</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;">$35M</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Over Budget</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #f97316;">+40%</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">Timeline</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #3b82f6;">6 years</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">
+                                Nashville has 1,472 chronically homeless individuals (April 2025)<br>
+                                Strobel's 90 units address just 6.1% of this population
+                            </div>
+                        </div>
+                        <div style="text-align: center;">
+                            <button onclick="showView('strobel')" style="padding: 0.75rem 1.5rem; background: #22c55e; color: white; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                                View Full Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strobel House View -->
+            <div id="strobel-view" class="view" style="position: relative; min-height: 100vh; background: url('https://moodynolan.com/wp-content/uploads/2024/10/R19345_01_N10_web.jpg') center/cover no-repeat fixed;">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,0,0,0.88) 0%, rgba(0,20,40,0.85) 100%);"></div>
+                
+                <div style="position: relative; z-index: 1; padding: 2rem; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;">
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h1 style="font-size: 2.5rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Metro Nashville Strobel House</h1>
+                        <div style="font-size: 1.25rem; color: #90EE90; margin-bottom: 1rem;">Capital Expenditure Summary</div>
+                        <div style="font-size: 3rem; font-weight: 800; color: #FFD700; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);">$35 MILLION</div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; width: 100%;">
+                        
+                        <!-- Financial Overview Panel -->
+                        <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2);">
+                            <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">💰 Financial Overview</h2>
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin: 1.5rem 0; padding: 1rem; background: rgba(255,0,0,0.1); border-radius: 0.5rem; border: 1px solid rgba(255,100,100,0.3);">
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.875rem; color: #ccc;">Original Bid</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700;">$25M</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">2020</div>
+                                </div>
+                                <div style="font-size: 2rem; color: #ff6b6b;">→</div>
+                                <div style="text-align: center;">
+                                    <div style="font-size: 0.875rem; color: #ccc;">Final Cost</div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: #ff6b6b;">$35M</div>
+                                    <div style="display: inline-block; background: #ff6b6b; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-weight: 600; margin-top: 0.5rem;">+40%</div>
+                                </div>
+                            </div>
+
+                            <div style="margin: 1.5rem 0;">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">Bell Construction Contract</div>
+                                <div style="color: #e0e0e0; font-size: 0.875rem;">$25 million awarded in 2020</div>
+                            </div>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">📊 Impact & Capacity</h2>
+                            
+                            <div style="background: linear-gradient(135deg, rgba(34,197,94,0.2) 0%, rgba(34,197,94,0.1) 100%); border: 2px solid #22c55e; border-radius: 0.75rem; padding: 1.5rem; margin: 1rem 0; text-align: center;">
+                                <div style="font-size: 3rem; font-weight: 800; color: #90EE90; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">6.1%</div>
+                                <div style="font-size: 0.875rem; color: #e0e0e0; margin-top: 0.5rem;">
+                                    Strobel's 90 units serve only 90 people<br>
+                                    out of Nashville's 1,472 chronically homeless (April 2025)<br>
+                                    <span style="font-size: 0.75rem; color: #aaa;">(1,382 chronically homeless individuals remain unserved by this facility)</span>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0;">
+                                <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem;">🏢</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #90EE90;">90</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">Studio Units</div>
+                                </div>
+                                <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem;">📐</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #90EE90;">5</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">Stories</div>
+                                </div>
+                                <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem;">📍</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #90EE90;">110</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">Jo Johnston Ave</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline & Team Panel -->
+                        <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 1rem; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.2);">
+                            <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">📅 Project Timeline</h2>
+                            
+                            <div style="position: relative; padding-left: 2rem; margin: 1.5rem 0;">
+                                <div style="position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 2px; background: linear-gradient(180deg, #90EE90 0%, #4169E1 100%);"></div>
+                                
+                                <div style="position: relative; margin-bottom: 1rem;">
+                                    <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">2018-2019</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Planning began (Mayor Barry Administration)</div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 1rem;">
+                                    <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">2020</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Construction contract awarded to Bell</div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 1rem;">
+                                    <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">May 2022</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Groundbreaking ceremony</div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 1rem;">
+                                    <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">October 2022</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">$50M ARPA funds approved for homeless services</div>
+                                </div>
+                                
+                                <div style="position: relative; margin-bottom: 1rem;">
+                                    <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">July 2024</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Grand opening - facility operational</div>
+                                </div>
+                            </div>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">👥 Project Team</h2>
+                            
+                            <div style="margin: 1rem 0;">
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <span style="color: #90EE90; font-weight: 600;">Architect</span>
+                                    <span style="color: #e0e0e0;">Moody Nolan</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <span style="color: #90EE90; font-weight: 600;">Civil Engineering</span>
+                                    <span style="color: #e0e0e0;">Catalyst Design Group</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                    <span style="color: #90EE90; font-weight: 600;">General Contractor</span>
+                                    <span style="color: #e0e0e0;">Bell Construction</span>
+                                </div>
+                            </div>
+
+                            <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">💵 Funding Context</h2>
+                            
+                            <div style="padding: 1rem; background: rgba(59,130,246,0.1); border-radius: 0.5rem; border: 1px solid rgba(59,130,246,0.3);">
+                                <div style="margin-bottom: 1rem;">
+                                    <div style="font-weight: 600; color: #60a5fa;">Capital Investment</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700;">$35M</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">Excluded from operational totals</div>
+                                </div>
+                                
+                                <div style="margin-bottom: 0.5rem;">
+                                    <div style="font-weight: 600; color: #60a5fa;">Operating Funds</div>
+                                    <div>• $500K startup (FY2024)</div>
+                                    <div>• $2M ARPA allocated</div>
+                                </div>
+                                
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">
+                                        Part of <strong style="color: #90EE90;">$50M ARPA</strong> homeless initiative
+                                        <br><span style="color: #aaa;">($25M designated for PSH gap financing)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; padding: 1rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.2); width: 100%; max-width: 1200px;">
+                        <div style="font-size: 0.75rem; color: #aaa;">
+                            Sources: 
+                            <a href="https://www.nashville.gov/sites/default/files/2025-05/OHS-American-Rescue-Plan-Report-2025-05.pdf" target="_blank" style="color: #90EE90; text-decoration: none;">OHS ARPA Report 2025</a> | 
+                            Nashville.gov | Nashville Banner | The Contributor | NewsChannel 5 | Nashville Post
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About View -->
+            <div id="about-view" class="view">
+                <div class="alert alert-info">
+                    <h4>📊 Data Methodology</h4>
+                    <p>This dashboard presents <strong>verified funding data by fiscal year</strong> (July 1 - June 30), compiled from official government sources including HUD awards, Metro Nashville budgets, and council resolutions. All figures are documented with source URLs in the Sources tab.</p>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Understanding the Data</h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h4>Fiscal Year Timeline</h4>
+                            <p>Data follows Metro Nashville's fiscal year (July 1 - June 30). For example, FY2024 runs from July 1, 2023 to June 30, 2024.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>FY2021 COVID Relief Impact</h4>
+                            <p>The $7.7 million in ESG-CARES and other COVID funding enabled housing 1,875 people at $9,751 per person - near peak efficiency.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>ARPA Timeline & Spending</h4>
+                            <p>$50M authorized October 2022 (FY2023). Through December 31, 2023, $18.3M was spent. Through November 2024, $29.4M has been spent/committed with remaining funds through 2026.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>HUD CoC Awards</h4>
+                            <p>Federal awards flow directly to nonprofit agencies and MDHA. FY2024 shows combined FY23 ($9.7M) and FY24 ($11.8M) awards.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>Metro Budget Evolution</h4>
+                            <p>Metro General Fund support grew from $2.4M (FY2020) to $5.5M (FY2024). Office of Homeless Services launched FY2024.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>Strobel House</h4>
+                            <p>90 studio units serving 6.1% of chronically homeless (90 of 1,472 as of April 2025). $500K operations startup funding included in FY2024. Opened July 18, 2024. $35M capital construction costs tracked separately from operational funding.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="card-title">Key Funding Programs</h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <h4>HUD Continuum of Care (CoC)</h4>
+                            <p>Annual federal competitive grants for permanent supportive housing, rapid rehousing, and support services. Direct to providers.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>ESG-CARES COVID Relief</h4>
+                            <p>Emergency federal funding totaling $10M in two rounds ($1.5M + $8.5M) for pandemic homelessness response.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>ARPA Homelessness Initiative</h4>
+                            <p>$50M allocation: PSH Gap Financing ($25M), Interim Housing ($9M), Housing First Services ($9M), Low-Barrier Grants ($7M).</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>Mobile Navigation Centers</h4>
+                            <p>$850K funding (FY2022) for mobile outreach centers announced as part of Mayor's homelessness response plan to connect unsheltered individuals with services.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>Unsheltered Supplement</h4>
+                            <p>Special $4.9M HUD grant (FY2023) specifically targeting unsheltered homelessness through special NOFO, supplementing regular CoC awards.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>Barnes Fund</h4>
+                            <p>Nashville's affordable housing trust fund, Round 14 allocated $7.6M for permanent supportive housing projects.</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <h4>MHID Special Purpose Fund</h4>
+                            <p>External grants including HUD HMIS ($141K) and Coordinated Entry ($128K) for system infrastructure.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h4>⚠️ Important Notes</h4>
+                    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                        <li>Despite 428% funding increase, homelessness increased 3.8% (2,017 → 2,094)</li>
+                        <li>Strobel House: $35M capital investment serves only 6.1% of chronically homeless</li>
+                        <li>Chronic homelessness: 1,472 individuals as of April 2025 (48% experiencing chronic homelessness)</li>
+                        <li>HUD CoC funds flow directly to nonprofits, not through Metro budget</li>
+                        <li>COVID funding split between ESG-CARES ($10M) and other COVID programs ($13.2M)</li>
+                        <li>ARPA actual spending: $8.2M in FY2023, $21.2M in FY2024 (of $50M authorized)</li>
+                        <li>Cost per person varies dramatically: $8,951 (FY2021) to $24,491 (FY2024)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Data Table View -->
+            <div id="data-view" class="view">
+                <div class="card">
+                    <h3 class="card-title">Complete Verified Funding Data by Fiscal Year</h3>
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fiscal Year</th>
+                                    <th class="text-right">Total Funding</th>
+                                    <th class="text-right">Metro General</th>
+                                    <th class="text-right">HUD CoC</th>
+                                    <th class="text-right">ESG-COVID</th>
+                                    <th class="text-right">Other COVID</th>
+                                    <th class="text-right">ARPA Actual</th>
+                                    <th class="text-right">Barnes Fund</th>
+                                    <th class="text-right">Strobel Ops</th>
+                                    <th class="text-right">MHID Grants</th>
+                                    <th class="text-right">Mobile Nav Centers</th>
+                                    <th class="text-right">Unsheltered Supp</th>
+                                    <th class="text-right">People Housed</th>
+                                    <th class="text-right">PIT Count</th>
+                                    <th class="text-right">$/Person</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>FY2020</strong></td>
+                                    <td class="text-right">$8,831,796</td>
+                                    <td class="text-right">$2,405,000</td>
+                                    <td class="text-right">$6,115,465</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$311,331</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">975</td>
+                                    <td class="text-right">2,017</td>
+                                    <td class="text-right">$9,058</td>
+                                </tr>
+                                <tr style="background: #f9fafb;">
+                                    <td><strong>FY2021</strong></td>
+                                    <td class="text-right">$16,784,442</td>
+                                    <td class="text-right">$1,716,000</td>
+                                    <td class="text-right">$7,051,438</td>
+                                    <td class="text-right">$3,346,000</td>
+                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$271,004</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">1,875</td>
+                                    <td class="text-right">No count</td>
+                                    <td class="text-right">$8,951</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>FY2022</strong></td>
+                                    <td class="text-right">$19,951,619</td>
+                                    <td class="text-right">$2,833,000</td>
+                                    <td class="text-right">$7,831,201</td>
+                                    <td class="text-right">$3,346,000</td>
+                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$691,418</td>
+                                    <td class="text-right">$850,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">1,811</td>
+                                    <td class="text-right">1,916</td>
+                                    <td class="text-right">$11,017</td>
+                                </tr>
+                                <tr style="background: #f9fafb;">
+                                    <td><strong>FY2023</strong></td>
+                                    <td class="text-right">$34,746,119</td>
+                                    <td class="text-right">$3,440,000</td>
+                                    <td class="text-right">$9,695,266</td>
+                                    <td class="text-right">$3,346,000</td>
+                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">$8,230,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$779,800</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$4,855,053</td>
+                                    <td class="text-right">1,946</td>
+                                    <td class="text-right">2,129</td>
+                                    <td class="text-right">$17,857</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>FY2024</strong></td>
+                                    <td class="text-right">$46,592,842</td>
+                                    <td class="text-right">$5,525,000</td>
+                                    <td class="text-right">$11,846,313</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$21,170,000</td>
+                                    <td class="text-right">$7,551,529</td>
+                                    <td class="text-right">$500,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">1,902</td>
+                                    <td class="text-right">2,094</td>
+                                    <td class="text-right">$24,491</td>
+                                </tr>
+                                <tr style="background: #e5e7eb; font-weight: 600;">
+                                    <td>TOTALS</td>
+                                    <td class="text-right">$126,906,818</td>
+                                    <td class="text-right">$15,919,000</td>
+                                    <td class="text-right">$42,539,683</td>
+                                    <td class="text-right">$10,038,000</td>
+                                    <td class="text-right">$13,200,000</td>
+                                    <td class="text-right">$29,400,000</td>
+                                    <td class="text-right">$7,551,529</td>
+                                    <td class="text-right">$500,000</td>
+                                    <td class="text-right">$2,053,553</td>
+                                    <td class="text-right">$850,000</td>
+                                    <td class="text-right">$4,855,053</td>
+                                    <td class="text-right">9,509</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">$13,349 avg</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; color: var(--gray-800);">📈 Key Insights from Verified Data</h4>
+                        <ul style="margin-left: 1.5rem; color: var(--gray-600); font-size: 0.875rem; line-height: 1.8;">
+                            <li><strong>Funding increased 428%</strong> from FY2020 to FY2024 ($8.8M → $46.6M)</li>
+                            <li><strong>People housed increased only 95%</strong> in the same period (975 → 1,902)</li>
+                            <li><strong>Homelessness actually increased:</strong> Up 3.8% (2,017 → 2,094)</li>
+                            <li><strong>FY2021 was most efficient:</strong> $8,951 per person housed</li>
+                            <li><strong>Cost per person nearly tripled</strong> from FY2021 to FY2024 ($8,951 → $24,491)</li>
+                            <li><strong>Chronic homelessness crisis:</strong> 1,472 chronically homeless (April 2025)</li>
+                            <li><strong>Strobel House impact:</strong> $35M facility serves only 6.1% of chronically homeless</li>
+                            <li><strong>Total housed 9,509 people</strong> over 5 years at average cost of $13,349</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources View -->
+            <div id="sources-view" class="view">
+                <div class="card">
+                    <h3 class="card-title">Complete Documentation & Sources</h3>
+                    
+                    <div class="source-section">
+                        <div class="source-year">FY2020 Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Metro General Fund ($2,405,000):</strong> Metro Nashville FY2020 audit reports</li>
+                            <li><strong>HUD CoC ($6,115,465):</strong> <a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2020_TN_2020.pdf" target="_blank">HUD FY2020 CoC Award Report</a></li>
+                            <li><strong>MHID Grants ($311,331):</strong> Metro Special Purpose Fund expenditure reports</li>
+                            <li><strong>PIT Count (2,017):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/metro-office-homeless-services-conducts-2025-point-time-count" target="_blank">Calculated from 2022 5% decrease</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">FY2021 Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Metro General Fund ($1,716,000):</strong> Metro audit showing actual spending</li>
+                            <li><strong>HUD CoC ($7,051,438):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/FY2021_TN_Press_Report.pdf" target="_blank">HUD FY2021 Tennessee Press Report</a></li>
+                            <li><strong>ESG-COVID Round 1 ($1,549,066):</strong> <a href="https://www.nashville-mdha.org/2020/07/13/request-for-applications-now-open-for-cares-act-emergency-solutions-grant-funding/" target="_blank">MDHA CARES Act ESG Announcement</a></li>
+                            <li><strong>ESG-COVID Round 2 ($8,489,679):</strong> <a href="https://www.nashville-mdha.org/2020/12/23/cares-act-funding-to-provide-rapid-re-housing-to-400-individuals-and-families-experiencing-homelessness/" target="_blank">MDHA Rapid Re-Housing Announcement</a></li>
+                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
+                            <li><strong>MHID Grants ($271,004):</strong> Metro SPF actual expenditure</li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">FY2022 Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Metro General Fund ($2,833,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2021-09/FY22-Budget-Book-Section-K-Program-Pages.pdf" target="_blank">FY22 Budget Book Program Pages</a></li>
+                            <li><strong>HUD CoC ($7,831,201):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/FY2021_TN_Press_Report.pdf" target="_blank">FY2021 award announced March 2022</a></li>
+                            <li><strong>ESG-COVID ($3,346,000):</strong> Continued COVID relief funding</li>
+                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
+                            <li><strong>HUD HMIS Grant ($141,508):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?GUID=D4BD0E17-29E5-453C-8E51-B4C2C1289DD7&ID=5138258" target="_blank">Council Resolution</a></li>
+                            <li><strong>Coordinated Entry Grant ($128,000):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?GUID=2CC0FADE-4DB9-4783-81D9-1DB198D782CF&ID=5138261" target="_blank">Council Resolution</a></li>
+                            <li><strong>Mobile Navigation Centers ($850,000):</strong> <a href="https://www.nashville.gov/departments/mayor/news/nashville-releases-plan-boost-homelessness-response" target="_blank">Mayor's Press Release - Homelessness Response Plan</a></li>
+                            <li><strong>People Housed (1,811):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
+                            <li><strong>PIT Count (1,916):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashvilles-office-homeless-services-presents-encouraging-results-2024-point-time-count" target="_blank">2024 PIT Count Report</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">FY2023 Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Metro General Fund ($3,440,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2022-05/037_SocialServices_FY23RecPP.pdf" target="_blank">FY23 Social Services Budget</a></li>
+                            <li><strong>HUD CoC ($9,695,266):</strong> <a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2022_TN_2022.pdf" target="_blank">HUD FY2022 Award Report</a></li>
+                            <li><strong>ESG-COVID ($3,346,000):</strong> Continued COVID relief funding</li>
+                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
+                            <li><strong>ARPA PSH Gap ($25M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754013&GUID=F6C40DA9-B0CC-4BDF-8368-AAECDAC0A4E8" target="_blank">RS2022-1696</a></li>
+                            <li><strong>ARPA Services ($9M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754014&GUID=2CE82EF0-BBA4-498A-9099-7EB47F122247" target="_blank">RS2022-1697</a></li>
+                            <li><strong>ARPA Interim Housing ($9M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754015&GUID=3845114F-AAEA-47D4-B928-F1E49DE3AE2F" target="_blank">RS2022-1698</a></li>
+                            <li><strong>ARPA Low Barrier ($7M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754016&GUID=60AEBF6E-720F-4AE1-B4E1-DBDF99ABB949" target="_blank">RS2022-1699</a></li>
+                            <li><strong>HUD Unsheltered Supplement ($4,855,053):</strong> <a href="https://www.hud.gov/press/press_releases_media_advisories/hud_no_23_016" target="_blank">HUD Special NOFO Announcement</a></li>
+                            <li><strong>People Housed (1,946):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
+                            <li><strong>PIT Count (2,129):</strong> <a href="https://www.hudexchange.info/programs/coc/coc-homeless-populations-and-subpopulations-reports/" target="_blank">HUD Exchange PIT Report</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">FY2024 Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Metro General Fund ($5,525,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2023-09/FY24BB_53OfficeofHomelessServices.pdf" target="_blank">FY24 Office of Homeless Services Budget</a></li>
+                            <li><strong>HUD CoC FY23 Award ($9,695,266):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/CoC/CoC-2024-TN_Press.pdf" target="_blank">HUD CoC 2024 Press Release</a></li>
+                            <li><strong>HUD CoC FY24 Award ($11,846,313):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/CoC/CoC-2024-TN_Press.pdf" target="_blank">HUD CoC 2024 Press Release</a></li>
+                            <li><strong>ARPA Actual Spending (FY23: $8.2M, FY24: $21.2M):</strong> Based on <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">"Help & Hope" tracking report</a> showing $18.3M spent through 12/31/23</li>
+                            <li><strong>Barnes Fund Round 14 ($7,551,529):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=6693417&GUID=EA9C750E-ECC9-408A-BAAD-8F21479ACD97" target="_blank">Council Resolution RS2024-459</a></li>
+                            <li><strong>Strobel Operations ($500,000):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=6693417&GUID=EA9C750E-ECC9-408A-BAAD-8F21479ACD97" target="_blank">RS2024-459</a></li>
+                            <li><strong>People Housed (1,902):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
+                            <li><strong>PIT Count (2,094):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashvilles-office-homeless-services-presents-encouraging-results-2024-point-time-count" target="_blank">2024 PIT Count Results</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">Additional Resources</div>
+                        <ul class="source-list">
+                            <li><a href="https://www.hudexchange.info/programs/coc/" target="_blank">HUD CoC Program Overview</a></li>
+                            <li><a href="https://www.nashville.gov/departments/office-homeless-services" target="_blank">Nashville Office of Homeless Services</a></li>
+                            <li><a href="https://mdha.org/" target="_blank">Metro Development and Housing Agency (MDHA)</a></li>
+                            <li><a href="https://www.nashville.gov/departments/mayor/community-affordability/barnes-fund-affordable-housing" target="_blank">Barnes Fund for Affordable Housing</a></li>
+                            <li><a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2022_TN_2022.pdf" target="_blank">TN-504 CoC Award Reports</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script>
+        // ==================== DATA CONFIGURATION ====================
+        const FUNDING_DATA = [
+            {
+                year: "FY2020",
+                yearNum: 2020,
+                total: 8831796,
+                hudCoc: 6115465,
+                metroGeneral: 2405000,
+                esgCovid: 0,
+                otherCovid: 0,
+                arpa: 0,
+                barnesFund: 0,
+                strobelOps: 0,
+                mhidGrants: 311331,
+                mobileNav: 0,
+                unsheltered: 0,
+                peopleHoused: 975,
+                peopleHousedAlt: null,
+                pitCount: 2017
+            },
+            {
+                year: "FY2021",
+                yearNum: 2021,
+                total: 16784442,
+                hudCoc: 7051438,
+                metroGeneral: 1716000,
+                esgCovid: 3346000,
+                otherCovid: 4400000,
+                arpa: 0,
+                barnesFund: 0,
+                strobelOps: 0,
+                mhidGrants: 271004,
+                mobileNav: 0,
+                unsheltered: 0,
+                peopleHoused: 1875,
+                peopleHousedAlt: null,
+                pitCount: null
+            },
+            {
+                year: "FY2022",
+                yearNum: 2022,
+                total: 19951619,
+                hudCoc: 7831201,
+                metroGeneral: 2833000,
+                esgCovid: 3346000,
+                otherCovid: 4400000,
+                arpa: 0,
+                barnesFund: 0,
+                strobelOps: 0,
+                mhidGrants: 691418,
+                mobileNav: 850000,
+                unsheltered: 0,
+                peopleHoused: 1811,
+                peopleHousedAlt: null,
+                pitCount: 1916
+            },
+            {
+                year: "FY2023",
+                yearNum: 2023,
+                total: 34746119,
+                hudCoc: 9695266,
+                metroGeneral: 3440000,
+                esgCovid: 3346000,
+                otherCovid: 4400000,
+                arpa: 8230000,
+                barnesFund: 0,
+                strobelOps: 0,
+                mhidGrants: 779800,
+                mobileNav: 0,
+                unsheltered: 4855053,
+                peopleHoused: 1946,
+                peopleHousedAlt: null,
+                pitCount: 2129
+            },
+            {
+                year: "FY2024",
+                yearNum: 2024,
+                total: 46592842,
+                hudCoc: 11846313,
+                metroGeneral: 5525000,
+                esgCovid: 0,
+                otherCovid: 0,
+                arpa: 21170000,
+                barnesFund: 7551529,
+                strobelOps: 500000,
+                mhidGrants: 0,
+                mobileNav: 0,
+                unsheltered: 0,
+                peopleHoused: 1902,
+                peopleHousedAlt: null,
+                pitCount: 2094
+            }
+        ];
+
+        const FUNDING_SOURCES = {
+            hudCoc: { label: "HUD CoC", color: "#3b82f6" },
+            metroGeneral: { label: "Metro General Fund", color: "#10b981" },
+            esgCovid: { label: "ESG-COVID", color: "#ef4444" },
+            otherCovid: { label: "Other COVID", color: "#f97316" },
+            arpa: { label: "ARPA Actual", color: "#8b5cf6" },
+            barnesFund: { label: "Barnes Fund", color: "#14b8a6" },
+            strobelOps: { label: "Strobel Operations", color: "#ec4899" },
+            mhidGrants: { label: "MHID Grants", color: "#6b7280" },
+            mobileNav: { label: "Mobile Navigation Centers", color: "#f59e0b" },
+            unsheltered: { label: "Unsheltered Supplement", color: "#06b6d4" }
+        };
+
+        // ==================== UTILITY FUNCTIONS ====================
+        const formatMoney = d3.format("$,.0f");
+        const formatNumber = d3.format(",");
+
+        function calculateMetrics(data) {
+            const baseline = data[0];
+            return data.map(d => ({
+                ...d,
+                costPerPerson: d.total / d.peopleHoused,
+                fundingIndex: (d.total / baseline.total) * 100,
+                housedIndex: (d.peopleHoused / baseline.peopleHoused) * 100,
+                pitIndex: d.pitCount ? (d.pitCount / baseline.pitCount) * 100 : null
+            }));
+        }
+
+        function showTooltip(event, content) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = content;
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY - 10) + 'px';
+            tooltip.style.opacity = '1';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = '0';
+        }
+
+        // ==================== IMPROVED INDEXED CHART ====================
+        function createIndexedChart() {
+            const container = d3.select("#indexed-chart");
+            container.selectAll("*").remove();
+            
+            const margin = {top: 20, right: 40, bottom: 70, left: 70};
+            const width = Math.min(container.node().getBoundingClientRect().width, 1000);
+            const height = 450;
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const data = calculateMetrics(FUNDING_DATA);
+
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.year))
+                .range([0, innerWidth])
+                .padding(0.25);
+
+            const y = d3.scaleLinear()
+                .domain([0, 550])
+                .range([innerHeight, 0]);
+
+            // Create gradients
+            const defs = svg.append("defs");
+            
+            const fundingGradient = defs.append("linearGradient")
+                .attr("id", "funding-gradient")
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "0%").attr("y2", "100%");
+            
+            fundingGradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "#22c55e")
+                .attr("stop-opacity", 0.8);
+            
+            fundingGradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#16a34a")
+                .attr("stop-opacity", 0.8);
+
+            // Baseline line
+            g.append("line")
+                .attr("x1", 0)
+                .attr("x2", innerWidth)
+                .attr("y1", y(100))
+                .attr("y2", y(100))
+                .attr("stroke", "#9ca3af")
+                .attr("stroke-width", 1)
+                .attr("stroke-dasharray", "3,3");
+
+            // Funding bars
+            g.selectAll(".funding-bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("x", d => x(d.year))
+                .attr("width", x.bandwidth())
+                .attr("y", innerHeight)
+                .attr("height", 0)
+                .attr("fill", "url(#funding-gradient)")
+                .attr("opacity", 0.7)
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("opacity", 0.9);
+                    showTooltip(event, `
+                        <div class="tooltip-title">${d.year} Metrics</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Funding:</span>
+                            <span class="tooltip-value">${formatMoney(d.total)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Index:</span>
+                            <span class="tooltip-value">${d.fundingIndex.toFixed(0)}%</span>
+                        </div>
+                    `);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("opacity", 0.7);
+                    hideTooltip();
+                })
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
+                .attr("y", d => y(d.fundingIndex))
+                .attr("height", d => innerHeight - y(d.fundingIndex));
+
+            // Improved icon positioning
+            g.selectAll(".dollar-icon")
+                .data(data)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => {
+                    // Position dollar sign in middle of bar
+                    const barTop = y(d.fundingIndex);
+                    const barBottom = innerHeight;
+                    const barMiddle = (barTop + barBottom) / 2;
+                    // Make sure it doesn't overlap with percentage labels
+                    return Math.max(barMiddle, barTop + 30);
+                })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "20px")
+                .text("💵")
+                .attr("opacity", 0)
+                .transition()
+                .delay((d, i) => i * 100 + 500)
+                .attr("opacity", 0.7);
+
+            // Percentage labels above bars
+            g.selectAll(".percent-label")
+                .data(data)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => y(d.fundingIndex) - 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "700")
+                .attr("fill", "#16a34a")
+                .text(d => Math.round(d.fundingIndex) + "%")
+                .attr("opacity", 0)
+                .transition()
+                .delay((d, i) => i * 100 + 600)
+                .attr("opacity", 1);
+
+            // People housed line
+            const housedLine = d3.line()
+                .x(d => x(d.year) + x.bandwidth() / 2)
+                .y(d => y(d.housedIndex))
+                .curve(d3.curveMonotoneX);
+
+            const housedPath = g.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "#15803d")
+                .attr("stroke-width", 3)
+                .attr("d", housedLine);
+
+            const pathLength = housedPath.node().getTotalLength();
+            
+            housedPath
+                .attr("stroke-dasharray", pathLength)
+                .attr("stroke-dashoffset", pathLength)
+                .transition()
+                .duration(1500)
+                .attr("stroke-dashoffset", 0);
+
+            // House icons with smart positioning
+            g.selectAll(".house-icon")
+                .data(data)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => {
+                    const baseY = y(d.housedIndex);
+                    // Offset vertically if it's too close to the tent icon
+                    if (d.pitCount && Math.abs(d.housedIndex - d.pitIndex) < 10) {
+                        return baseY - 15;
+                    }
+                    return baseY + 5;
+                })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .text("🏠")
+                .style("cursor", "pointer")
+                .attr("opacity", 0)
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("font-size", "20px");
+                    showTooltip(event, `
+                        <div class="tooltip-title">${d.year} Housing</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Housed:</span>
+                            <span class="tooltip-value">${formatNumber(d.peopleHoused)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Index:</span>
+                            <span class="tooltip-value">${d.housedIndex.toFixed(0)}%</span>
+                        </div>
+                    `);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("font-size", "16px");
+                    hideTooltip();
+                })
+                .transition()
+                .delay((d, i) => i * 100 + 800)
+                .attr("opacity", 1);
+
+            // PIT count line and tents
+            const pitData = data.filter(d => d.pitIndex !== null);
+            
+            const pitLine = d3.line()
+                .x(d => x(d.year) + x.bandwidth() / 2)
+                .y(d => y(d.pitIndex))
+                .curve(d3.curveMonotoneX);
+
+            g.append("path")
+                .datum(pitData)
+                .attr("fill", "none")
+                .attr("stroke", "#8b4513")
+                .attr("stroke-width", 3)
+                .attr("stroke-dasharray", "5,5")
+                .attr("d", pitLine);
+
+            // Tent icons with smart positioning
+            g.selectAll(".tent-icon")
+                .data(pitData)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => {
+                    const baseY = y(d.pitIndex);
+                    // Offset vertically if it's too close to the house icon
+                    if (Math.abs(d.housedIndex - d.pitIndex) < 10) {
+                        return baseY + 20;
+                    }
+                    return baseY + 5;
+                })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .text("⛺")
+                .style("cursor", "pointer")
+                .attr("opacity", 0)
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("font-size", "20px");
+                    showTooltip(event, `
+                        <div class="tooltip-title">${d.year} PIT Count</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Count:</span>
+                            <span class="tooltip-value">${formatNumber(d.pitCount)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Index:</span>
+                            <span class="tooltip-value">${d.pitIndex.toFixed(0)}%</span>
+                        </div>
+                    `);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("font-size", "16px");
+                    hideTooltip();
+                })
+                .transition()
+                .delay((d, i) => i * 100 + 1000)
+                .attr("opacity", 1);
+
+            // Axes
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(x));
+
+            g.append("g")
+                .call(d3.axisLeft(y).tickFormat(d => d + "%"));
+
+            // Y-axis label
+            g.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left + 15)
+                .attr("x", 0 - (innerHeight / 2))
+                .attr("text-anchor", "middle")
+                .style("font-size", "12px")
+                .style("fill", "#6b7280")
+                .text("Index (FY2020 = 100%)");
+
+            // Legend at bottom
+            const legendData = [
+                { label: "Funding 💵", color: "#22c55e" },
+                { label: "People Housed 🏠", color: "#15803d" },
+                { label: "PIT Count ⛺", color: "#8b4513" }
+            ];
+
+            const legend = g.selectAll(".legend")
+                .data(legendData)
+                .enter().append("g")
+                .attr("transform", (d, i) => `translate(${i * 135 + innerWidth/2 - 195}, ${innerHeight + 45})`);
+
+            legend.append("rect")
+                .attr("width", 18)
+                .attr("height", 3)
+                .attr("fill", d => d.color);
+
+            legend.append("text")
+                .attr("x", 22)
+                .attr("y", 3)
+                .style("font-size", "11px")
+                .text(d => d.label);
+        }
+
+        function createStackedChart() {
+            const container = d3.select("#stacked-chart");
+            container.selectAll("*").remove();
+            
+            const legendContainer = d3.select("#stacked-legend");
+            legendContainer.selectAll("*").remove();
+            
+            const margin = {top: 20, right: 80, bottom: 50, left: 80};
+            const width = Math.min(container.node().getBoundingClientRect().width, 1000);
+            const height = 400;
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const keys = Object.keys(FUNDING_SOURCES);
+            const stack = d3.stack().keys(keys);
+            const stackedData = stack(FUNDING_DATA);
+
+            const x = d3.scaleBand()
+                .domain(FUNDING_DATA.map(d => d.year))
+                .range([0, innerWidth])
+                .padding(0.1);
+
+            const y = d3.scaleLinear()
+                .domain([0, 50000000])
+                .range([innerHeight, 0]);
+
+            const layers = g.selectAll(".layer")
+                .data(stackedData)
+                .enter().append("g")
+                .attr("fill", d => FUNDING_SOURCES[d.key].color);
+
+            layers.selectAll("rect")
+                .data(d => d)
+                .enter().append("rect")
+                .attr("x", d => x(d.data.year))
+                .attr("width", x.bandwidth())
+                .attr("y", innerHeight)
+                .attr("height", 0)
+                .on("mouseover", function(event, d) {
+                    const key = d3.select(this.parentNode).datum().key;
+                    const value = d.data[key];
+                    if (value > 0) {
+                        showTooltip(event, `
+                            <div class="tooltip-title">${d.data.year} - ${FUNDING_SOURCES[key].label}</div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Amount:</span>
+                                <span class="tooltip-value">${formatMoney(value)}</span>
+                            </div>
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Percent:</span>
+                                <span class="tooltip-value">${((value / d.data.total) * 100).toFixed(1)}%</span>
+                            </div>
+                        `);
+                    }
+                })
+                .on("mouseout", hideTooltip)
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 50)
+                .attr("y", d => y(d[1]))
+                .attr("height", d => y(d[0]) - y(d[1]));
+
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(x));
+
+            g.append("g")
+                .call(d3.axisLeft(y).tickFormat(formatMoney));
+
+            const legend = d3.select("#stacked-legend");
+            legend.selectAll("*").remove();
+            
+            Object.entries(FUNDING_SOURCES).forEach(([key, source]) => {
+                if (FUNDING_DATA.some(d => d[key] > 0)) {
+                    const item = legend.append("div")
+                        .attr("class", "legend-item");
+                    
+                    item.append("div")
+                        .attr("class", "legend-color")
+                        .style("background", source.color);
+                    
+                    item.append("div")
+                        .text(source.label);
+                }
+            });
+        }
+
+        function createEfficiencyChart() {
+            const container = d3.select("#efficiency-chart");
+            container.selectAll("*").remove();
+            
+            const margin = {top: 20, right: 80, bottom: 50, left: 80};
+            const width = Math.min(container.node().getBoundingClientRect().width, 1000);
+            const height = 350;
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const data = calculateMetrics(FUNDING_DATA);
+
+            const x = d3.scaleBand()
+                .domain(data.map(d => d.year))
+                .range([0, innerWidth])
+                .padding(0.3);
+
+            const y = d3.scaleLinear()
+                .domain([0, 26000])
+                .range([innerHeight, 0]);
+
+            g.selectAll(".efficiency-bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("x", d => x(d.year))
+                .attr("width", x.bandwidth())
+                .attr("y", innerHeight)
+                .attr("height", 0)
+                .attr("fill", d => {
+                    if (d.year === "FY2020" || d.year === "FY2021") return "#22c55e";
+                    if (d.year === "FY2022") return "#fbbf24";
+                    if (d.year === "FY2023") return "#fb923c";
+                    return "#ef4444";
+                })
+                .attr("opacity", 0.8)
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("opacity", 1);
+                    const efficiency = d.peopleHoused / (d.total / 1000000);
+                    showTooltip(event, `
+                        <div class="tooltip-title">${d.year} Efficiency</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Cost/Person:</span>
+                            <span class="tooltip-value">${formatMoney(d.costPerPerson)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">People/$1M:</span>
+                            <span class="tooltip-value">${efficiency.toFixed(1)}</span>
+                        </div>
+                    `);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("opacity", 0.8);
+                    hideTooltip();
+                })
+                .transition()
+                .duration(800)
+                .delay((d, i) => i * 100)
+                .attr("y", d => y(d.costPerPerson))
+                .attr("height", d => innerHeight - y(d.costPerPerson));
+
+            g.selectAll(".value-label")
+                .data(data)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => y(d.costPerPerson) - 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "600")
+                .text(d => formatMoney(d.costPerPerson));
+
+            g.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", innerHeight + 40)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "11px")
+                .attr("fill", "#6b7280")
+                .text("FY2021 shows peak efficiency; FY2024 includes Barnes Fund and Strobel operations");
+
+            g.append("g")
+                .attr("transform", `translate(0,${innerHeight})`)
+                .call(d3.axisBottom(x));
+
+            g.append("g")
+                .call(d3.axisLeft(y).tickFormat(formatMoney));
+        }
+
+        // ==================== VIEW MANAGEMENT ====================
+        function showView(viewName) {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Find and activate the button for the view
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    if (btn.textContent.toLowerCase().includes(viewName.toLowerCase()) || 
+                        (viewName === 'strobel' && btn.textContent.includes('Strobel'))) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(`${viewName}-view`).classList.add('active');
+
+            if (viewName === 'dashboard') {
+                setTimeout(() => {
+                    createIndexedChart();
+                    createStackedChart();
+                    createEfficiencyChart();
+                }, 100);
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('load', () => {
+            createIndexedChart();
+            createStackedChart();
+            createEfficiencyChart();
+        });
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('dashboard-view').classList.contains('active')) {
+                createIndexedChart();
+                createStackedChart();
+                createEfficiencyChart();
+            }
+        });
+    </script>
+</body>
+</html>
