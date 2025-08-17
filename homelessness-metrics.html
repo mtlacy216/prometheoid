@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nashville CoC Funding & Housing Impact Dashboard</title>
+    <title>Nashville CoC Funding Analysis - Change Log // Nashville</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
         :root {
@@ -64,6 +64,18 @@
         .subtitle {
             opacity: 0.95;
             font-size: 0.95rem;
+        }
+
+        .unofficial-banner {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            margin-top: 1rem;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.875rem;
+            max-width: 90%;
         }
 
         nav {
@@ -415,10 +427,14 @@
 <body>
     <div class="container">
         <header>
-            <h1>Nashville CoC Funding & Housing Impact Dashboard</h1>
+            <h1>Nashville CoC Funding & Housing Impact Analysis</h1>
             <div class="subtitle">
-                Verified Funding Data by Fiscal Year (FY2020-FY2024) • TN-504 Continuum of Care<br>
+                Analysis of Verified Funding Data by Fiscal Year (FY2020-FY2024) • TN-504 Continuum of Care<br>
                 <small style="opacity: 0.8;">Office of Homeless Services / Metro Homeless Impact Division</small>
+            </div>
+            <div class="unofficial-banner">
+                📊 UNOFFICIAL ANALYSIS BY CHANGE LOG // NASHVILLE<br>
+                <small style="font-size: 0.8rem; opacity: 0.9;">Figures reviewed by former senior employees of Metro Nashville's homeless approach and deemed substantially accurate, though particulars of calendar years and fiscal and actual spend down may vary. The arc of funding dramatically increasing with housing placements remaining static is accurate.</small>
             </div>
         </header>
 
@@ -436,8 +452,8 @@
                 <div class="metric-grid">
                     <div class="metric-card">
                         <div class="metric-label">Funding Surged</div>
-                        <div class="metric-value">$126.9M Total</div>
-                        <div class="metric-change">↑ 428% from FY2020</div>
+                        <div class="metric-value">$121.5M Ops</div>
+                        <div class="metric-change">+$35M for 90 beds at Strobel</div>
                     </div>
                     <div class="metric-card">
                         <div class="metric-label">Homelessness Unchanged</div>
@@ -452,13 +468,13 @@
                     <div class="metric-card">
                         <div class="metric-label">ROI Declining</div>
                         <div class="metric-value">95% more housed</div>
-                        <div class="metric-change">428% more spent</div>
+                        <div class="metric-change">428% more spent (ops only)</div>
                     </div>
                 </div>
 
                 <div class="card">
                     <h3 class="card-title">Funding vs. Outcomes: Indexed to FY2020 Baseline</h3>
-                    <div class="chart-subtitle">Tracking investment growth against housing outcomes and PIT counts</div>
+                    <div class="chart-subtitle">Tracking investment growth against housing outcomes and PIT counts (Strobel capital shown separately)</div>
                     <div id="indexed-chart" class="chart-container"></div>
                 </div>
 
@@ -470,17 +486,91 @@
                 </div>
 
                 <div class="card">
-                    <h3 class="card-title">Cost Efficiency: Investment per Person Housed</h3>
-                    <div class="chart-subtitle">Lower is better - FY2021 shows impact of rapid COVID relief deployment</div>
+                    <h3 class="card-title">Cost Efficiency: Investment per Person Housed vs National Benchmark</h3>
+                    <div class="chart-subtitle">National best practice: $15,358/person/year for Permanent Supportive Housing (RAND Corporation study)</div>
                     <div id="efficiency-chart" class="chart-container"></div>
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: #166534;">
+                            <strong>📊 Efficiency Analysis:</strong> Nashville's FY2024 cost of $24,497 per person is 159% of the national benchmark. 
+                            At best practice rates, the same $46.6M could have housed 3,032 people instead of 1,902.
+                            <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7514010/" target="_blank" style="color: #2563eb; text-decoration: underline;">Source: RAND Study</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="background: linear-gradient(135deg, rgba(251,191,36,0.05) 0%, rgba(255,255,255,1) 100%); border: 2px solid #f59e0b;">
+                    <h3 class="card-title">ARPA PSH Gap Financing: A Cracked Foundation</h3>
+                    <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 1.5rem;">
+                        <div style="flex: 1;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                                    <div style="font-size: 0.875rem; color: #6b7280;">Authorized Purpose</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #059669;">PSH & 0-30% AMI</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">
+                                        <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754013&GUID=F6C40DA9-B0CC-4BDF-8368-AAECDAC0A4E8" target="_blank" style="color: #2563eb;">RS2022-1696</a>
+                                    </div>
+                                </div>
+                                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                                    <div style="font-size: 0.875rem; color: #6b7280;">Units Funded</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;">182 units</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">124 PSH + 58 deeply affordable</div>
+                                </div>
+                                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                                    <div style="font-size: 0.875rem; color: #6b7280;">Cost per Unit</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;">$132,798</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">As gap financing loans</div>
+                                </div>
+                                <div style="padding: 1rem; background: white; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                                    <div style="font-size: 0.875rem; color: #6b7280;">Timeline</div>
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: #f59e0b;">3+ years</div>
+                                    <div style="font-size: 0.75rem; color: #6b7280;">2022 → 2025 delivery</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="flex-shrink: 0; text-align: center;">
+                            <div style="font-size: 3rem;">🏚️</div>
+                            <div style="font-size: 0.75rem; color: #6b7280; max-width: 150px;">Like building on a cracked foundation - pay $133K to build it, then $15K/year forever to maintain it</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(239,68,68,0.05); border-left: 4px solid #ef4444; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <div style="font-weight: 600; color: #991b1b; margin-bottom: 0.5rem;">⚠️ The REAL Cost Problem:</div>
+                        <div style="font-size: 0.875rem; color: #7f1d1d;">
+                            <strong>Gap financing:</strong> $132,798 per unit upfront PLUS $15,358/year ongoing operations = $148,156 first year<br>
+                            <strong>Total 10-year cost:</strong> $132,798 + ($15,358 × 10) = $286,378 per unit<br>
+                            <strong>Alternative approach:</strong> Same $25M could have immediately housed 1,627 people for a year using existing units<br>
+                            <strong>The double burden:</strong> Nashville pays to BUILD units AND THEN pays annually to operate them<br>
+                            <strong>Opportunity cost:</strong> While waiting 3+ years for 182 units, homelessness increased from 2,129 to 2,180<br>
+                            <strong>Source:</strong> <a href="https://www.nashville.gov/sites/default/files/2025-05/OHS-American-Rescue-Plan-Report-2025-04.pdf" target="_blank" style="color: #2563eb;">OHS ARPA Report 2025</a>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(59,130,246,0.05); border-left: 4px solid #3b82f6; padding: 1rem; border-radius: 0.5rem;">
+                        <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.5rem;">📊 Breakdown of Funded Projects (per OHS Report):</div>
+                        <div style="font-size: 0.875rem; color: #1e3a8a;">
+                            • Urban Housing Solutions: 17 PSH units ($3M) - Now Online<br>
+                            • Woodbine Community: 32 units ($3.56M) - Now Online<br>
+                            • I Am Next: 80 units ($7.55M from Barnes Fund) - Now Online<br>
+                            • AGB Real Estate: 25 units ($4M) - Now Online<br>
+                            • Others: 28 units ($5.9M) - Various stages<br>
+                            <span style="font-size: 0.75rem; color: #6b7280;">Note: These are loans, not grants (except $5M forgivable)</span>
+                        </div>
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(59,130,246,0.2);">
+                            <div style="font-size: 0.875rem; color: #1e40af; font-weight: 600;">💡 Why Master Leasing Works Better:</div>
+                            <div style="font-size: 0.825rem; color: #1e3a8a;">
+                                Using existing apartments: $0 upfront + $15,358/year = Immediate housing<br>
+                                Building new units: $132,798 upfront + $15,358/year + 3-year wait = Triple cost
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card" style="background: linear-gradient(135deg, rgba(34,197,94,0.05) 0%, rgba(255,255,255,1) 100%); border: 2px solid #22c55e;">
-                    <h3 class="card-title">Strobel House: $35M to House 6% of Chronically Homeless</h3>
+                    <h3 class="card-title">Strobel House: $35M Capital + 90 People Housed</h3>
                     <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 1rem; align-items: center;">
                         <div style="text-align: center;">
-                            <div style="font-size: 2.5rem; font-weight: 800; color: #16a34a;">6.1%</div>
-                            <div style="font-size: 0.75rem; color: #6b7280;">90 units serve only<br>90 of Nashville's 1,472<br>chronically homeless</div>
+                            <div style="font-size: 2.5rem; font-weight: 800; color: #16a34a;">90</div>
+                            <div style="font-size: 0.75rem; color: #6b7280;">people housed<br>out of 1,472<br>chronically homeless</div>
                         </div>
                         <div>
                             <div style="display: flex; justify-content: space-around; margin-bottom: 1rem;">
@@ -499,7 +589,7 @@
                             </div>
                             <div style="font-size: 0.875rem; color: #6b7280;">
                                 Nashville has 1,472 chronically homeless individuals (April 2025)<br>
-                                Strobel's 90 units address just 6.1% of this population
+                                Strobel's 90 units serve 6.1% of this population
                             </div>
                         </div>
                         <div style="text-align: center;">
@@ -520,6 +610,7 @@
                         <h1 style="font-size: 2.5rem; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Metro Nashville Strobel House</h1>
                         <div style="font-size: 1.25rem; color: #90EE90; margin-bottom: 1rem;">Capital Expenditure Summary</div>
                         <div style="font-size: 3rem; font-weight: 800; color: #FFD700; text-shadow: 3px 3px 6px rgba(0,0,0,0.7);">$35 MILLION</div>
+                        <div style="font-size: 1.5rem; color: #90EE90; margin-top: 0.5rem;">90 PEOPLE HOUSED</div>
                     </div>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; width: 100%;">
@@ -543,8 +634,12 @@
                             </div>
 
                             <div style="margin: 1.5rem 0;">
-                                <div style="font-weight: 600; margin-bottom: 0.5rem;">Bell Construction Contract</div>
-                                <div style="color: #e0e0e0; font-size: 0.875rem;">$25 million awarded in 2020</div>
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                                    <a href="https://thecontributor.org/learn-more-about-the-history-of-strobel-house/" target="_blank" style="color: #90EE90;">Cost Increase Documentation →</a>
+                                </div>
+                                <div style="color: #e0e0e0; font-size: 0.875rem;">
+                                    "The change of the design and location, the years added to the project, which were marked by inflation, raised the final cost by 40 percent to $35 million."
+                                </div>
                             </div>
 
                             <h2 style="font-size: 1.25rem; font-weight: 600; color: #90EE90; margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(144,238,144,0.3);">📊 Impact & Capacity</h2>
@@ -593,25 +688,33 @@
                                 <div style="position: relative; margin-bottom: 1rem;">
                                     <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
                                     <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">2020</div>
-                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Construction contract awarded to Bell</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">
+                                        <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashville-celebrates-grand-opening-strobel-house-milestone-permanent-supportive-housing" target="_blank" style="color: #90EE90;">Bell Construction awarded contract →</a>
+                                    </div>
                                 </div>
                                 
                                 <div style="position: relative; margin-bottom: 1rem;">
                                     <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
-                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">May 2022</div>
-                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Groundbreaking ceremony</div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">May 31, 2022</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">
+                                        <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashville-celebrates-grand-opening-strobel-house-milestone-permanent-supportive-housing" target="_blank" style="color: #90EE90;">Groundbreaking ceremony →</a>
+                                    </div>
                                 </div>
                                 
                                 <div style="position: relative; margin-bottom: 1rem;">
                                     <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
                                     <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">October 2022</div>
-                                    <div style="font-size: 0.875rem; color: #e0e0e0;">$50M ARPA funds approved for homeless services</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">
+                                        <a href="https://www.wsmv.com/2022/10/05/metro-council-approves-50-million-homelessness-response-plan/" target="_blank" style="color: #90EE90;">$50M ARPA funds approved →</a>
+                                    </div>
                                 </div>
                                 
                                 <div style="position: relative; margin-bottom: 1rem;">
                                     <div style="position: absolute; left: -1.5rem; top: 0.25rem; width: 10px; height: 10px; background: #90EE90; border-radius: 50%; border: 2px solid white;"></div>
-                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">July 2024</div>
-                                    <div style="font-size: 0.875rem; color: #e0e0e0;">Grand opening - facility operational</div>
+                                    <div style="font-weight: 600; color: #FFD700; font-size: 0.875rem;">July 18, 2024</div>
+                                    <div style="font-size: 0.875rem; color: #e0e0e0;">
+                                        <a href="https://nashvillebanner.com/2024/07/19/strobel-house-housing-homeless/" target="_blank" style="color: #90EE90;">Grand opening - facility operational →</a>
+                                    </div>
                                 </div>
                             </div>
 
@@ -651,6 +754,7 @@
                                     <div style="font-size: 0.875rem; color: #e0e0e0;">
                                         Part of <strong style="color: #90EE90;">$50M ARPA</strong> homeless initiative
                                         <br><span style="color: #aaa;">($25M designated for PSH gap financing)</span>
+                                        <br><span style="color: #90EE90; margin-top: 0.5rem; display: block;">Note: At $1.5M annual operations for 90 beds = $16,667/person/year, closely aligned with national PSH benchmark of $15,358</span>
                                     </div>
                                 </div>
                             </div>
@@ -660,8 +764,11 @@
                     <div style="text-align: center; padding: 1rem; margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.2); width: 100%; max-width: 1200px;">
                         <div style="font-size: 0.75rem; color: #aaa;">
                             Sources: 
-                            <a href="https://www.nashville.gov/sites/default/files/2025-05/OHS-American-Rescue-Plan-Report-2025-05.pdf" target="_blank" style="color: #90EE90; text-decoration: none;">OHS ARPA Report 2025</a> | 
-                            Nashville.gov | Nashville Banner | The Contributor | NewsChannel 5 | Nashville Post
+                            <a href="https://thecontributor.org/learn-more-about-the-history-of-strobel-house/" target="_blank" style="color: #90EE90; text-decoration: none;">The Contributor</a> | 
+                            <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashville-celebrates-grand-opening-strobel-house-milestone-permanent-supportive-housing" target="_blank" style="color: #90EE90; text-decoration: none;">Nashville.gov</a> | 
+                            <a href="https://nashvillebanner.com/2024/07/19/strobel-house-housing-homeless/" target="_blank" style="color: #90EE90; text-decoration: none;">Nashville Banner</a> | 
+                            <a href="https://fox17.com/features/high-cost-of-homelessness/2024-nashvilles-first-permanent-supportive-housing-center-opens-its-doors-tennessee-homeless-davidson-county-middle-tn" target="_blank" style="color: #90EE90; text-decoration: none;">FOX 17</a> | 
+                            <a href="https://www.newschannel5.com/news/metro-council-approves-50-million-to-combat-homelessness" target="_blank" style="color: #90EE90; text-decoration: none;">NewsChannel 5</a>
                         </div>
                     </div>
                 </div>
@@ -671,7 +778,7 @@
             <div id="about-view" class="view">
                 <div class="alert alert-info">
                     <h4>📊 Data Methodology</h4>
-                    <p>This dashboard presents <strong>verified funding data by fiscal year</strong> (July 1 - June 30), compiled from official government sources including HUD awards, Metro Nashville budgets, and council resolutions. All figures are documented with source URLs in the Sources tab.</p>
+                    <p>This analysis presents <strong>funding data by fiscal year</strong> (July 1 - June 30), compiled from official government sources including HUD awards, Metro Nashville budgets, and council resolutions. <strong>Figures were reviewed by former senior employees of Metro Nashville's homeless approach and were deemed substantially accurate</strong>, though particulars of calendar years and fiscal and actual spend down may vary. The arc of funding dramatically increasing with housing placements remaining static is accurate.</p>
                 </div>
 
                 <div class="card">
@@ -684,13 +791,13 @@
                         </div>
                         
                         <div class="info-item">
-                            <h4>FY2021 COVID Relief Impact</h4>
-                            <p>The $7.7 million in ESG-CARES and other COVID funding enabled housing 1,875 people at $9,751 per person - near peak efficiency.</p>
+                            <h4>ESG-CARES COVID Relief</h4>
+                            <p>$10 million total in two allocations (summer 2020), deployed over two-year grant period FY2021-2022. "Housing Surge" began October 1, 2020.</p>
                         </div>
                         
                         <div class="info-item">
                             <h4>ARPA Timeline & Spending</h4>
-                            <p>$50M authorized October 2022 (FY2023). Through December 31, 2023, $18.3M was spent. Through November 2024, $29.4M has been spent/committed with remaining funds through 2026.</p>
+                            <p>$50M authorized October 2022 (FY2023). Through November 2023, only $8.2M was spent due to contracting delays. Bulk of spending occurred in FY2024. The $25M PSH gap financing created only 182 units over 3+ years at $132,798 per unit.</p>
                         </div>
                         
                         <div class="info-item">
@@ -721,12 +828,12 @@
                         
                         <div class="info-item">
                             <h4>ESG-CARES COVID Relief</h4>
-                            <p>Emergency federal funding totaling $10M in two rounds ($1.5M + $8.5M) for pandemic homelessness response.</p>
+                            <p>Emergency federal funding totaling $10M in two rounds for pandemic homelessness response. Two-year grant period FY2021-2022.</p>
                         </div>
                         
                         <div class="info-item">
                             <h4>ARPA Homelessness Initiative</h4>
-                            <p>$50M allocation: PSH Gap Financing ($25M), Interim Housing ($9M), Housing First Services ($9M), Low-Barrier Grants ($7M).</p>
+                            <p>$50M allocation: PSH Gap Financing ($25M - created only 182 units at $132,798/unit), Interim Housing ($9M), Housing First Services ($9M), Low-Barrier Grants ($7M). Gap financing structured as loans, not grants.</p>
                         </div>
                         
                         <div class="info-item">
@@ -743,11 +850,6 @@
                             <h4>Barnes Fund</h4>
                             <p>Nashville's affordable housing trust fund, Round 14 allocated $7.6M for permanent supportive housing projects.</p>
                         </div>
-                        
-                        <div class="info-item">
-                            <h4>MHID Special Purpose Fund</h4>
-                            <p>External grants including HUD HMIS ($141K) and Coordinated Entry ($128K) for system infrastructure.</p>
-                        </div>
                     </div>
                 </div>
 
@@ -755,12 +857,14 @@
                     <h4>⚠️ Important Notes</h4>
                     <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
                         <li>Despite 428% funding increase, homelessness increased 3.8% (2,017 → 2,094)</li>
-                        <li>Strobel House: $35M capital investment serves only 6.1% of chronically homeless</li>
-                        <li>Chronic homelessness: 1,472 individuals as of April 2025 (48% experiencing chronic homelessness)</li>
+                        <li>Strobel House: $35M capital investment houses 90 people (6.1% of chronically homeless)</li>
+                        <li>ARPA PSH Gap Financing: $25M created only 182 units over 3+ years at $132,798 per unit PLUS requires $15,358/year ongoing</li>
+                        <li>Chronic homelessness: 1,472 individuals as of April 2025</li>
                         <li>HUD CoC funds flow directly to nonprofits, not through Metro budget</li>
-                        <li>COVID funding split between ESG-CARES ($10M) and other COVID programs ($13.2M)</li>
-                        <li>ARPA actual spending: $8.2M in FY2023, $21.2M in FY2024 (of $50M authorized)</li>
-                        <li>Cost per person varies dramatically: $8,951 (FY2021) to $24,491 (FY2024)</li>
+                        <li>ESG-CARES: $10M total split over FY2021-2022</li>
+                        <li>ARPA actual spending lagged authorization by over a year</li>
+                        <li>Cost per person varies dramatically: $9,058 (FY2020) to $24,491 (FY2024)</li>
+                        <li>Some Metro General Fund amounts could not be verified from budget documents</li>
                     </ul>
                 </div>
             </div>
@@ -768,7 +872,7 @@
             <!-- Data Table View -->
             <div id="data-view" class="view">
                 <div class="card">
-                    <h3 class="card-title">Complete Verified Funding Data by Fiscal Year</h3>
+                    <h3 class="card-title">Funding Data by Fiscal Year (Reviewed by Former Senior Staff)</h3>
                     <div style="overflow-x: auto;">
                         <table>
                             <thead>
@@ -777,17 +881,17 @@
                                     <th class="text-right">Total Funding</th>
                                     <th class="text-right">Metro General</th>
                                     <th class="text-right">HUD CoC</th>
-                                    <th class="text-right">ESG-COVID</th>
+                                    <th class="text-right">ESG-CARES</th>
                                     <th class="text-right">Other COVID</th>
                                     <th class="text-right">ARPA Actual</th>
                                     <th class="text-right">Barnes Fund</th>
-                                    <th class="text-right">Strobel Ops</th>
-                                    <th class="text-right">MHID Grants</th>
-                                    <th class="text-right">Mobile Nav Centers</th>
-                                    <th class="text-right">Unsheltered Supp</th>
+                                    <th class="text-right">Mobile Nav</th>
+                                    <th class="text-right">Unsheltered</th>
+                                    <th class="text-right">MHID/Other</th>
                                     <th class="text-right">People Housed</th>
                                     <th class="text-right">PIT Count</th>
                                     <th class="text-right">$/Person</th>
+                                    <th class="text-right">vs Benchmark</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -801,63 +905,63 @@
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
                                     <td class="text-right">$311,331</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">-</td>
                                     <td class="text-right">975</td>
                                     <td class="text-right">2,017</td>
                                     <td class="text-right">$9,058</td>
+                                    <td class="text-right" style="color: #22c55e; font-weight: 600;">59%</td>
                                 </tr>
                                 <tr style="background: #f9fafb;">
                                     <td><strong>FY2021</strong></td>
-                                    <td class="text-right">$16,784,442</td>
+                                    <td class="text-right">$20,388,442</td>
                                     <td class="text-right">$1,716,000</td>
                                     <td class="text-right">$7,051,438</td>
-                                    <td class="text-right">$3,346,000</td>
-                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">$5,000,000</td>
+                                    <td class="text-right">$4,850,000</td>
+                                    <td class="text-right">$1,500,000</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">$271,004</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">-</td>
                                     <td class="text-right">1,875</td>
                                     <td class="text-right">No count</td>
-                                    <td class="text-right">$8,951</td>
+                                    <td class="text-right">$10,874</td>
+                                    <td class="text-right" style="color: #22c55e; font-weight: 600;">71%</td>
                                 </tr>
                                 <tr>
                                     <td><strong>FY2022</strong></td>
-                                    <td class="text-right">$19,951,619</td>
+                                    <td class="text-right">$18,705,619</td>
                                     <td class="text-right">$2,833,000</td>
                                     <td class="text-right">$7,831,201</td>
-                                    <td class="text-right">$3,346,000</td>
-                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">$5,000,000</td>
+                                    <td class="text-right">$1,500,000</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">$691,418</td>
                                     <td class="text-right">$850,000</td>
                                     <td class="text-right">-</td>
+                                    <td class="text-right">$691,418</td>
                                     <td class="text-right">1,811</td>
                                     <td class="text-right">1,916</td>
-                                    <td class="text-right">$11,017</td>
+                                    <td class="text-right">$10,333</td>
+                                    <td class="text-right" style="color: #22c55e; font-weight: 600;">67%</td>
                                 </tr>
                                 <tr style="background: #f9fafb;">
                                     <td><strong>FY2023</strong></td>
-                                    <td class="text-right">$34,746,119</td>
+                                    <td class="text-right">$27,000,119</td>
                                     <td class="text-right">$3,440,000</td>
                                     <td class="text-right">$9,695,266</td>
-                                    <td class="text-right">$3,346,000</td>
-                                    <td class="text-right">$4,400,000</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
                                     <td class="text-right">$8,230,000</td>
                                     <td class="text-right">-</td>
                                     <td class="text-right">-</td>
-                                    <td class="text-right">$779,800</td>
-                                    <td class="text-right">-</td>
                                     <td class="text-right">$4,855,053</td>
+                                    <td class="text-right">$779,800</td>
                                     <td class="text-right">1,946</td>
                                     <td class="text-right">2,129</td>
-                                    <td class="text-right">$17,857</td>
+                                    <td class="text-right">$13,870</td>
+                                    <td class="text-right" style="color: #f59e0b; font-weight: 600;">90%</td>
                                 </tr>
                                 <tr>
                                     <td><strong>FY2024</strong></td>
@@ -868,46 +972,55 @@
                                     <td class="text-right">-</td>
                                     <td class="text-right">$21,170,000</td>
                                     <td class="text-right">$7,551,529</td>
+                                    <td class="text-right">-</td>
+                                    <td class="text-right">-</td>
                                     <td class="text-right">$500,000</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">-</td>
                                     <td class="text-right">1,902</td>
                                     <td class="text-right">2,094</td>
                                     <td class="text-right">$24,491</td>
+                                    <td class="text-right" style="color: #ef4444; font-weight: 600;">159%</td>
                                 </tr>
                                 <tr style="background: #e5e7eb; font-weight: 600;">
                                     <td>TOTALS</td>
-                                    <td class="text-right">$126,906,818</td>
+                                    <td class="text-right">$121,519,818</td>
                                     <td class="text-right">$15,919,000</td>
                                     <td class="text-right">$42,539,683</td>
-                                    <td class="text-right">$10,038,000</td>
-                                    <td class="text-right">$13,200,000</td>
-                                    <td class="text-right">$29,400,000</td>
+                                    <td class="text-right">$10,000,000</td>
+                                    <td class="text-right">$6,350,000</td>
+                                    <td class="text-right">$30,900,000</td>
                                     <td class="text-right">$7,551,529</td>
-                                    <td class="text-right">$500,000</td>
-                                    <td class="text-right">$2,053,553</td>
                                     <td class="text-right">$850,000</td>
                                     <td class="text-right">$4,855,053</td>
+                                    <td class="text-right">$2,553,553</td>
                                     <td class="text-right">9,509</td>
                                     <td class="text-right">-</td>
-                                    <td class="text-right">$13,349 avg</td>
+                                    <td class="text-right">$12,784 avg</td>
+                                    <td class="text-right" style="color: #22c55e;">83% avg</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 0.5rem; font-size: 0.875rem;">
+                        <strong>Legend:</strong> ✓ = Verified from official sources | ⚠️ = Unverified or estimated<br>
+                        <strong>National Benchmark:</strong> $15,358/person/year for Permanent Supportive Housing (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7514010/" target="_blank" style="color: #2563eb;">RAND Corporation, 2020</a>)<br>
+                        <strong>Note:</strong> Strobel House $35M capital cost excluded from operational totals
+                    </div>
 
                     <div style="margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
-                        <h4 style="margin-bottom: 0.5rem; color: var(--gray-800);">📈 Key Insights from Verified Data</h4>
+                        <h4 style="margin-bottom: 0.5rem; color: var(--gray-800);">📈 Key Insights from Reviewed Data</h4>
                         <ul style="margin-left: 1.5rem; color: var(--gray-600); font-size: 0.875rem; line-height: 1.8;">
                             <li><strong>Funding increased 428%</strong> from FY2020 to FY2024 ($8.8M → $46.6M)</li>
                             <li><strong>People housed increased only 95%</strong> in the same period (975 → 1,902)</li>
                             <li><strong>Homelessness actually increased:</strong> Up 3.8% (2,017 → 2,094)</li>
-                            <li><strong>FY2021 was most efficient:</strong> $8,951 per person housed</li>
-                            <li><strong>Cost per person nearly tripled</strong> from FY2021 to FY2024 ($8,951 → $24,491)</li>
+                            <li><strong>FY2021 Housing Surge impact:</strong> ESG-CARES enabled housing 1,875 people</li>
+                            <li><strong>Cost per person nearly tripled</strong> from FY2020 to FY2024 ($9,058 → $24,491)</li>
+                            <li><strong>FY2024 vs National Benchmark:</strong> At RAND study rate of $15,358/person, the $46.6M could have housed 3,032 people instead of 1,902</li>
+                            <li><strong>Lost capacity:</strong> 1,130 additional people could have been housed at best practice rates</li>
                             <li><strong>Chronic homelessness crisis:</strong> 1,472 chronically homeless (April 2025)</li>
-                            <li><strong>Strobel House impact:</strong> $35M facility serves only 6.1% of chronically homeless</li>
-                            <li><strong>Total housed 9,509 people</strong> over 5 years at average cost of $13,349</li>
+                            <li><strong>Strobel House impact:</strong> $35M facility houses 90 people (6.1% of chronically homeless)</li>
+                            <li><strong>ARPA PSH double burden:</strong> $25M gap financing created only 182 units at $132,798/unit PLUS requires $15,358/year ongoing operations</li>
+                            <li><strong>Total housed 9,509 people</strong> over 5 years at average cost of $12,784</li>
                         </ul>
                     </div>
                 </div>
@@ -919,70 +1032,77 @@
                     <h3 class="card-title">Complete Documentation & Sources</h3>
                     
                     <div class="source-section">
-                        <div class="source-year">FY2020 Sources</div>
+                        <div class="source-year">ARPA PSH Gap Financing Documentation</div>
                         <ul class="source-list">
-                            <li><strong>Metro General Fund ($2,405,000):</strong> Metro Nashville FY2020 audit reports</li>
-                            <li><strong>HUD CoC ($6,115,465):</strong> <a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2020_TN_2020.pdf" target="_blank">HUD FY2020 CoC Award Report</a></li>
-                            <li><strong>MHID Grants ($311,331):</strong> Metro Special Purpose Fund expenditure reports</li>
-                            <li><strong>PIT Count (2,017):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/metro-office-homeless-services-conducts-2025-point-time-count" target="_blank">Calculated from 2022 5% decrease</a></li>
+                            <li><strong>Authorizing Resolution:</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754013&GUID=F6C40DA9-B0CC-4BDF-8368-AAECDAC0A4E8" target="_blank">RS2022-1696 - $25M for PSH/0-30% AMI Housing</a></li>
+                            <li><strong>Implementation Report:</strong> <a href="https://www.nashville.gov/sites/default/files/2025-05/OHS-American-Rescue-Plan-Report-2025-04.pdf" target="_blank">OHS American Rescue Plan Report (May 2025)</a></li>
+                            <li><strong>Program Structure:</strong> Low-interest loans to developers (not grants), with up to $5M forgivable</li>
+                            <li><strong>MDHA Administration:</strong> 5% fee ($1.25M) for program administration</li>
+                            <li><strong>Actual Deployment:</strong> $24,169,120 allocated across 10 projects creating 182 units (124 PSH + 58 deeply affordable)</li>
+                            <li><strong>Timeline:</strong> Units coming online May 2023 - December 2025 (3+ years from authorization)</li>
+                            <li><strong>Per Unit Cost:</strong> $132,798 as gap financing (total development costs higher with other funding sources) PLUS $15,358/year ongoing operations</li>
+                            <li><strong>True 10-Year Cost:</strong> $286,378 per unit ($132,798 capital + 10 years × $15,358 operations)</li>
+                            <li><strong>Status:</strong> Many units marked "Now Online" per OHS report, but full deployment extends to Dec 2025</li>
                         </ul>
                     </div>
 
                     <div class="source-section">
-                        <div class="source-year">FY2021 Sources</div>
+                        <div class="source-year">National Benchmark Sources</div>
                         <ul class="source-list">
-                            <li><strong>Metro General Fund ($1,716,000):</strong> Metro audit showing actual spending</li>
-                            <li><strong>HUD CoC ($7,051,438):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/FY2021_TN_Press_Report.pdf" target="_blank">HUD FY2021 Tennessee Press Report</a></li>
-                            <li><strong>ESG-COVID Round 1 ($1,549,066):</strong> <a href="https://www.nashville-mdha.org/2020/07/13/request-for-applications-now-open-for-cares-act-emergency-solutions-grant-funding/" target="_blank">MDHA CARES Act ESG Announcement</a></li>
-                            <li><strong>ESG-COVID Round 2 ($8,489,679):</strong> <a href="https://www.nashville-mdha.org/2020/12/23/cares-act-funding-to-provide-rapid-re-housing-to-400-individuals-and-families-experiencing-homelessness/" target="_blank">MDHA Rapid Re-Housing Announcement</a></li>
-                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
-                            <li><strong>MHID Grants ($271,004):</strong> Metro SPF actual expenditure</li>
+                            <li><strong>RAND Corporation Study (2020):</strong> <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7514010/" target="_blank">Cost after PSH placement: $15,358/person/year</a></li>
+                            <li><strong>Study Details:</strong> "Cost Analysis of Health Care Utilization Among Individuals Experiencing Chronic Homelessness" - Western Journal of Emergency Medicine</li>
+                            <li><strong>Methodology:</strong> Analysis of 107 chronically homeless adults in supportive housing, tracking costs 12 months before and after placement</li>
+                            <li><strong>Key Finding:</strong> 60% reduction in public costs after housing placement (from $38,146 to $15,358 annually)</li>
                         </ul>
                     </div>
 
                     <div class="source-section">
-                        <div class="source-year">FY2022 Sources</div>
+                        <div class="source-year">Data Review & Verification</div>
                         <ul class="source-list">
-                            <li><strong>Metro General Fund ($2,833,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2021-09/FY22-Budget-Book-Section-K-Program-Pages.pdf" target="_blank">FY22 Budget Book Program Pages</a></li>
-                            <li><strong>HUD CoC ($7,831,201):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/FY2021_TN_Press_Report.pdf" target="_blank">FY2021 award announced March 2022</a></li>
-                            <li><strong>ESG-COVID ($3,346,000):</strong> Continued COVID relief funding</li>
-                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
-                            <li><strong>HUD HMIS Grant ($141,508):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?GUID=D4BD0E17-29E5-453C-8E51-B4C2C1289DD7&ID=5138258" target="_blank">Council Resolution</a></li>
-                            <li><strong>Coordinated Entry Grant ($128,000):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?GUID=2CC0FADE-4DB9-4783-81D9-1DB198D782CF&ID=5138261" target="_blank">Council Resolution</a></li>
-                            <li><strong>Mobile Navigation Centers ($850,000):</strong> <a href="https://www.nashville.gov/departments/mayor/news/nashville-releases-plan-boost-homelessness-response" target="_blank">Mayor's Press Release - Homelessness Response Plan</a></li>
-                            <li><strong>People Housed (1,811):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
-                            <li><strong>PIT Count (1,916):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashvilles-office-homeless-services-presents-encouraging-results-2024-point-time-count" target="_blank">2024 PIT Count Report</a></li>
+                            <li><strong>Former Senior Staff Review:</strong> Figures reviewed by former senior employees of Metro Nashville's homeless approach including former MHID Director Judith Tackett</li>
+                            <li><strong>ESG-CARES Confirmation:</strong> $10M total in two allocations (summer 2020), two-year grant period per Tackett</li>
+                            <li><strong>ARPA First Grant:</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5197351&GUID=86C55951-1F8A-4484-902E-BC420389D3EC" target="_blank">$1.5M secured 2021 (RS2021)</a></li>
+                            <li><strong>Mobile Navigation Centers:</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5074956&GUID=B10090DD-2584-4D71-9BAA-8A4E11266C50" target="_blank">$850K grant August 2021</a></li>
                         </ul>
                     </div>
 
                     <div class="source-section">
-                        <div class="source-year">FY2023 Sources</div>
+                        <div class="source-year">FY2020-2021 Sources</div>
                         <ul class="source-list">
-                            <li><strong>Metro General Fund ($3,440,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2022-05/037_SocialServices_FY23RecPP.pdf" target="_blank">FY23 Social Services Budget</a></li>
-                            <li><strong>HUD CoC ($9,695,266):</strong> <a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2022_TN_2022.pdf" target="_blank">HUD FY2022 Award Report</a></li>
-                            <li><strong>ESG-COVID ($3,346,000):</strong> Continued COVID relief funding</li>
-                            <li><strong>Other COVID ($4,400,000):</strong> Additional CARES Act relief from Metro's $121.1M total allocation - <a href="https://www.nashville.gov/departments/finance/reports/coronavirus-aid" target="_blank">Metro COVID-19 Relief Page</a></li>
-                            <li><strong>ARPA PSH Gap ($25M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754013&GUID=F6C40DA9-B0CC-4BDF-8368-AAECDAC0A4E8" target="_blank">RS2022-1696</a></li>
-                            <li><strong>ARPA Services ($9M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754014&GUID=2CE82EF0-BBA4-498A-9099-7EB47F122247" target="_blank">RS2022-1697</a></li>
-                            <li><strong>ARPA Interim Housing ($9M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754015&GUID=3845114F-AAEA-47D4-B928-F1E49DE3AE2F" target="_blank">RS2022-1698</a></li>
-                            <li><strong>ARPA Low Barrier ($7M authorized):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754016&GUID=60AEBF6E-720F-4AE1-B4E1-DBDF99ABB949" target="_blank">RS2022-1699</a></li>
-                            <li><strong>HUD Unsheltered Supplement ($4,855,053):</strong> <a href="https://www.hud.gov/press/press_releases_media_advisories/hud_no_23_016" target="_blank">HUD Special NOFO Announcement</a></li>
-                            <li><strong>People Housed (1,946):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
-                            <li><strong>PIT Count (2,129):</strong> <a href="https://www.hudexchange.info/programs/coc/coc-homeless-populations-and-subpopulations-reports/" target="_blank">HUD Exchange PIT Report</a></li>
+                            <li><strong>HUD CoC Awards:</strong> <a href="https://files.hudexchange.info/reports/published/CoC_AwardComp_CoC_TN-504-2020_TN_2020.pdf" target="_blank">FY2020 CoC Award Report</a> | <a href="https://www.hud.gov/sites/dfiles/CPD/documents/FY2021_TN_Press_Report.pdf" target="_blank">FY2021 Press Report</a></li>
+                            <li><strong>ESG-CARES Round 1:</strong> <a href="https://www.nashville-mdha.org/2020/07/13/request-for-applications-now-open-for-cares-act-emergency-solutions-grant-funding/" target="_blank">MDHA CARES Act ESG Announcement</a></li>
+                            <li><strong>People Housed FY2021-2022:</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/homeless-management-information-system/2022-monthly-data-reports" target="_blank">HMIS Monthly Reports</a></li>
                         </ul>
                     </div>
 
                     <div class="source-section">
-                        <div class="source-year">FY2024 Sources</div>
+                        <div class="source-year">ARPA Sources</div>
                         <ul class="source-list">
-                            <li><strong>Metro General Fund ($5,525,000):</strong> <a href="https://www.nashville.gov/sites/default/files/2023-09/FY24BB_53OfficeofHomelessServices.pdf" target="_blank">FY24 Office of Homeless Services Budget</a></li>
-                            <li><strong>HUD CoC FY23 Award ($9,695,266):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/CoC/CoC-2024-TN_Press.pdf" target="_blank">HUD CoC 2024 Press Release</a></li>
-                            <li><strong>HUD CoC FY24 Award ($11,846,313):</strong> <a href="https://www.hud.gov/sites/dfiles/CPD/documents/CoC/CoC-2024-TN_Press.pdf" target="_blank">HUD CoC 2024 Press Release</a></li>
-                            <li><strong>ARPA Actual Spending (FY23: $8.2M, FY24: $21.2M):</strong> Based on <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">"Help & Hope" tracking report</a> showing $18.3M spent through 12/31/23</li>
-                            <li><strong>Barnes Fund Round 14 ($7,551,529):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=6693417&GUID=EA9C750E-ECC9-408A-BAAD-8F21479ACD97" target="_blank">Council Resolution RS2024-459</a></li>
-                            <li><strong>Strobel Operations ($500,000):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=6693417&GUID=EA9C750E-ECC9-408A-BAAD-8F21479ACD97" target="_blank">RS2024-459</a></li>
-                            <li><strong>People Housed (1,902):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
-                            <li><strong>PIT Count (2,094):</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashvilles-office-homeless-services-presents-encouraging-results-2024-point-time-count" target="_blank">2024 PIT Count Results</a></li>
+                            <li><strong>PSH Gap Financing ($25M):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754013&GUID=F6C40DA9-B0CC-4BDF-8368-AAECDAC0A4E8" target="_blank">RS2022-1696</a></li>
+                            <li><strong>Housing First Services ($9M):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754014&GUID=2CE82EF0-BBA4-498A-9099-7EB47F122247" target="_blank">RS2022-1697</a></li>
+                            <li><strong>Interim Housing ($9M):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754015&GUID=3845114F-AAEA-47D4-B928-F1E49DE3AE2F" target="_blank">RS2022-1698</a></li>
+                            <li><strong>Low Barrier Services ($7M):</strong> <a href="https://nashville.legistar.com/LegislationDetail.aspx?ID=5754016&GUID=60AEBF6E-720F-4AE1-B4E1-DBDF99ABB949" target="_blank">RS2022-1699</a></li>
+                            <li><strong>ARPA Spending Reports:</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/data" target="_blank">OHS Data Dashboard</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">Strobel House Sources</div>
+                        <ul class="source-list">
+                            <li><strong>Cost Increase Documentation:</strong> <a href="https://thecontributor.org/learn-more-about-the-history-of-strobel-house/" target="_blank">The Contributor - History of Strobel House</a></li>
+                            <li><strong>Grand Opening & Details:</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/nashville-celebrates-grand-opening-strobel-house-milestone-permanent-supportive-housing" target="_blank">Nashville.gov Official Announcement</a></li>
+                            <li><strong>Coverage:</strong> <a href="https://nashvillebanner.com/2024/07/19/strobel-house-housing-homeless/" target="_blank">Nashville Banner</a> | <a href="https://fox17.com/features/high-cost-of-homelessness/2024-nashvilles-first-permanent-supportive-housing-center-opens-its-doors-tennessee-homeless-davidson-county-middle-tn" target="_blank">FOX 17</a></li>
+                            <li><strong>ARPA Approval:</strong> <a href="https://www.wsmv.com/2022/10/05/metro-council-approves-50-million-homelessness-response-plan/" target="_blank">WSMV</a> | <a href="https://www.newschannel5.com/news/metro-council-approves-50-million-to-combat-homelessness" target="_blank">NewsChannel 5</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="source-section">
+                        <div class="source-year">Point-in-Time Count Sources</div>
+                        <ul class="source-list">
+                            <li><strong>2022 PIT:</strong> <a href="https://www.nashville-mdha.org/2022/05/10/results-from-2022-point-in-time-pit-count-released/" target="_blank">1,916 people</a></li>
+                            <li><strong>2023 PIT:</strong> <a href="https://www.nashville-mdha.org/2023/05/09/results-of-2023-point-in-time-count-released/" target="_blank">2,129 people</a></li>
+                            <li><strong>2024 PIT:</strong> <a href="https://www.nashville.gov/sites/default/files/2024-05/PIT-2024-Infographic.pdf" target="_blank">2,094 people</a></li>
+                            <li><strong>2025 PIT:</strong> <a href="https://www.nashville.gov/departments/office-homeless-services/news/2025-point-time-count" target="_blank">2,180 people (preliminary)</a></li>
                         </ul>
                     </div>
 
@@ -1016,66 +1136,58 @@
                 otherCovid: 0,
                 arpa: 0,
                 barnesFund: 0,
-                strobelOps: 0,
-                mhidGrants: 311331,
                 mobileNav: 0,
                 unsheltered: 0,
+                mhidOther: 311331,
                 peopleHoused: 975,
-                peopleHousedAlt: null,
                 pitCount: 2017
             },
             {
                 year: "FY2021",
                 yearNum: 2021,
-                total: 16784442,
+                total: 20388442,
                 hudCoc: 7051438,
                 metroGeneral: 1716000,
-                esgCovid: 3346000,
-                otherCovid: 4400000,
-                arpa: 0,
+                esgCovid: 5000000,
+                otherCovid: 4850000,
+                arpa: 1500000,
                 barnesFund: 0,
-                strobelOps: 0,
-                mhidGrants: 271004,
                 mobileNav: 0,
                 unsheltered: 0,
+                mhidOther: 271004,
                 peopleHoused: 1875,
-                peopleHousedAlt: null,
                 pitCount: null
             },
             {
                 year: "FY2022",
                 yearNum: 2022,
-                total: 19951619,
+                total: 18705619,
                 hudCoc: 7831201,
                 metroGeneral: 2833000,
-                esgCovid: 3346000,
-                otherCovid: 4400000,
+                esgCovid: 5000000,
+                otherCovid: 1500000,
                 arpa: 0,
                 barnesFund: 0,
-                strobelOps: 0,
-                mhidGrants: 691418,
                 mobileNav: 850000,
                 unsheltered: 0,
+                mhidOther: 691418,
                 peopleHoused: 1811,
-                peopleHousedAlt: null,
                 pitCount: 1916
             },
             {
                 year: "FY2023",
                 yearNum: 2023,
-                total: 34746119,
+                total: 27000119,
                 hudCoc: 9695266,
                 metroGeneral: 3440000,
-                esgCovid: 3346000,
-                otherCovid: 4400000,
+                esgCovid: 0,
+                otherCovid: 0,
                 arpa: 8230000,
                 barnesFund: 0,
-                strobelOps: 0,
-                mhidGrants: 779800,
                 mobileNav: 0,
                 unsheltered: 4855053,
+                mhidOther: 779800,
                 peopleHoused: 1946,
-                peopleHousedAlt: null,
                 pitCount: 2129
             },
             {
@@ -1088,12 +1200,10 @@
                 otherCovid: 0,
                 arpa: 21170000,
                 barnesFund: 7551529,
-                strobelOps: 500000,
-                mhidGrants: 0,
                 mobileNav: 0,
                 unsheltered: 0,
+                mhidOther: 500000,
                 peopleHoused: 1902,
-                peopleHousedAlt: null,
                 pitCount: 2094
             }
         ];
@@ -1101,14 +1211,13 @@
         const FUNDING_SOURCES = {
             hudCoc: { label: "HUD CoC", color: "#3b82f6" },
             metroGeneral: { label: "Metro General Fund", color: "#10b981" },
-            esgCovid: { label: "ESG-COVID", color: "#ef4444" },
+            esgCovid: { label: "ESG-CARES", color: "#ef4444" },
             otherCovid: { label: "Other COVID", color: "#f97316" },
             arpa: { label: "ARPA Actual", color: "#8b5cf6" },
             barnesFund: { label: "Barnes Fund", color: "#14b8a6" },
-            strobelOps: { label: "Strobel Operations", color: "#ec4899" },
-            mhidGrants: { label: "MHID Grants", color: "#6b7280" },
-            mobileNav: { label: "Mobile Navigation Centers", color: "#f59e0b" },
-            unsheltered: { label: "Unsheltered Supplement", color: "#06b6d4" }
+            mobileNav: { label: "Mobile Navigation", color: "#f59e0b" },
+            unsheltered: { label: "Unsheltered Supplement", color: "#06b6d4" },
+            mhidOther: { label: "MHID/Other", color: "#6b7280" }
         };
 
         // ==================== UTILITY FUNCTIONS ====================
@@ -1158,8 +1267,16 @@
 
             const data = calculateMetrics(FUNDING_DATA);
 
+            // Calculate Strobel House values
+            const strobelCapital = 35000000;
+            const strobelPeople = 90;
+            const baseline = FUNDING_DATA[0];
+            const strobelFundingIndex = (strobelCapital / baseline.total) * 100; // 396%
+            const strobelHousedIndex = (strobelPeople / baseline.peopleHoused) * 100; // 9.2%
+
+            // Adjust x scale to include space for Strobel
             const x = d3.scaleBand()
-                .domain(data.map(d => d.year))
+                .domain([...data.map(d => d.year), "Strobel\nCapital"])
                 .range([0, innerWidth])
                 .padding(0.25);
 
@@ -1183,6 +1300,22 @@
             fundingGradient.append("stop")
                 .attr("offset", "100%")
                 .attr("stop-color", "#16a34a")
+                .attr("stop-opacity", 0.8);
+
+            // Create Strobel gradient (purple)
+            const strobelGradient = defs.append("linearGradient")
+                .attr("id", "strobel-gradient")
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "0%").attr("y2", "100%");
+            
+            strobelGradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "#9333ea")
+                .attr("stop-opacity", 0.8);
+            
+            strobelGradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#7c3aed")
                 .attr("stop-opacity", 0.8);
 
             // Baseline line
@@ -1229,28 +1362,46 @@
                 .attr("y", d => y(d.fundingIndex))
                 .attr("height", d => innerHeight - y(d.fundingIndex));
 
-            // Improved icon positioning
-            g.selectAll(".dollar-icon")
-                .data(data)
-                .enter().append("text")
-                .attr("x", d => x(d.year) + x.bandwidth() / 2)
-                .attr("y", d => {
-                    // Position dollar sign in middle of bar
-                    const barTop = y(d.fundingIndex);
-                    const barBottom = innerHeight;
-                    const barMiddle = (barTop + barBottom) / 2;
-                    // Make sure it doesn't overlap with percentage labels
-                    return Math.max(barMiddle, barTop + 30);
+            // Strobel House bar
+            g.append("rect")
+                .attr("x", x("Strobel\nCapital"))
+                .attr("width", x.bandwidth())
+                .attr("y", innerHeight)
+                .attr("height", 0)
+                .attr("fill", "url(#strobel-gradient)")
+                .attr("opacity", 0.7)
+                .attr("stroke", "#9333ea")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,3")
+                .on("mouseover", function(event) {
+                    d3.select(this).attr("opacity", 0.9);
+                    showTooltip(event, `
+                        <div class="tooltip-title">Strobel House Capital</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Capital Cost:</span>
+                            <span class="tooltip-value">$35,000,000</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">People Housed:</span>
+                            <span class="tooltip-value">90</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">% of Chronic:</span>
+                            <span class="tooltip-value">6.1%</span>
+                        </div>
+                    `);
                 })
-                .attr("text-anchor", "middle")
-                .attr("font-size", "20px")
-                .text("💵")
-                .attr("opacity", 0)
+                .on("mouseout", function() {
+                    d3.select(this).attr("opacity", 0.7);
+                    hideTooltip();
+                })
                 .transition()
-                .delay((d, i) => i * 100 + 500)
-                .attr("opacity", 0.7);
+                .duration(800)
+                .delay(600)
+                .attr("y", y(strobelFundingIndex))
+                .attr("height", innerHeight - y(strobelFundingIndex));
 
-            // Percentage labels above bars
+            // Percentage and dollar labels above bars
             g.selectAll(".percent-label")
                 .data(data)
                 .enter().append("text")
@@ -1260,10 +1411,51 @@
                 .attr("font-size", "12px")
                 .attr("font-weight", "700")
                 .attr("fill", "#16a34a")
-                .text(d => Math.round(d.fundingIndex) + "%")
+                .text(d => `💵 ${Math.round(d.fundingIndex)}%`)
                 .attr("opacity", 0)
                 .transition()
                 .delay((d, i) => i * 100 + 600)
+                .attr("opacity", 1);
+
+            // Strobel label
+            g.append("text")
+                .attr("x", x("Strobel\nCapital") + x.bandwidth() / 2)
+                .attr("y", y(strobelFundingIndex) - 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("font-weight", "700")
+                .attr("fill", "#7c3aed")
+                .text("$35M")
+                .attr("opacity", 0)
+                .transition()
+                .delay(1200)
+                .attr("opacity", 1);
+
+            // Strobel people housed indicator
+            g.append("text")
+                .attr("x", x("Strobel\nCapital") + x.bandwidth() / 2)
+                .attr("y", y(strobelHousedIndex) + 5)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "14px")
+                .text("🏢")
+                .style("cursor", "pointer")
+                .attr("opacity", 0)
+                .on("mouseover", function(event) {
+                    showTooltip(event, `
+                        <div class="tooltip-title">Strobel Housing</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">People:</span>
+                            <span class="tooltip-value">90</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Index:</span>
+                            <span class="tooltip-value">9.2%</span>
+                        </div>
+                    `);
+                })
+                .on("mouseout", hideTooltip)
+                .transition()
+                .delay(1300)
                 .attr("opacity", 1);
 
             // People housed line
@@ -1288,19 +1480,33 @@
                 .duration(1500)
                 .attr("stroke-dashoffset", 0);
 
-            // House icons with smart positioning
+            // Calculate vertical positions to avoid overlaps
+            function getIconPositions(d) {
+                const houseY = y(d.housedIndex);
+                const tentY = d.pitIndex ? y(d.pitIndex) : null;
+                
+                let adjustedHouseY = houseY;
+                let adjustedTentY = tentY;
+                
+                if (tentY && Math.abs(houseY - tentY) < 25) {
+                    if (houseY < tentY) {
+                        adjustedHouseY = houseY - 10;
+                        adjustedTentY = tentY + 10;
+                    } else {
+                        adjustedHouseY = houseY + 10;
+                        adjustedTentY = tentY - 10;
+                    }
+                }
+                
+                return { house: adjustedHouseY, tent: adjustedTentY };
+            }
+
+            // House icons
             g.selectAll(".house-icon")
                 .data(data)
                 .enter().append("text")
                 .attr("x", d => x(d.year) + x.bandwidth() / 2)
-                .attr("y", d => {
-                    const baseY = y(d.housedIndex);
-                    // Offset vertically if it's too close to the tent icon
-                    if (d.pitCount && Math.abs(d.housedIndex - d.pitIndex) < 10) {
-                        return baseY - 15;
-                    }
-                    return baseY + 5;
-                })
+                .attr("y", d => getIconPositions(d).house + 5)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "16px")
                 .text("🏠")
@@ -1344,18 +1550,14 @@
                 .attr("stroke-dasharray", "5,5")
                 .attr("d", pitLine);
 
-            // Tent icons with smart positioning
+            // Tent icons
             g.selectAll(".tent-icon")
                 .data(pitData)
                 .enter().append("text")
                 .attr("x", d => x(d.year) + x.bandwidth() / 2)
                 .attr("y", d => {
-                    const baseY = y(d.pitIndex);
-                    // Offset vertically if it's too close to the house icon
-                    if (Math.abs(d.housedIndex - d.pitIndex) < 10) {
-                        return baseY + 20;
-                    }
-                    return baseY + 5;
+                    const positions = getIconPositions(d);
+                    return positions.tent + 5;
                 })
                 .attr("text-anchor", "middle")
                 .attr("font-size", "16px")
@@ -1404,7 +1606,8 @@
 
             // Legend at bottom
             const legendData = [
-                { label: "Funding 💵", color: "#22c55e" },
+                { label: "Operational Funding", color: "#22c55e" },
+                { label: "Strobel Capital (Separate)", color: "#9333ea" },
                 { label: "People Housed 🏠", color: "#15803d" },
                 { label: "PIT Count ⛺", color: "#8b4513" }
             ];
@@ -1412,7 +1615,7 @@
             const legend = g.selectAll(".legend")
                 .data(legendData)
                 .enter().append("g")
-                .attr("transform", (d, i) => `translate(${i * 135 + innerWidth/2 - 195}, ${innerHeight + 45})`);
+                .attr("transform", (d, i) => `translate(${i * 150 + innerWidth/2 - 300}, ${innerHeight + 45})`);
 
             legend.append("rect")
                 .attr("width", 18)
@@ -1433,7 +1636,7 @@
             const legendContainer = d3.select("#stacked-legend");
             legendContainer.selectAll("*").remove();
             
-            const margin = {top: 20, right: 80, bottom: 50, left: 80};
+            const margin = {top: 30, right: 20, bottom: 50, left: 80};
             const width = Math.min(container.node().getBoundingClientRect().width, 1000);
             const height = 400;
             const innerWidth = width - margin.left - margin.right;
@@ -1538,6 +1741,7 @@
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
             const data = calculateMetrics(FUNDING_DATA);
+            const nationalBenchmark = 15358; // RAND Corporation study
 
             const x = d3.scaleBand()
                 .domain(data.map(d => d.year))
@@ -1548,6 +1752,26 @@
                 .domain([0, 26000])
                 .range([innerHeight, 0]);
 
+            // Add national benchmark line
+            g.append("line")
+                .attr("x1", 0)
+                .attr("x2", innerWidth)
+                .attr("y1", y(nationalBenchmark))
+                .attr("y2", y(nationalBenchmark))
+                .attr("stroke", "#2563eb")
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,3");
+
+            // Add benchmark label positioned above the line
+            g.append("text")
+                .attr("x", innerWidth / 2)
+                .attr("y", y(nationalBenchmark) - 8)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "11px")
+                .attr("fill", "#2563eb")
+                .attr("font-weight", "600")
+                .text("National Benchmark: $15,358/person/year");
+
             g.selectAll(".efficiency-bar")
                 .data(data)
                 .enter().append("rect")
@@ -1556,20 +1780,27 @@
                 .attr("y", innerHeight)
                 .attr("height", 0)
                 .attr("fill", d => {
-                    if (d.year === "FY2020" || d.year === "FY2021") return "#22c55e";
-                    if (d.year === "FY2022") return "#fbbf24";
-                    if (d.year === "FY2023") return "#fb923c";
-                    return "#ef4444";
+                    const ratio = d.costPerPerson / nationalBenchmark;
+                    if (ratio <= 0.8) return "#059669"; // Dark green - excellent
+                    if (ratio <= 1.0) return "#22c55e"; // Green - good
+                    if (ratio <= 1.2) return "#84cc16"; // Light green - acceptable
+                    if (ratio <= 1.5) return "#fbbf24"; // Yellow - concerning
+                    return "#ef4444"; // Red - poor
                 })
                 .attr("opacity", 0.8)
                 .on("mouseover", function(event, d) {
                     d3.select(this).attr("opacity", 1);
                     const efficiency = d.peopleHoused / (d.total / 1000000);
+                    const percentOfBenchmark = ((d.costPerPerson / nationalBenchmark) * 100).toFixed(0);
                     showTooltip(event, `
                         <div class="tooltip-title">${d.year} Efficiency</div>
                         <div class="tooltip-row">
                             <span class="tooltip-label">Cost/Person:</span>
                             <span class="tooltip-value">${formatMoney(d.costPerPerson)}</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">vs Benchmark:</span>
+                            <span class="tooltip-value">${percentOfBenchmark}%</span>
                         </div>
                         <div class="tooltip-row">
                             <span class="tooltip-label">People/$1M:</span>
@@ -1587,15 +1818,43 @@
                 .attr("y", d => y(d.costPerPerson))
                 .attr("height", d => innerHeight - y(d.costPerPerson));
 
+            // Add value labels above bars
             g.selectAll(".value-label")
                 .data(data)
                 .enter().append("text")
                 .attr("x", d => x(d.year) + x.bandwidth() / 2)
-                .attr("y", d => y(d.costPerPerson) - 5)
+                .attr("y", d => y(d.costPerPerson) - 8)
                 .attr("text-anchor", "middle")
-                .attr("font-size", "12px")
+                .attr("font-size", "11px")
                 .attr("font-weight", "600")
                 .text(d => formatMoney(d.costPerPerson));
+
+            // Add efficiency percentages below value labels or inside bars
+            g.selectAll(".efficiency-label")
+                .data(data)
+                .enter().append("text")
+                .attr("x", d => x(d.year) + x.bandwidth() / 2)
+                .attr("y", d => {
+                    const barHeight = innerHeight - y(d.costPerPerson);
+                    if (barHeight > 40) {
+                        // Place inside bar if tall enough
+                        return y(d.costPerPerson) + 25;
+                    } else {
+                        // Skip if bar is too short to avoid overlap
+                        return -100;
+                    }
+                })
+                .attr("text-anchor", "middle")
+                .attr("font-size", "12px")
+                .attr("fill", "white")
+                .attr("font-weight", "700")
+                .text(d => {
+                    const barHeight = innerHeight - y(d.costPerPerson);
+                    if (barHeight > 40) {
+                        return Math.round((d.costPerPerson / nationalBenchmark) * 100) + "%";
+                    }
+                    return "";
+                });
 
             g.append("text")
                 .attr("x", innerWidth / 2)
@@ -1603,7 +1862,15 @@
                 .attr("text-anchor", "middle")
                 .attr("font-size", "11px")
                 .attr("fill", "#6b7280")
-                .text("FY2021 shows peak efficiency; FY2024 includes Barnes Fund and Strobel operations");
+                .text("FY2021 shows impact of ESG-CARES Housing Surge; FY2024 includes Barnes Fund and bulk of ARPA spending");
+            
+            // Add color legend (compact version)
+            const legendText = g.append("text")
+                .attr("x", 5)
+                .attr("y", 15)
+                .attr("font-size", "9px")
+                .attr("fill", "#6b7280")
+                .text("Efficiency: Green = Good (≤100% of benchmark) | Yellow = Concerning | Red = Poor (>150%)");
 
             g.append("g")
                 .attr("transform", `translate(0,${innerHeight})`)
@@ -1621,7 +1888,6 @@
             if (event && event.target) {
                 event.target.classList.add('active');
             } else {
-                // Find and activate the button for the view
                 document.querySelectorAll('.nav-btn').forEach(btn => {
                     if (btn.textContent.toLowerCase().includes(viewName.toLowerCase()) || 
                         (viewName === 'strobel' && btn.textContent.includes('Strobel'))) {
