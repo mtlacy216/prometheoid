@@ -474,7 +474,7 @@
 
                 <div class="card">
                     <h3 class="card-title">Funding vs. Outcomes: Indexed to FY2020 Baseline</h3>
-                    <div class="chart-subtitle">Tracking investment growth against housing outcomes and PIT counts (Strobel capital shown separately)</div>
+                    <div class="chart-subtitle">Tracking investment growth against housing outcomes and PIT counts (Strobel House construction shown separately)</div>
                     <div id="indexed-chart" class="chart-container"></div>
                 </div>
 
@@ -566,7 +566,7 @@
                 </div>
 
                 <div class="card" style="background: linear-gradient(135deg, rgba(34,197,94,0.05) 0%, rgba(255,255,255,1) 100%); border: 2px solid #22c55e;">
-                    <h3 class="card-title">Strobel House: $35M Capital + 90 People Housed</h3>
+                    <h3 class="card-title">Strobel House: $35M Construction + 90 People Housed</h3>
                     <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 1rem; align-items: center;">
                         <div style="text-align: center;">
                             <div style="font-size: 2.5rem; font-weight: 800; color: #16a34a;">90</div>
@@ -857,7 +857,7 @@
                     <h4>⚠️ Important Notes</h4>
                     <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
                         <li>Despite 428% funding increase, homelessness increased 3.8% (2,017 → 2,094)</li>
-                        <li>Strobel House: $35M capital investment houses 90 people (6.1% of chronically homeless)</li>
+                        <li>Strobel House: $35M construction investment houses 90 people (6.1% of chronically homeless)</li>
                         <li>ARPA PSH Gap Financing: $25M created only 182 units over 3+ years at $132,798 per unit PLUS requires $15,358/year ongoing</li>
                         <li>Chronic homelessness: 1,472 individuals as of April 2025</li>
                         <li>HUD CoC funds flow directly to nonprofits, not through Metro budget</li>
@@ -1004,7 +1004,7 @@
                     <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 0.5rem; font-size: 0.875rem;">
                         <strong>Legend:</strong> ✓ = Verified from official sources | ⚠️ = Unverified or estimated<br>
                         <strong>National Benchmark:</strong> $15,358/person/year for Permanent Supportive Housing (<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7514010/" target="_blank" style="color: #2563eb;">RAND Corporation, 2020</a>)<br>
-                        <strong>Note:</strong> Strobel House $35M capital cost excluded from operational totals
+                        <strong>Note:</strong> Strobel House $35M construction cost excluded from operational totals
                     </div>
 
                     <div style="margin-top: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
@@ -1276,7 +1276,7 @@
 
             // Adjust x scale to include space for Strobel
             const x = d3.scaleBand()
-                .domain([...data.map(d => d.year), "Strobel\nCapital"])
+                .domain([...data.map(d => d.year), "Strobel House\nConstruction"])
                 .range([0, innerWidth])
                 .padding(0.25);
 
@@ -1364,7 +1364,7 @@
 
             // Strobel House bar
             g.append("rect")
-                .attr("x", x("Strobel\nCapital"))
+                .attr("x", x("Strobel House\nConstruction"))
                 .attr("width", x.bandwidth())
                 .attr("y", innerHeight)
                 .attr("height", 0)
@@ -1376,7 +1376,7 @@
                 .on("mouseover", function(event) {
                     d3.select(this).attr("opacity", 0.9);
                     showTooltip(event, `
-                        <div class="tooltip-title">Strobel House Capital</div>
+                        <div class="tooltip-title">Strobel House Construction</div>
                         <div class="tooltip-row">
                             <span class="tooltip-label">Capital Cost:</span>
                             <span class="tooltip-value">$35,000,000</span>
@@ -1419,7 +1419,7 @@
 
             // Strobel label
             g.append("text")
-                .attr("x", x("Strobel\nCapital") + x.bandwidth() / 2)
+                .attr("x", x("Strobel House\nConstruction") + x.bandwidth() / 2)
                 .attr("y", y(strobelFundingIndex) - 5)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "12px")
@@ -1433,7 +1433,7 @@
 
             // Strobel people housed indicator
             g.append("text")
-                .attr("x", x("Strobel\nCapital") + x.bandwidth() / 2)
+                .attr("x", x("Strobel House\nConstruction") + x.bandwidth() / 2)
                 .attr("y", y(strobelHousedIndex) + 5)
                 .attr("text-anchor", "middle")
                 .attr("font-size", "14px")
@@ -1607,7 +1607,7 @@
             // Legend at bottom
             const legendData = [
                 { label: "Operational Funding", color: "#22c55e" },
-                { label: "Strobel Capital (Separate)", color: "#9333ea" },
+                { label: "Strobel House Construction (Separate)", color: "#9333ea" },
                 { label: "People Housed 🏠", color: "#15803d" },
                 { label: "PIT Count ⛺", color: "#8b4513" }
             ];
