@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .info-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .info-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #333;
+            word-break: break-all;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .qr-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        #qrcode {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            animation: fadeIn 1s ease-out;
+            width: 260px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Hide duplicate image if QRCode.js creates both canvas and img */
+        #qrcode img {
+            display: none !important;
+        }
+
+        /* Only show the canvas element */
+        #qrcode canvas {
+            display: block !important;
+            max-width: 100%;
+            height: auto;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        #qrcode canvas,
+        #qrcode img {
+            display: block !important;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .url-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+            max-width: 100%;
+            border: 1px solid #e0e0e0;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            font-size: 14px;
+        }
+
+        .copy-btn:hover {
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+        }
+
+        .regenerate-btn {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .regenerate-btn:hover {
+            box-shadow: 0 10px 25px rgba(245, 87, 108, 0.3);
+        }
+
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+            animation: slideInRight 0.5s ease-out;
+            z-index: 1000;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Secure QR Code</h1>
+        
+        <div class="info-group">
+            <span class="info-label">Base URL</span>
+            <div class="info-value" id="baseUrlDisplay">https://example.com/verify</div>
+        </div>
+        
+        <div class="info-group">
+            <span class="info-label">GUID</span>
+            <div class="info-value" id="guidDisplay"></div>
+        </div>
+        
+        <div class="info-group">
+            <span class="info-label">Encryption Key</span>
+            <div class="info-value" id="encKeyDisplay"></div>
+        </div>
+        
+        <div class="button-group">
+            <button class="regenerate-btn" onclick="regenerateAll()">Generate New QR Code</button>
+            <button class="copy-btn" onclick="copyURL()">Copy Full URL</button>
+        </div>
+        
+        <div class="qr-container">
+            <div id="qrcode"></div>
+            <div id="urlDisplay" class="url-display"></div>
+            <div class="timestamp" id="timestamp"></div>
+        </div>
+    </div>
+
+    <script>
+        let qrcode = null;
+        let currentURL = '';
+        const baseUrl = 'https://example.com/verify';
+
+        // Generate GUID
+        function generateGUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Generate random encryption key
+        function generateEncryptionKey(length = 32) {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+            let key = '';
+            for (let i = 0; i < length; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return key;
+        }
+
+        // Generate QR code with all information
+        function generateQRCode() {
+            const guid = generateGUID();
+            const encKey = generateEncryptionKey();
+            
+            // Display the values
+            document.getElementById('baseUrlDisplay').textContent = baseUrl;
+            document.getElementById('guidDisplay').textContent = guid;
+            document.getElementById('encKeyDisplay').textContent = encKey;
+            
+            // Build URL with parameters
+            currentURL = `${baseUrl}?guid=${encodeURIComponent(guid)}&key=${encodeURIComponent(encKey)}`;
+            
+            // Clear existing QR code
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            // Generate new QR code with fixed size
+            qrcode = new QRCode(qrContainer, {
+                text: currentURL,
+                width: 220,
+                height: 220,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Display full URL
+            document.getElementById('urlDisplay').textContent = currentURL;
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('timestamp').textContent = `Generated: ${now.toLocaleString()}`;
+        }
+
+        // Regenerate everything
+        function regenerateAll() {
+            generateQRCode();
+            showSuccessMessage('New QR code generated!');
+        }
+
+        // Copy URL to clipboard
+        function copyURL() {
+            navigator.clipboard.writeText(currentURL).then(() => {
+                showSuccessMessage('URL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = currentURL;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccessMessage('URL copied to clipboard!');
+            });
+        }
+
+        // Show success message
+        function showSuccessMessage(message) {
+            // Remove any existing message
+            const existing = document.querySelector('.success-message');
+            if (existing) {
+                document.body.removeChild(existing);
+            }
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'success-message';
+            msgDiv.textContent = message;
+            document.body.appendChild(msgDiv);
+            
+            setTimeout(() => {
+                msgDiv.style.animation = 'slideInRight 0.5s ease-out reverse';
+                setTimeout(() => {
+                    if (document.body.contains(msgDiv)) {
+                        document.body.removeChild(msgDiv);
+                    }
+                }, 500);
+            }, 2000);
+        }
+
+        // Auto-generate QR code on page load
+        window.onload = function() {
+            generateQRCode();
+        };
+    </script>
+</body>
+</html>
