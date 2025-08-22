@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Contact QR System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            color: #666;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .qr-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        #qrcode {
+            display: inline-block;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+        }
+
+        .qr-data {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #666;
+            text-align: left;
+        }
+
+        .emergency-display {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .emergency-header {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .contact-info {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .contact-label {
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .contact-value {
+            color: #333;
+            font-size: 16px;
+            word-break: break-word;
+        }
+
+        .call-button {
+            background: #4CAF50;
+            margin-top: 15px;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .credentials-section {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .advanced-toggle {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .toggle-btn {
+            background: #6c757d;
+            font-size: 14px;
+        }
+
+        .advanced-content {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .advanced-content.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency Contact QR System</h1>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('create', this)">Create QR Code</button>
+            <button class="mode-btn" onclick="switchMode('read', this)">Read QR Code</button>
+            <button class="mode-btn" onclick="switchMode('setup', this)">Setup</button>
+        </div>
+
+        <!-- Create Mode -->
+        <div id="create-mode" class="mode-content active">
+            <form id="contact-form">
+                <div class="form-group">
+                    <label for="person-name">Person's Name *</label>
+                    <input type="text" id="person-name" required placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="relationship">Relationship</label>
+                    <input type="text" id="relationship" placeholder="Friend, Family, etc.">
+                </div>
+
+                <h3 style="margin: 30px 0 20px; color: #666;">Emergency Contacts</h3>
+
+                <div class="form-group">
+                    <label for="contact1-name">Contact 1 - Name *</label>
+                    <input type="text" id="contact1-name" required placeholder="Jane Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact1-phone">Contact 1 - Phone *</label>
+                    <input type="tel" id="contact1-phone" required placeholder="+1-555-123-4567">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact1-relation">Contact 1 - Relation</label>
+                    <input type="text" id="contact1-relation" placeholder="Spouse, Parent, etc.">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact2-name">Contact 2 - Name</label>
+                    <input type="text" id="contact2-name" placeholder="Bob Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact2-phone">Contact 2 - Phone</label>
+                    <input type="tel" id="contact2-phone" placeholder="+1-555-987-6543">
+                </div>
+
+                <div class="form-group">
+                    <label for="contact2-relation">Contact 2 - Relation</label>
+                    <input type="text" id="contact2-relation" placeholder="Brother, Friend, etc.">
+                </div>
+
+                <h3 style="margin: 30px 0 20px; color: #666;">Medical Information</h3>
+
+                <div class="form-group">
+                    <label for="blood-type">Blood Type</label>
+                    <select id="blood-type">
+                        <option value="">Unknown</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="allergies">Allergies</label>
+                    <textarea id="allergies" placeholder="List any allergies..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="medications">Current Medications</label>
+                    <textarea id="medications" placeholder="List current medications..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="medical-conditions">Medical Conditions</label>
+                    <textarea id="medical-conditions" placeholder="List any medical conditions..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Additional Notes</label>
+                    <textarea id="notes" placeholder="Any additional important information..."></textarea>
+                </div>
+
+                <button type="submit">Generate QR Code</button>
+            </form>
+
+            <div id="qr-result" class="qr-container" style="display: none;">
+                <h3>QR Code Generated!</h3>
+                <div id="qrcode"></div>
+                <div class="qr-data">
+                    <strong>UUID:</strong> <span id="uuid-display"></span><br>
+                    <strong>Key:</strong> <span id="key-display"></span><br>
+                    <strong>URL:</strong> <span id="url-display"></span>
+                </div>
+                <button onclick="printQRCode()">Print QR Code</button>
+                <button onclick="downloadQRCode()">Download QR Code</button>
+                <button onclick="testQRCode()">Test QR Code</button>
+            </div>
+
+            <div id="create-status"></div>
+        </div>
+
+        <!-- Read Mode -->
+        <div id="read-mode" class="mode-content">
+            <div class="form-group">
+                <label for="qr-url">Enter QR Code URL or Scan</label>
+                <input type="text" id="qr-url" placeholder="Paste URL here or use camera to scan">
+                <button onclick="readEmergencyContact()">Load Emergency Contact</button>
+            </div>
+
+            <div id="emergency-display" style="display: none;">
+                <!-- Emergency contact info will be displayed here -->
+            </div>
+
+            <div id="read-status"></div>
+        </div>
+
+        <!-- Setup Mode -->
+        <div id="setup-mode" class="mode-content">
+            <div class="credentials-section">
+                <h3>⚠️ Important: Save These Credentials Securely</h3>
+                <p style="margin: 10px 0; color: #856404;">These credentials are required to create and update emergency contacts.</p>
+            </div>
+
+            <div class="form-group">
+                <label for="base-key">Base System Key *</label>
+                <input type="password" id="base-key" placeholder="Your master password (never changes)">
+                <small style="color: #666;">This encrypts your Archive.org credentials</small>
+            </div>
+
+            <div class="form-group">
+                <label for="archive-access">Archive.org Access Key *</label>
+                <input type="text" id="archive-access" placeholder="IA_ACCESS_KEY_XXXXX">
+                <small style="color: #666;">From archive.org/account/s3.php</small>
+            </div>
+
+            <div class="form-group">
+                <label for="archive-secret">Archive.org Secret Key *</label>
+                <input type="password" id="archive-secret" placeholder="IA_SECRET_KEY_XXXXX">
+            </div>
+
+            <div class="form-group">
+                <label for="item-identifier">Archive.org Item Identifier *</label>
+                <input type="text" id="item-identifier" placeholder="emergency-contacts-yourname">
+                <small style="color: #666;">Unique identifier for your Archive.org item</small>
+            </div>
+
+            <button onclick="saveCredentials()">Save Credentials (Local Storage)</button>
+            <button onclick="testArchiveConnection()">Test Archive.org Connection</button>
+            
+            <div class="advanced-toggle">
+                <button class="toggle-btn" onclick="toggleAdvanced()">Advanced Options</button>
+                <div id="advanced-content" class="advanced-content">
+                    <button onclick="clearCredentials()" style="background: #dc3545;">Clear All Credentials</button>
+                    <button onclick="exportCredentials()">Export Credentials</button>
+                    <button onclick="importCredentials()">Import Credentials</button>
+                </div>
+            </div>
+
+            <div id="setup-status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentMode = 'create';
+        let qrcode = null;
+        let currentContactData = null;
+        let currentUUID = null;
+        let currentKey = null;
+
+        // Initialize on load
+        window.onload = function() {
+            checkURLParams();
+            loadSavedCredentials();
+        };
+
+        // Check if URL has parameters (for reading QR)
+        function checkURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const uuid = urlParams.get('uuid');
+            const hash = window.location.hash.substring(1);
+            
+            if (uuid && hash) {
+                // Find and click the read button
+                const readBtn = document.querySelector('.mode-btn:nth-child(2)');
+                switchMode('read', readBtn);
+                document.getElementById('qr-url').value = window.location.href;
+                readEmergencyContact();
+            }
+        }
+
+        // Mode switching
+        function switchMode(mode, btn) {
+            currentMode = mode;
+            
+            // Update buttons
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.mode-content').forEach(content => content.classList.remove('active'));
+            
+            // Activate selected mode
+            btn.classList.add('active');
+            document.getElementById(`${mode}-mode`).classList.add('active');
+        }
+
+        // Generate UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // Generate random key
+        function generateRandomKey(length = 32) {
+            const array = new Uint8Array(length);
+            crypto.getRandomValues(array);
+            return btoa(String.fromCharCode.apply(null, array))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        // Encryption functions
+        async function encrypt(text, password) {
+            const enc = new TextEncoder();
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            
+            const passwordKey = await crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                "PBKDF2",
+                false,
+                ["deriveBits", "deriveKey"]
+            );
+            
+            const aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                passwordKey,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["encrypt"]
+            );
+            
+            const encrypted = await crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                aesKey,
+                enc.encode(text)
+            );
+            
+            const encryptedContent = new Uint8Array(encrypted);
+            const buf = new Uint8Array(salt.byteLength + iv.byteLength + encryptedContent.byteLength);
+            buf.set(salt, 0);
+            buf.set(iv, salt.byteLength);
+            buf.set(encryptedContent, salt.byteLength + iv.byteLength);
+            
+            return btoa(String.fromCharCode(...buf));
+        }
+
+        async function decrypt(encryptedData, password) {
+            const enc = new TextEncoder();
+            const dec = new TextDecoder();
+            
+            const data = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+            const salt = data.slice(0, 16);
+            const iv = data.slice(16, 28);
+            const encrypted = data.slice(28);
+            
+            const passwordKey = await crypto.subtle.importKey(
+                "raw",
+                enc.encode(password),
+                "PBKDF2",
+                false,
+                ["deriveBits", "deriveKey"]
+            );
+            
+            const aesKey = await crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: 100000,
+                    hash: "SHA-256"
+                },
+                passwordKey,
+                { name: "AES-GCM", length: 256 },
+                false,
+                ["decrypt"]
+            );
+            
+            const decrypted = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                aesKey,
+                encrypted
+            );
+            
+            return dec.decode(decrypted);
+        }
+
+        // Form submission
+        document.getElementById('contact-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            showStatus('create-status', 'Generating QR code...', 'info');
+            
+            try {
+                // Collect form data
+                const contactData = {
+                    personName: document.getElementById('person-name').value,
+                    relationship: document.getElementById('relationship').value,
+                    contacts: [
+                        {
+                            name: document.getElementById('contact1-name').value,
+                            phone: document.getElementById('contact1-phone').value,
+                            relation: document.getElementById('contact1-relation').value
+                        }
+                    ],
+                    medical: {
+                        bloodType: document.getElementById('blood-type').value,
+                        allergies: document.getElementById('allergies').value,
+                        medications: document.getElementById('medications').value,
+                        conditions: document.getElementById('medical-conditions').value
+                    },
+                    notes: document.getElementById('notes').value,
+                    created: new Date().toISOString(),
+                    version: 1
+                };
+                
+                // Add second contact if provided
+                if (document.getElementById('contact2-name').value) {
+                    contactData.contacts.push({
+                        name: document.getElementById('contact2-name').value,
+                        phone: document.getElementById('contact2-phone').value,
+                        relation: document.getElementById('contact2-relation').value
+                    });
+                }
+                
+                // Generate UUID and key
+                currentUUID = generateUUID();
+                currentKey = generateRandomKey();
+                currentContactData = contactData;
+                
+                // Encrypt data
+                const encryptedData = await encrypt(JSON.stringify(contactData), currentKey);
+                
+                // Try to upload to Archive.org
+                const credentials = loadCredentials();
+                if (credentials && credentials.accessKey && credentials.secretKey) {
+                    try {
+                        await uploadToArchive(currentUUID, encryptedData, credentials);
+                        showStatus('create-status', 'Uploaded to Archive.org successfully!', 'success');
+                    } catch (error) {
+                        showStatus('create-status', 'Could not upload to Archive.org. QR code will work once you upload manually.', 'error');
+                        console.error('Upload error:', error);
+                    }
+                }
+                
+                // Generate QR code
+                const baseUrl = window.location.origin + window.location.pathname;
+                const qrUrl = `${baseUrl}?uuid=${currentUUID}#${currentKey}`;
+                
+                generateQRCode(qrUrl);
+                
+                // Display results
+                document.getElementById('uuid-display').textContent = currentUUID;
+                document.getElementById('key-display').textContent = currentKey;
+                document.getElementById('url-display').textContent = qrUrl;
+                document.getElementById('qr-result').style.display = 'block';
+                
+                showStatus('create-status', 'QR code generated successfully!', 'success');
+                
+            } catch (error) {
+                showStatus('create-status', 'Error: ' + error.message, 'error');
+                console.error(error);
+            }
+        });
+
+        // Generate QR code
+        function generateQRCode(text) {
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            qrcode = new QRCode(qrContainer, {
+                text: text,
+                width: 300,
+                height: 300,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // Read emergency contact
+        async function readEmergencyContact() {
+            const url = document.getElementById('qr-url').value;
+            if (!url) {
+                showStatus('read-status', 'Please enter a QR code URL', 'error');
+                return;
+            }
+            
+            showStatus('read-status', 'Loading emergency contact...', 'info');
+            
+            try {
+                // Parse URL
+                const urlObj = new URL(url);
+                const uuid = urlObj.searchParams.get('uuid');
+                const key = urlObj.hash.substring(1);
+                
+                if (!uuid || !key) {
+                    throw new Error('Invalid QR code URL');
+                }
+                
+                // Fetch from Archive.org
+                const response = await fetch(`https://archive.org/download/${getItemIdentifier()}/${uuid}.json`);
+                if (!response.ok) {
+                    throw new Error('Could not fetch emergency contact data');
+                }
+                
+                const encryptedData = await response.text();
+                const contactData = JSON.parse(await decrypt(encryptedData, key));
+                
+                // Display emergency contact
+                displayEmergencyContact(contactData);
+                showStatus('read-status', 'Emergency contact loaded successfully!', 'success');
+                
+            } catch (error) {
+                showStatus('read-status', 'Error: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // Display emergency contact
+        function displayEmergencyContact(data) {
+            const display = document.getElementById('emergency-display');
+            
+            let html = `
+                <div class="emergency-header">
+                    <h2>🚨 Emergency Contact Information</h2>
+                    <p>For: ${data.personName}</p>
+                </div>
+            `;
+            
+            data.contacts.forEach((contact, index) => {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Emergency Contact ${index + 1}</div>
+                        <div class="contact-value">${contact.name}</div>
+                        <div class="contact-value">${contact.phone}</div>
+                        <div class="contact-value">${contact.relation || ''}</div>
+                        <button class="call-button" onclick="window.location.href='tel:${contact.phone}'">
+                            📞 Call ${contact.name}
+                        </button>
+                    </div>
+                `;
+            });
+            
+            if (data.medical.bloodType) {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Blood Type</div>
+                        <div class="contact-value">${data.medical.bloodType}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.medical.allergies) {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Allergies</div>
+                        <div class="contact-value">${data.medical.allergies}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.medical.medications) {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Current Medications</div>
+                        <div class="contact-value">${data.medical.medications}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.medical.conditions) {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Medical Conditions</div>
+                        <div class="contact-value">${data.medical.conditions}</div>
+                    </div>
+                `;
+            }
+            
+            if (data.notes) {
+                html += `
+                    <div class="contact-info">
+                        <div class="contact-label">Additional Notes</div>
+                        <div class="contact-value">${data.notes}</div>
+                    </div>
+                `;
+            }
+            
+            display.innerHTML = html;
+            display.style.display = 'block';
+        }
+
+        // Upload to Archive.org
+        async function uploadToArchive(uuid, encryptedData, credentials) {
+            const itemId = credentials.itemIdentifier || 'emergency-contacts-' + credentials.accessKey.substring(0, 8);
+            const fileName = `${uuid}.json`;
+            const url = `https://s3.us.archive.org/${itemId}/${fileName}`;
+            
+            const headers = {
+                'authorization': `LOW ${credentials.accessKey}:${credentials.secretKey}`,
+                'x-archive-auto-make-bucket': '1',
+                'x-archive-meta-collection': 'opensource',
+                'x-archive-meta-title': 'Emergency Contacts',
+                'x-archive-meta-description': 'Encrypted emergency contact information',
+                'content-type': 'application/json'
+            };
+            
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: headers,
+                body: encryptedData
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to upload to Archive.org');
+            }
+            
+            return response;
+        }
+
+        // Credential management
+        function saveCredentials() {
+            const credentials = {
+                baseKey: document.getElementById('base-key').value,
+                accessKey: document.getElementById('archive-access').value,
+                secretKey: document.getElementById('archive-secret').value,
+                itemIdentifier: document.getElementById('item-identifier').value
+            };
+            
+            if (!credentials.baseKey || !credentials.accessKey || !credentials.secretKey || !credentials.itemIdentifier) {
+                showStatus('setup-status', 'Please fill all required fields', 'error');
+                return;
+            }
+            
+            localStorage.setItem('emergency-credentials', JSON.stringify(credentials));
+            showStatus('setup-status', 'Credentials saved successfully!', 'success');
+        }
+
+        function loadCredentials() {
+            const stored = localStorage.getItem('emergency-credentials');
+            return stored ? JSON.parse(stored) : null;
+        }
+
+        function loadSavedCredentials() {
+            const credentials = loadCredentials();
+            if (credentials) {
+                document.getElementById('base-key').value = credentials.baseKey || '';
+                document.getElementById('archive-access').value = credentials.accessKey || '';
+                document.getElementById('archive-secret').value = credentials.secretKey || '';
+                document.getElementById('item-identifier').value = credentials.itemIdentifier || '';
+            }
+        }
+
+        function clearCredentials() {
+            if (confirm('Are you sure you want to clear all saved credentials?')) {
+                localStorage.removeItem('emergency-credentials');
+                showStatus('setup-status', 'Credentials cleared', 'success');
+                document.getElementById('base-key').value = '';
+                document.getElementById('archive-access').value = '';
+                document.getElementById('archive-secret').value = '';
+                document.getElementById('item-identifier').value = '';
+            }
+        }
+
+        function getItemIdentifier() {
+            const credentials = loadCredentials();
+            return credentials ? credentials.itemIdentifier : 'emergency-contacts';
+        }
+
+        // Test Archive.org connection
+        async function testArchiveConnection() {
+            showStatus('setup-status', 'Testing connection...', 'info');
+            
+            try {
+                const credentials = loadCredentials();
+                if (!credentials) {
+                    throw new Error('Please save credentials first');
+                }
+                
+                const testData = JSON.stringify({ test: true, timestamp: new Date().toISOString() });
+                const testUUID = 'test-' + Date.now();
+                
+                await uploadToArchive(testUUID, testData, credentials);
+                showStatus('setup-status', 'Connection successful! Archive.org is working.', 'success');
+                
+            } catch (error) {
+                showStatus('setup-status', 'Connection failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        // UI Helper functions
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.className = 'status-message status-' + type;
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function toggleAdvanced() {
+            const advanced = document.getElementById('advanced-content');
+            advanced.classList.toggle('show');
+        }
+
+        function printQRCode() {
+            const printWindow = window.open('', '_blank');
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            const qrImage = document.querySelector('#qrcode img');
+            const dataUrl = qrCanvas ? qrCanvas.toDataURL() : (qrImage ? qrImage.src : '');
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Emergency Contact QR Code</title>
+                    <style>
+                        body { text-align: center; padding: 20px; font-family: Arial; }
+                        img { max-width: 400px; margin: 20px auto; }
+                        .info { margin: 20px; padding: 20px; border: 1px solid #ccc; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Emergency Contact QR Code</h1>
+                    <img src="${dataUrl}" />
+                    <div class="info">
+                        <p><strong>Person:</strong> ${currentContactData.personName}</p>
+                        <p><strong>UUID:</strong> ${currentUUID}</p>
+                        <p><strong>Created:</strong> ${new Date().toLocaleDateString()}</p>
+                        <p style="color: red;"><strong>⚠️ Keep this QR code safe!</strong></p>
+                    </div>
+                    <script>window.print();<\/script>
+                </body>
+                </html>
+            `);
+        }
+
+        function downloadQRCode() {
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            const qrImage = document.querySelector('#qrcode img');
+            const link = document.createElement('a');
+            link.download = `emergency-qr-${currentContactData.personName.replace(/\s+/g, '-')}.png`;
+            
+            if (qrCanvas) {
+                link.href = qrCanvas.toDataURL();
+            } else if (qrImage) {
+                link.href = qrImage.src;
+            }
+            
+            link.click();
+        }
+
+        function testQRCode() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const testUrl = `${baseUrl}?uuid=${currentUUID}#${currentKey}`;
+            window.open(testUrl, '_blank');
+        }
+
+        function exportCredentials() {
+            const credentials = loadCredentials();
+            if (!credentials) {
+                showStatus('setup-status', 'No credentials to export', 'error');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(credentials, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', 'emergency-credentials.json');
+            link.click();
+            
+            showStatus('setup-status', 'Credentials exported', 'success');
+        }
+
+        function importCredentials() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                const text = await file.text();
+                
+                try {
+                    const credentials = JSON.parse(text);
+                    localStorage.setItem('emergency-credentials', JSON.stringify(credentials));
+                    loadSavedCredentials();
+                    showStatus('setup-status', 'Credentials imported successfully', 'success');
+                } catch (error) {
+                    showStatus('setup-status', 'Invalid credentials file', 'error');
+                }
+            };
+            
+            input.click();
+        }
+    </script>
+</body>
+</html>
