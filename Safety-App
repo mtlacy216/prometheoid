@@ -387,6 +387,54 @@
                 <button onclick="printQRCode()">Print QR Code</button>
                 <button onclick="downloadQRCode()">Download QR Code</button>
                 <button onclick="testQRCode()">Test QR Code</button>
+                <button onclick="showUploadInstructions()" style="background: #28a745;">📤 Upload to Archive.org</button>
+            </div>
+            
+            <div id="upload-section" class="qr-container" style="display: none; margin-top: 20px; background: #f8f9fa;">
+                <h3>📤 Upload to Archive.org</h3>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ffeeba;">
+                    <strong>⚠️ Manual Upload Required</strong><br>
+                    <small>Due to browser security, you need to upload using one of these methods:</small>
+                </div>
+                
+                <div class="form-group" style="text-align: left;">
+                    <label>Your Archive.org Credentials:</label>
+                    <div style="background: white; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <strong>Access Key:</strong> <span id="display-access-key" style="color: #007bff;"></span><br>
+                        <strong>Secret Key:</strong> <span id="display-secret-key" style="color: #007bff;"></span><br>
+                        <strong>Item ID:</strong> <span id="display-item-id" style="color: #007bff;"></span>
+                    </div>
+                </div>
+                
+                <h4 style="margin-top: 20px;">Method 1: Copy Encrypted Data</h4>
+                <div class="form-group">
+                    <label>Encrypted Data (copy this):</label>
+                    <textarea id="encrypted-data-display" style="height: 100px; font-family: monospace; font-size: 12px;" readonly></textarea>
+                    <button onclick="copyEncryptedData()">📋 Copy Encrypted Data</button>
+                    <button onclick="downloadEncryptedData()">💾 Download as JSON File</button>
+                </div>
+                
+                <h4 style="margin-top: 20px;">Method 2: Use cURL Command</h4>
+                <div class="form-group">
+                    <label>Run this command in terminal:</label>
+                    <textarea id="curl-command" style="height: 150px; font-family: monospace; font-size: 12px;" readonly></textarea>
+                    <button onclick="copyCurlCommand()">📋 Copy cURL Command</button>
+                </div>
+                
+                <h4 style="margin-top: 20px;">Method 3: Python Script</h4>
+                <div class="form-group">
+                    <label>Save and run this Python script:</label>
+                    <textarea id="python-script" style="height: 200px; font-family: monospace; font-size: 12px;" readonly></textarea>
+                    <button onclick="copyPythonScript()">📋 Copy Python Script</button>
+                    <button onclick="downloadPythonScript()">💾 Download Python Script</button>
+                </div>
+                
+                <div style="background: #d4edda; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #c3e6cb;">
+                    <strong>✅ After Upload:</strong><br>
+                    Your QR code will work immediately! The emergency contact data will be available at:<br>
+                    <code style="color: #155724;">https://archive.org/download/<span id="item-url"></span>/<span id="uuid-url"></span>.json</code>
+                </div>
             </div>
 
             <div id="create-status"></div>
@@ -641,6 +689,9 @@
                 // Encrypt data
                 const encryptedData = await encrypt(JSON.stringify(contactData), currentKey);
                 
+                // Store encrypted data globally for upload functions
+                window.currentEncryptedData = encryptedData;
+                
                 // Try to upload to Archive.org
                 const credentials = loadCredentials();
                 if (credentials && credentials.accessKey && credentials.secretKey) {
@@ -648,9 +699,11 @@
                         await uploadToArchive(currentUUID, encryptedData, credentials);
                         showStatus('create-status', 'Uploaded to Archive.org successfully!', 'success');
                     } catch (error) {
-                        showStatus('create-status', 'Could not upload to Archive.org. QR code will work once you upload manually.', 'error');
+                        showStatus('create-status', 'Direct upload failed (CORS). Use the Upload button below for manual upload options.', 'info');
                         console.error('Upload error:', error);
                     }
+                } else {
+                    showStatus('create-status', 'No credentials saved. Use the Upload button to see manual upload options.', 'info');
                 }
                 
                 // Generate QR code
@@ -1009,6 +1062,129 @@
             };
             
             input.click();
+        }
+        
+        // New upload helper functions
+        function showUploadInstructions() {
+            const credentials = loadCredentials();
+            const uploadSection = document.getElementById('upload-section');
+            
+            if (credentials) {
+                // Display credentials
+                document.getElementById('display-access-key').textContent = credentials.accessKey;
+                document.getElementById('display-secret-key').textContent = credentials.secretKey;
+                document.getElementById('display-item-id').textContent = credentials.itemIdentifier;
+                
+                // Display encrypted data
+                document.getElementById('encrypted-data-display').value = window.currentEncryptedData;
+                
+                // Generate cURL command
+                const curlCommand = `curl -X PUT \\
+  "https://s3.us.archive.org/${credentials.itemIdentifier}/${currentUUID}.json" \\
+  -H "authorization: LOW ${credentials.accessKey}:${credentials.secretKey}" \\
+  -H "x-archive-auto-make-bucket: 1" \\
+  -H "x-archive-meta-collection: opensource" \\
+  -H "x-archive-meta-title: Emergency Contacts" \\
+  -H "x-archive-meta-description: Encrypted emergency contact information" \\
+  -H "content-type: application/json" \\
+  -d '${window.currentEncryptedData}'`;
+                
+                document.getElementById('curl-command').value = curlCommand;
+                
+                // Generate Python script
+                const pythonScript = `import requests
+
+# Archive.org credentials
+ACCESS_KEY = "${credentials.accessKey}"
+SECRET_KEY = "${credentials.secretKey}"
+ITEM_ID = "${credentials.itemIdentifier}"
+UUID = "${currentUUID}"
+
+# Encrypted data
+encrypted_data = """${window.currentEncryptedData}"""
+
+# Upload URL
+url = f"https://s3.us.archive.org/{ITEM_ID}/{UUID}.json"
+
+# Headers
+headers = {
+    "authorization": f"LOW {ACCESS_KEY}:{SECRET_KEY}",
+    "x-archive-auto-make-bucket": "1",
+    "x-archive-meta-collection": "opensource",
+    "x-archive-meta-title": "Emergency Contacts",
+    "x-archive-meta-description": "Encrypted emergency contact information",
+    "content-type": "application/json"
+}
+
+# Upload
+response = requests.put(url, headers=headers, data=encrypted_data)
+
+if response.status_code == 200:
+    print(f"✅ Upload successful!")
+    print(f"URL: https://archive.org/download/{ITEM_ID}/{UUID}.json")
+else:
+    print(f"❌ Upload failed: {response.status_code}")
+    print(response.text)`;
+                
+                document.getElementById('python-script').value = pythonScript;
+                
+                // Display URLs
+                document.getElementById('item-url').textContent = credentials.itemIdentifier;
+                document.getElementById('uuid-url').textContent = currentUUID;
+            } else {
+                // Show message to set up credentials first
+                uploadSection.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb;">
+                        <strong>❌ No Credentials Found</strong><br>
+                        Please go to Setup mode and save your Archive.org credentials first.
+                    </div>
+                `;
+            }
+            
+            uploadSection.style.display = 'block';
+        }
+        
+        function copyEncryptedData() {
+            const textarea = document.getElementById('encrypted-data-display');
+            textarea.select();
+            document.execCommand('copy');
+            showStatus('create-status', 'Encrypted data copied to clipboard!', 'success');
+        }
+        
+        function downloadEncryptedData() {
+            const data = window.currentEncryptedData;
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${currentUUID}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function copyCurlCommand() {
+            const textarea = document.getElementById('curl-command');
+            textarea.select();
+            document.execCommand('copy');
+            showStatus('create-status', 'cURL command copied to clipboard!', 'success');
+        }
+        
+        function copyPythonScript() {
+            const textarea = document.getElementById('python-script');
+            textarea.select();
+            document.execCommand('copy');
+            showStatus('create-status', 'Python script copied to clipboard!', 'success');
+        }
+        
+        function downloadPythonScript() {
+            const script = document.getElementById('python-script').value;
+            const blob = new Blob([script], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `upload_${currentUUID}.py`;
+            link.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
