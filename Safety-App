@@ -40,7 +40,7 @@
             background-clip: text;
         }
 
-        .mode-selector {
+        .tabs {
             display: flex;
             gap: 10px;
             margin-bottom: 30px;
@@ -49,7 +49,7 @@
             border-radius: 10px;
         }
 
-        .mode-btn {
+        .tab {
             flex: 1;
             padding: 12px;
             background: white;
@@ -61,16 +61,16 @@
             font-weight: 600;
         }
 
-        .mode-btn.active {
+        .tab.active {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
         }
 
-        .mode-content {
+        .tab-content {
             display: none;
         }
 
-        .mode-content.active {
+        .tab-content.active {
             display: block;
             animation: fadeIn 0.5s ease-out;
         }
@@ -130,6 +130,11 @@
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .qr-container {
             background: white;
             border-radius: 15px;
@@ -144,18 +149,6 @@
             padding: 20px;
             background: white;
             border-radius: 10px;
-        }
-
-        .qr-data {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            color: #666;
-            text-align: left;
         }
 
         .emergency-display {
@@ -226,19 +219,11 @@
             border: 1px solid #bee5eb;
         }
 
-        .credentials-section {
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
         .loading {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
+            border: 3px solid rgba(102, 126, 234, 0.3);
             border-top: 3px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -250,24 +235,29 @@
             100% { transform: rotate(360deg); }
         }
 
-        .advanced-toggle {
+        .qr-info {
             margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e0e0e0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            text-align: left;
         }
 
-        .toggle-btn {
-            background: #6c757d;
+        .qr-info-item {
+            margin: 10px 0;
             font-size: 14px;
         }
 
-        .advanced-content {
-            display: none;
-            margin-top: 20px;
+        .qr-info-label {
+            font-weight: 600;
+            color: #666;
         }
 
-        .advanced-content.show {
-            display: block;
+        .qr-info-value {
+            color: #333;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
         }
 
         @media (max-width: 768px) {
@@ -285,23 +275,31 @@
     <div class="container">
         <h1>🚨 Emergency Contact QR System</h1>
         
-        <div class="mode-selector">
-            <button class="mode-btn active" onclick="switchMode('create', this)">Create QR Code</button>
-            <button class="mode-btn" onclick="switchMode('read', this)">Read QR Code</button>
-            <button class="mode-btn" onclick="switchMode('setup', this)">Setup</button>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('create', this)">Create QR Code</button>
+            <button class="tab" onclick="switchTab('read', this)">Read QR Code</button>
         </div>
 
-        <!-- Create Mode -->
-        <div id="create-mode" class="mode-content active">
+        <!-- Create Tab -->
+        <div id="create-tab" class="tab-content active">
+            <!-- Saved QR Codes Section -->
+            <div id="saved-section" style="display: none; margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="color: #666; margin: 0;">📂 Saved QR Codes</h3>
+                    <div>
+                        <button onclick="exportAllQRs()" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📥 Export All</button>
+                        <button onclick="importQRs()" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📤 Import</button>
+                    </div>
+                </div>
+                <div id="saved-list" style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                    <!-- Saved items will appear here -->
+                </div>
+            </div>
+            
             <form id="contact-form">
                 <div class="form-group">
                     <label for="person-name">Person's Name *</label>
                     <input type="text" id="person-name" required placeholder="John Doe">
-                </div>
-
-                <div class="form-group">
-                    <label for="relationship">Relationship</label>
-                    <input type="text" id="relationship" placeholder="Friend, Family, etc.">
                 </div>
 
                 <h3 style="margin: 30px 0 20px; color: #666;">Emergency Contacts</h3>
@@ -336,7 +334,7 @@
                     <input type="text" id="contact2-relation" placeholder="Brother, Friend, etc.">
                 </div>
 
-                <h3 style="margin: 30px 0 20px; color: #666;">Medical Information</h3>
+                <h3 style="margin: 30px 0 20px; color: #666;">Medical Information (Optional)</h3>
 
                 <div class="form-group">
                     <label for="blood-type">Blood Type</label>
@@ -373,78 +371,45 @@
                     <textarea id="notes" placeholder="Any additional important information..."></textarea>
                 </div>
 
-                <button type="submit">Generate QR Code</button>
+                <button type="submit" id="submit-btn">Generate QR Code</button>
+                <button type="button" onclick="clearForm()" style="background: #6c757d; margin-top: 10px;">Clear Form</button>
             </form>
 
             <div id="qr-result" class="qr-container" style="display: none;">
-                <h3>QR Code Generated!</h3>
+                <h3>✅ QR Code Generated!</h3>
                 <div id="qrcode"></div>
-                <div class="qr-data">
-                    <strong>UUID:</strong> <span id="uuid-display"></span><br>
-                    <strong>Key:</strong> <span id="key-display"></span><br>
-                    <strong>URL:</strong> <span id="url-display"></span>
-                </div>
-                <button onclick="printQRCode()">Print QR Code</button>
-                <button onclick="downloadQRCode()">Download QR Code</button>
-                <button onclick="testQRCode()">Test QR Code</button>
-                <button onclick="showUploadInstructions()" style="background: #28a745;">📤 Upload to Archive.org</button>
-            </div>
-            
-            <div id="upload-section" class="qr-container" style="display: none; margin-top: 20px; background: #f8f9fa;">
-                <h3>📤 Upload to Archive.org</h3>
                 
-                <div style="background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ffeeba;">
-                    <strong>⚠️ Manual Upload Required</strong><br>
-                    <small>Due to browser security, you need to upload using one of these methods:</small>
-                </div>
-                
-                <div class="form-group" style="text-align: left;">
-                    <label>Your Archive.org Credentials:</label>
-                    <div style="background: white; padding: 10px; border-radius: 5px; margin: 10px 0;">
-                        <strong>Access Key:</strong> <span id="display-access-key" style="color: #007bff;"></span><br>
-                        <strong>Secret Key:</strong> <span id="display-secret-key" style="color: #007bff;"></span><br>
-                        <strong>Item ID:</strong> <span id="display-item-id" style="color: #007bff;"></span>
+                <div class="qr-info">
+                    <div class="qr-info-item">
+                        <span class="qr-info-label">Status:</span>
+                        <span id="upload-status" class="qr-info-value">Not saved to server yet</span>
+                    </div>
+                    <div class="qr-info-item">
+                        <span class="qr-info-label">GUID:</span>
+                        <span id="guid-display" class="qr-info-value"></span>
+                    </div>
+                    <div class="qr-info-item">
+                        <span class="qr-info-label">QR URL:</span>
+                        <span id="url-display" class="qr-info-value"></span>
                     </div>
                 </div>
                 
-                <h4 style="margin-top: 20px;">Method 1: Copy Encrypted Data</h4>
-                <div class="form-group">
-                    <label>Encrypted Data (copy this):</label>
-                    <textarea id="encrypted-data-display" style="height: 100px; font-family: monospace; font-size: 12px;" readonly></textarea>
-                    <button onclick="copyEncryptedData()">📋 Copy Encrypted Data</button>
-                    <button onclick="downloadEncryptedData()">💾 Download as JSON File</button>
-                </div>
-                
-                <h4 style="margin-top: 20px;">Method 2: Use cURL Command</h4>
-                <div class="form-group">
-                    <label>Run this command in terminal:</label>
-                    <textarea id="curl-command" style="height: 150px; font-family: monospace; font-size: 12px;" readonly></textarea>
-                    <button onclick="copyCurlCommand()">📋 Copy cURL Command</button>
-                </div>
-                
-                <h4 style="margin-top: 20px;">Method 3: Python Script</h4>
-                <div class="form-group">
-                    <label>Save and run this Python script:</label>
-                    <textarea id="python-script" style="height: 200px; font-family: monospace; font-size: 12px;" readonly></textarea>
-                    <button onclick="copyPythonScript()">📋 Copy Python Script</button>
-                    <button onclick="downloadPythonScript()">💾 Download Python Script</button>
-                </div>
-                
-                <div style="background: #d4edda; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px solid #c3e6cb;">
-                    <strong>✅ After Upload:</strong><br>
-                    Your QR code will work immediately! The emergency contact data will be available at:<br>
-                    <code style="color: #155724;">https://archive.org/download/<span id="item-url"></span>/<span id="uuid-url"></span>.json</code>
-                </div>
+                <button onclick="printQRCode()">🖨️ Print QR Code</button>
+                <button onclick="downloadQRCode()">💾 Download QR Code</button>
+                <button onclick="testQRCode()">🔍 Test QR Code</button>
+                <button onclick="saveToLocal()" style="background: #28a745;">☁️ Save to Server</button>
+                <button onclick="downloadEncryptedJSON()" style="background: #17a2b8;">📄 Download JSON</button>
+                <button onclick="updateExisting()" id="update-btn" style="background: #ffc107; display: none;">🔄 Update on Server</button>
             </div>
 
             <div id="create-status"></div>
         </div>
 
-        <!-- Read Mode -->
-        <div id="read-mode" class="mode-content">
+        <!-- Read Tab -->
+        <div id="read-tab" class="tab-content">
             <div class="form-group">
-                <label for="qr-url">Enter QR Code URL or Scan</label>
-                <input type="text" id="qr-url" placeholder="Paste URL here or use camera to scan">
+                <label for="qr-url">Enter QR Code URL or GUID</label>
+                <input type="text" id="qr-url" placeholder="Paste full URL or just the GUID">
                 <button onclick="readEmergencyContact()">Load Emergency Contact</button>
             </div>
 
@@ -454,97 +419,54 @@
 
             <div id="read-status"></div>
         </div>
-
-        <!-- Setup Mode -->
-        <div id="setup-mode" class="mode-content">
-            <div class="credentials-section">
-                <h3>⚠️ Important: Save These Credentials Securely</h3>
-                <p style="margin: 10px 0; color: #856404;">These credentials are required to create and update emergency contacts.</p>
-            </div>
-
-            <div class="form-group">
-                <label for="base-key">Base System Key *</label>
-                <input type="password" id="base-key" placeholder="Your master password (never changes)">
-                <small style="color: #666;">This encrypts your Archive.org credentials</small>
-            </div>
-
-            <div class="form-group">
-                <label for="archive-access">Archive.org Access Key *</label>
-                <input type="text" id="archive-access" placeholder="IA_ACCESS_KEY_XXXXX">
-                <small style="color: #666;">From archive.org/account/s3.php</small>
-            </div>
-
-            <div class="form-group">
-                <label for="archive-secret">Archive.org Secret Key *</label>
-                <input type="password" id="archive-secret" placeholder="IA_SECRET_KEY_XXXXX">
-            </div>
-
-            <div class="form-group">
-                <label for="item-identifier">Archive.org Item Identifier *</label>
-                <input type="text" id="item-identifier" placeholder="emergency-contacts-yourname">
-                <small style="color: #666;">Unique identifier for your Archive.org item</small>
-            </div>
-
-            <button onclick="saveCredentials()">Save Credentials (Local Storage)</button>
-            <button onclick="testArchiveConnection()">Test Archive.org Connection</button>
-            
-            <div class="advanced-toggle">
-                <button class="toggle-btn" onclick="toggleAdvanced()">Advanced Options</button>
-                <div id="advanced-content" class="advanced-content">
-                    <button onclick="clearCredentials()" style="background: #dc3545;">Clear All Credentials</button>
-                    <button onclick="exportCredentials()">Export Credentials</button>
-                    <button onclick="importCredentials()">Import Credentials</button>
-                </div>
-            </div>
-
-            <div id="setup-status"></div>
-        </div>
     </div>
 
     <script>
+        // Configuration
+        const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook-test/d5e99c29-2cf1-44c1-b5b4-95a1ca048441';
+        const ARCHIVE_ITEM_ID = 'emergency-contacts-data'; // Default item ID for Archive.org
+        
         // Global variables
-        let currentMode = 'create';
+        let currentTab = 'create';
         let qrcode = null;
-        let currentContactData = null;
-        let currentUUID = null;
+        let currentGUID = null;
         let currentKey = null;
+        let currentData = null;
+        let currentEncryptedData = null; // Store encrypted data for later save
+        let editingGUID = null; // Track if we're editing an existing entry
 
         // Initialize on load
         window.onload = function() {
             checkURLParams();
-            loadSavedCredentials();
+            loadSavedQRCodes();
         };
 
         // Check if URL has parameters (for reading QR)
         function checkURLParams() {
             const urlParams = new URLSearchParams(window.location.search);
-            const uuid = urlParams.get('uuid');
+            const guid = urlParams.get('guid');
             const hash = window.location.hash.substring(1);
             
-            if (uuid && hash) {
-                // Find and click the read button
-                const readBtn = document.querySelector('.mode-btn:nth-child(2)');
-                switchMode('read', readBtn);
+            if (guid && hash) {
+                switchTab('read', document.querySelector('.tab:nth-child(2)'));
                 document.getElementById('qr-url').value = window.location.href;
                 readEmergencyContact();
             }
         }
 
-        // Mode switching
-        function switchMode(mode, btn) {
-            currentMode = mode;
+        // Tab switching
+        function switchTab(tab, btn) {
+            currentTab = tab;
             
-            // Update buttons
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.mode-content').forEach(content => content.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             
-            // Activate selected mode
             btn.classList.add('active');
-            document.getElementById(`${mode}-mode`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
         }
 
-        // Generate UUID
-        function generateUUID() {
+        // Generate GUID
+        function generateGUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 const r = Math.random() * 16 | 0;
                 const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -553,7 +475,7 @@
         }
 
         // Generate random key
-        function generateRandomKey(length = 32) {
+        function generateKey(length = 32) {
             const array = new Uint8Array(length);
             crypto.getRandomValues(array);
             return btoa(String.fromCharCode.apply(null, array))
@@ -647,13 +569,23 @@
         document.getElementById('contact-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            showStatus('create-status', 'Generating QR code...', 'info');
+            // If we're editing and user clicks "Generate New", reset editing mode
+            if (editingGUID) {
+                editingGUID = null;
+                currentEncryptedData = null;
+                document.getElementById('update-btn').style.display = 'none';
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Generating... <span class="loading"></span>';
+            
+            showStatus('create-status', 'Creating encrypted emergency contact...', 'info');
             
             try {
                 // Collect form data
                 const contactData = {
                     personName: document.getElementById('person-name').value,
-                    relationship: document.getElementById('relationship').value,
                     contacts: [
                         {
                             name: document.getElementById('contact1-name').value,
@@ -681,48 +613,39 @@
                     });
                 }
                 
-                // Generate UUID and key
-                currentUUID = generateUUID();
-                currentKey = generateRandomKey();
-                currentContactData = contactData;
+                currentData = contactData;
                 
-                // Encrypt data
-                const encryptedData = await encrypt(JSON.stringify(contactData), currentKey);
+                // Generate GUID and key
+                currentGUID = generateGUID();
+                currentKey = generateKey();
                 
-                // Store encrypted data globally for upload functions
-                window.currentEncryptedData = encryptedData;
+                // Encrypt data and store for later save
+                currentEncryptedData = await encrypt(JSON.stringify(contactData), currentKey);
                 
-                // Try to upload to Archive.org
-                const credentials = loadCredentials();
-                if (credentials && credentials.accessKey && credentials.secretKey) {
-                    try {
-                        await uploadToArchive(currentUUID, encryptedData, credentials);
-                        showStatus('create-status', 'Uploaded to Archive.org successfully!', 'success');
-                    } catch (error) {
-                        showStatus('create-status', 'Direct upload failed (CORS). Use the Upload button below for manual upload options.', 'info');
-                        console.error('Upload error:', error);
-                    }
-                } else {
-                    showStatus('create-status', 'No credentials saved. Use the Upload button to see manual upload options.', 'info');
-                }
-                
-                // Generate QR code
+                // Generate QR code immediately (before upload)
                 const baseUrl = window.location.origin + window.location.pathname;
-                const qrUrl = `${baseUrl}?uuid=${currentUUID}#${currentKey}`;
+                const qrUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
                 
                 generateQRCode(qrUrl);
                 
                 // Display results
-                document.getElementById('uuid-display').textContent = currentUUID;
-                document.getElementById('key-display').textContent = currentKey;
+                document.getElementById('guid-display').textContent = currentGUID;
                 document.getElementById('url-display').textContent = qrUrl;
                 document.getElementById('qr-result').style.display = 'block';
                 
-                showStatus('create-status', 'QR code generated successfully!', 'success');
+                // Set status - not uploaded yet
+                document.getElementById('upload-status').textContent = '⚠️ Not saved to server yet';
+                document.getElementById('upload-status').style.color = '#ffc107';
+                
+                showStatus('create-status', '✅ QR code generated! Click "Save to Server" to upload.', 'success');
                 
             } catch (error) {
                 showStatus('create-status', 'Error: ' + error.message, 'error');
                 console.error(error);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Generate QR Code';
+                submitBtn.textContent = 'Generate QR Code';
             }
         });
 
@@ -743,32 +666,49 @@
 
         // Read emergency contact
         async function readEmergencyContact() {
-            const url = document.getElementById('qr-url').value;
-            if (!url) {
-                showStatus('read-status', 'Please enter a QR code URL', 'error');
+            const input = document.getElementById('qr-url').value.trim();
+            if (!input) {
+                showStatus('read-status', 'Please enter a QR code URL or GUID', 'error');
                 return;
             }
             
             showStatus('read-status', 'Loading emergency contact...', 'info');
             
             try {
-                // Parse URL
-                const urlObj = new URL(url);
-                const uuid = urlObj.searchParams.get('uuid');
-                const key = urlObj.hash.substring(1);
+                let guid, key;
                 
-                if (!uuid || !key) {
-                    throw new Error('Invalid QR code URL');
+                // Check if input is full URL or just GUID
+                if (input.includes('?')) {
+                    // Full URL
+                    const urlObj = new URL(input);
+                    guid = urlObj.searchParams.get('guid');
+                    key = urlObj.hash.substring(1);
+                } else if (input.includes('#')) {
+                    // GUID with key
+                    [guid, key] = input.split('#');
+                } else {
+                    // Just GUID - need key
+                    showStatus('read-status', 'Please provide the full QR URL including the encryption key', 'error');
+                    return;
                 }
                 
-                // Fetch from Archive.org
-                const response = await fetch(`https://archive.org/download/${getItemIdentifier()}/${uuid}.json`);
+                if (!guid || !key) {
+                    throw new Error('Invalid QR code URL - missing GUID or key');
+                }
+                
+                // Fetch from Archive.org (no auth needed for reading)
+                const archiveUrl = `https://archive.org/download/${ARCHIVE_ITEM_ID}/${guid}.json`;
+                const response = await fetch(archiveUrl);
+                
                 if (!response.ok) {
-                    throw new Error('Could not fetch emergency contact data');
+                    throw new Error('Could not fetch emergency contact data. It may not be uploaded yet.');
                 }
                 
                 const encryptedData = await response.text();
-                const contactData = JSON.parse(await decrypt(encryptedData, key));
+                
+                // Decrypt
+                const decryptedData = await decrypt(encryptedData, key);
+                const contactData = JSON.parse(decryptedData);
                 
                 // Display emergency contact
                 displayEmergencyContact(contactData);
@@ -791,54 +731,58 @@
                 </div>
             `;
             
-            data.contacts.forEach((contact, index) => {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Emergency Contact ${index + 1}</div>
-                        <div class="contact-value">${contact.name}</div>
-                        <div class="contact-value">${contact.phone}</div>
-                        <div class="contact-value">${contact.relation || ''}</div>
-                        <button class="call-button" onclick="window.location.href='tel:${contact.phone}'">
-                            📞 Call ${contact.name}
-                        </button>
-                    </div>
-                `;
-            });
-            
-            if (data.medical.bloodType) {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Blood Type</div>
-                        <div class="contact-value">${data.medical.bloodType}</div>
-                    </div>
-                `;
+            if (data.contacts && data.contacts.length > 0) {
+                data.contacts.forEach((contact, index) => {
+                    html += `
+                        <div class="contact-info">
+                            <div class="contact-label">Emergency Contact ${index + 1}</div>
+                            <div class="contact-value">${contact.name}</div>
+                            <div class="contact-value">${contact.phone}</div>
+                            ${contact.relation ? `<div class="contact-value">${contact.relation}</div>` : ''}
+                            <button class="call-button" onclick="window.location.href='tel:${contact.phone}'">
+                                📞 Call ${contact.name}
+                            </button>
+                        </div>
+                    `;
+                });
             }
             
-            if (data.medical.allergies) {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Allergies</div>
-                        <div class="contact-value">${data.medical.allergies}</div>
-                    </div>
-                `;
-            }
-            
-            if (data.medical.medications) {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Current Medications</div>
-                        <div class="contact-value">${data.medical.medications}</div>
-                    </div>
-                `;
-            }
-            
-            if (data.medical.conditions) {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Medical Conditions</div>
-                        <div class="contact-value">${data.medical.conditions}</div>
-                    </div>
-                `;
+            if (data.medical) {
+                if (data.medical.bloodType) {
+                    html += `
+                        <div class="contact-info">
+                            <div class="contact-label">Blood Type</div>
+                            <div class="contact-value">${data.medical.bloodType}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.medical.allergies) {
+                    html += `
+                        <div class="contact-info">
+                            <div class="contact-label">Allergies</div>
+                            <div class="contact-value">${data.medical.allergies}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.medical.medications) {
+                    html += `
+                        <div class="contact-info">
+                            <div class="contact-label">Current Medications</div>
+                            <div class="contact-value">${data.medical.medications}</div>
+                        </div>
+                    `;
+                }
+                
+                if (data.medical.conditions) {
+                    html += `
+                        <div class="contact-info">
+                            <div class="contact-label">Medical Conditions</div>
+                            <div class="contact-value">${data.medical.conditions}</div>
+                        </div>
+                    `;
+                }
             }
             
             if (data.notes) {
@@ -854,105 +798,6 @@
             display.style.display = 'block';
         }
 
-        // Upload to Archive.org
-        async function uploadToArchive(uuid, encryptedData, credentials) {
-            const itemId = credentials.itemIdentifier || 'emergency-contacts-' + credentials.accessKey.substring(0, 8);
-            const fileName = `${uuid}.json`;
-            const url = `https://s3.us.archive.org/${itemId}/${fileName}`;
-            
-            const headers = {
-                'authorization': `LOW ${credentials.accessKey}:${credentials.secretKey}`,
-                'x-archive-auto-make-bucket': '1',
-                'x-archive-meta-collection': 'opensource',
-                'x-archive-meta-title': 'Emergency Contacts',
-                'x-archive-meta-description': 'Encrypted emergency contact information',
-                'content-type': 'application/json'
-            };
-            
-            const response = await fetch(url, {
-                method: 'PUT',
-                headers: headers,
-                body: encryptedData
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to upload to Archive.org');
-            }
-            
-            return response;
-        }
-
-        // Credential management
-        function saveCredentials() {
-            const credentials = {
-                baseKey: document.getElementById('base-key').value,
-                accessKey: document.getElementById('archive-access').value,
-                secretKey: document.getElementById('archive-secret').value,
-                itemIdentifier: document.getElementById('item-identifier').value
-            };
-            
-            if (!credentials.baseKey || !credentials.accessKey || !credentials.secretKey || !credentials.itemIdentifier) {
-                showStatus('setup-status', 'Please fill all required fields', 'error');
-                return;
-            }
-            
-            localStorage.setItem('emergency-credentials', JSON.stringify(credentials));
-            showStatus('setup-status', 'Credentials saved successfully!', 'success');
-        }
-
-        function loadCredentials() {
-            const stored = localStorage.getItem('emergency-credentials');
-            return stored ? JSON.parse(stored) : null;
-        }
-
-        function loadSavedCredentials() {
-            const credentials = loadCredentials();
-            if (credentials) {
-                document.getElementById('base-key').value = credentials.baseKey || '';
-                document.getElementById('archive-access').value = credentials.accessKey || '';
-                document.getElementById('archive-secret').value = credentials.secretKey || '';
-                document.getElementById('item-identifier').value = credentials.itemIdentifier || '';
-            }
-        }
-
-        function clearCredentials() {
-            if (confirm('Are you sure you want to clear all saved credentials?')) {
-                localStorage.removeItem('emergency-credentials');
-                showStatus('setup-status', 'Credentials cleared', 'success');
-                document.getElementById('base-key').value = '';
-                document.getElementById('archive-access').value = '';
-                document.getElementById('archive-secret').value = '';
-                document.getElementById('item-identifier').value = '';
-            }
-        }
-
-        function getItemIdentifier() {
-            const credentials = loadCredentials();
-            return credentials ? credentials.itemIdentifier : 'emergency-contacts';
-        }
-
-        // Test Archive.org connection
-        async function testArchiveConnection() {
-            showStatus('setup-status', 'Testing connection...', 'info');
-            
-            try {
-                const credentials = loadCredentials();
-                if (!credentials) {
-                    throw new Error('Please save credentials first');
-                }
-                
-                const testData = JSON.stringify({ test: true, timestamp: new Date().toISOString() });
-                const testUUID = 'test-' + Date.now();
-                
-                await uploadToArchive(testUUID, testData, credentials);
-                showStatus('setup-status', 'Connection successful! Archive.org is working.', 'success');
-                
-            } catch (error) {
-                showStatus('setup-status', 'Connection failed: ' + error.message, 'error');
-                console.error(error);
-            }
-        }
-
         // UI Helper functions
         function showStatus(elementId, message, type) {
             const element = document.getElementById(elementId);
@@ -965,11 +810,6 @@
                     element.style.display = 'none';
                 }, 5000);
             }
-        }
-
-        function toggleAdvanced() {
-            const advanced = document.getElementById('advanced-content');
-            advanced.classList.toggle('show');
         }
 
         function printQRCode() {
@@ -992,8 +832,8 @@
                     <h1>Emergency Contact QR Code</h1>
                     <img src="${dataUrl}" />
                     <div class="info">
-                        <p><strong>Person:</strong> ${currentContactData.personName}</p>
-                        <p><strong>UUID:</strong> ${currentUUID}</p>
+                        <p><strong>Person:</strong> ${currentData.personName}</p>
+                        <p><strong>GUID:</strong> ${currentGUID}</p>
                         <p><strong>Created:</strong> ${new Date().toLocaleDateString()}</p>
                         <p style="color: red;"><strong>⚠️ Keep this QR code safe!</strong></p>
                     </div>
@@ -1007,7 +847,7 @@
             const qrCanvas = document.querySelector('#qrcode canvas');
             const qrImage = document.querySelector('#qrcode img');
             const link = document.createElement('a');
-            link.download = `emergency-qr-${currentContactData.personName.replace(/\s+/g, '-')}.png`;
+            link.download = `emergency-qr-${currentData.personName.replace(/\s+/g, '-')}.png`;
             
             if (qrCanvas) {
                 link.href = qrCanvas.toDataURL();
@@ -1017,32 +857,361 @@
             
             link.click();
         }
-
-        function testQRCode() {
-            const baseUrl = window.location.origin + window.location.pathname;
-            const testUrl = `${baseUrl}?uuid=${currentUUID}#${currentKey}`;
-            window.open(testUrl, '_blank');
-        }
-
-        function exportCredentials() {
-            const credentials = loadCredentials();
-            if (!credentials) {
-                showStatus('setup-status', 'No credentials to export', 'error');
+        
+        async function downloadEncryptedJSON() {
+            if (!currentGUID || !currentKey || !currentData) {
+                showStatus('create-status', 'No data to download', 'error');
                 return;
             }
             
-            const dataStr = JSON.stringify(credentials, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            // Use existing encrypted data or encrypt current data
+            const encryptedData = currentEncryptedData || await encrypt(JSON.stringify(currentData), currentKey);
             
+            // Create JSON object with all necessary info
+            const exportData = {
+                guid: currentGUID,
+                encryptedData: encryptedData,
+                itemId: ARCHIVE_ITEM_ID,
+                created: currentData.created,
+                personName: currentData.personName,
+                // Include the QR URL for reference (key is in fragment)
+                qrUrl: `${window.location.origin}${window.location.pathname}?guid=${currentGUID}#${currentKey}`
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.setAttribute('href', dataUri);
-            link.setAttribute('download', 'emergency-credentials.json');
+            link.href = url;
+            link.download = `${currentGUID}.json`;
             link.click();
+            URL.revokeObjectURL(url);
             
-            showStatus('setup-status', 'Credentials exported', 'success');
+            showStatus('create-status', '✅ Downloaded encrypted JSON file', 'success');
         }
 
-        function importCredentials() {
+        function testQRCode() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const testUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
+            window.open(testUrl, '_blank');
+        }
+
+        // Save/Load Functions
+        async function saveToLocal() {
+            if (!currentGUID || !currentKey || !currentData) {
+                showStatus('create-status', 'No QR code to save', 'error');
+                return;
+            }
+            
+            const saveBtn = document.querySelector('button[onclick="saveToLocal()"]');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = 'Saving... <span class="loading"></span>';
+            showStatus('create-status', 'Saving to server...', 'info');
+            
+            try {
+                // Use existing encrypted data or encrypt current data
+                const encryptedData = currentEncryptedData || await encrypt(JSON.stringify(currentData), currentKey);
+                
+                // Send to webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        guid: currentGUID,
+                        data: encryptedData,
+                        itemId: ARCHIVE_ITEM_ID,
+                        timestamp: new Date().toISOString(),
+                        action: 'save'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to save to server');
+                }
+                
+                // If webhook succeeded, save to localStorage
+                const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+                
+                // Save current QR
+                saved[currentGUID] = {
+                    guid: currentGUID,
+                    key: currentKey,
+                    name: currentData.personName,
+                    created: currentData.created,
+                    updated: new Date().toISOString(),
+                    data: currentData
+                };
+                
+                localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
+                
+                // Update UI
+                loadSavedQRCodes();
+                document.getElementById('upload-status').textContent = '✅ Saved to server!';
+                document.getElementById('upload-status').style.color = '#28a745';
+                showStatus('create-status', '✅ QR code saved to server and locally!', 'success');
+                
+            } catch (error) {
+                // Even if webhook fails, save locally
+                const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+                saved[currentGUID] = {
+                    guid: currentGUID,
+                    key: currentKey,
+                    name: currentData.personName,
+                    created: currentData.created,
+                    updated: new Date().toISOString(),
+                    data: currentData
+                };
+                localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
+                loadSavedQRCodes();
+                
+                document.getElementById('upload-status').textContent = '⚠️ Saved locally only (server error)';
+                document.getElementById('upload-status').style.color = '#ffc107';
+                showStatus('create-status', '⚠️ Saved locally (server unavailable)', 'error');
+                console.error('Save to webhook failed:', error);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '☁️ Save to Server';
+            }
+        }
+        
+        function loadSavedQRCodes() {
+            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+            const savedSection = document.getElementById('saved-section');
+            const savedList = document.getElementById('saved-list');
+            
+            if (Object.keys(saved).length === 0) {
+                savedSection.style.display = 'none';
+                return;
+            }
+            
+            savedSection.style.display = 'block';
+            
+            let html = '';
+            for (const [guid, item] of Object.entries(saved)) {
+                const date = new Date(item.updated || item.created).toLocaleDateString();
+                html += `
+                    <div style="background: white; padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>${item.name}</strong>
+                                <div style="font-size: 12px; color: #666;">
+                                    GUID: ${guid.substring(0, 8)}... | Updated: ${date}
+                                </div>
+                            </div>
+                            <div>
+                                <button onclick="loadSavedQR('${guid}')" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📋 Load</button>
+                                <button onclick="deleteSavedQR('${guid}')" style="padding: 5px 10px; font-size: 12px; margin: 2px; background: #dc3545;">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            savedList.innerHTML = html;
+        }
+        
+        async function loadSavedQR(guid) {
+            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+            const item = saved[guid];
+            
+            if (!item) {
+                showStatus('create-status', 'Saved QR not found', 'error');
+                return;
+            }
+            
+            // Set editing mode
+            editingGUID = guid;
+            currentGUID = item.guid;
+            currentKey = item.key;
+            currentData = item.data;
+            
+            // Prepare encrypted data
+            currentEncryptedData = await encrypt(JSON.stringify(item.data), item.key);
+            
+            // Fill form with saved data
+            document.getElementById('person-name').value = item.data.personName || '';
+            
+            if (item.data.contacts && item.data.contacts[0]) {
+                document.getElementById('contact1-name').value = item.data.contacts[0].name || '';
+                document.getElementById('contact1-phone').value = item.data.contacts[0].phone || '';
+                document.getElementById('contact1-relation').value = item.data.contacts[0].relation || '';
+            }
+            
+            if (item.data.contacts && item.data.contacts[1]) {
+                document.getElementById('contact2-name').value = item.data.contacts[1].name || '';
+                document.getElementById('contact2-phone').value = item.data.contacts[1].phone || '';
+                document.getElementById('contact2-relation').value = item.data.contacts[1].relation || '';
+            }
+            
+            if (item.data.medical) {
+                document.getElementById('blood-type').value = item.data.medical.bloodType || '';
+                document.getElementById('allergies').value = item.data.medical.allergies || '';
+                document.getElementById('medications').value = item.data.medical.medications || '';
+                document.getElementById('medical-conditions').value = item.data.medical.conditions || '';
+            }
+            
+            document.getElementById('notes').value = item.data.notes || '';
+            
+            // Generate QR code
+            const baseUrl = window.location.origin + window.location.pathname;
+            const qrUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
+            generateQRCode(qrUrl);
+            
+            // Display results
+            document.getElementById('guid-display').textContent = currentGUID;
+            document.getElementById('url-display').textContent = qrUrl;
+            document.getElementById('upload-status').textContent = '✅ Loaded from local storage';
+            document.getElementById('upload-status').style.color = '#28a745';
+            document.getElementById('qr-result').style.display = 'block';
+            
+            // Show update button
+            document.getElementById('update-btn').style.display = 'inline-block';
+            
+            // Change submit button text
+            document.getElementById('submit-btn').textContent = 'Generate New QR Code';
+            
+            showStatus('create-status', '✅ Loaded saved QR code. You can update it or generate a new one.', 'success');
+        }
+        
+        function deleteSavedQR(guid) {
+            if (!confirm('Delete this saved QR code?')) return;
+            
+            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+            delete saved[guid];
+            localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
+            
+            loadSavedQRCodes();
+            showStatus('create-status', 'QR code deleted', 'info');
+            
+            // If we were editing this one, clear the form
+            if (editingGUID === guid) {
+                clearForm();
+            }
+        }
+        
+        async function updateExisting() {
+            if (!currentGUID || !currentKey) {
+                showStatus('create-status', 'No QR code to update', 'error');
+                return;
+            }
+            
+            const updateBtn = document.getElementById('update-btn');
+            updateBtn.disabled = true;
+            updateBtn.innerHTML = 'Updating... <span class="loading"></span>';
+            
+            try {
+                // Collect updated form data
+                const contactData = {
+                    personName: document.getElementById('person-name').value,
+                    contacts: [
+                        {
+                            name: document.getElementById('contact1-name').value,
+                            phone: document.getElementById('contact1-phone').value,
+                            relation: document.getElementById('contact1-relation').value
+                        }
+                    ],
+                    medical: {
+                        bloodType: document.getElementById('blood-type').value,
+                        allergies: document.getElementById('allergies').value,
+                        medications: document.getElementById('medications').value,
+                        conditions: document.getElementById('medical-conditions').value
+                    },
+                    notes: document.getElementById('notes').value,
+                    created: currentData.created || new Date().toISOString(),
+                    updated: new Date().toISOString(),
+                    version: (currentData.version || 1) + 1
+                };
+                
+                // Add second contact if provided
+                if (document.getElementById('contact2-name').value) {
+                    contactData.contacts.push({
+                        name: document.getElementById('contact2-name').value,
+                        phone: document.getElementById('contact2-phone').value,
+                        relation: document.getElementById('contact2-relation').value
+                    });
+                }
+                
+                currentData = contactData;
+                
+                // Encrypt with same key and store
+                const encryptedData = await encrypt(JSON.stringify(contactData), currentKey);
+                currentEncryptedData = encryptedData;
+                
+                // Upload update to webhook
+                document.getElementById('upload-status').textContent = 'Updating on server...';
+                document.getElementById('upload-status').style.color = '#ffc107';
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        guid: currentGUID,
+                        data: encryptedData,
+                        itemId: ARCHIVE_ITEM_ID,
+                        timestamp: new Date().toISOString(),
+                        action: 'update'
+                    })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('upload-status').textContent = '✅ Updated successfully!';
+                    document.getElementById('upload-status').style.color = '#28a745';
+                    
+                    // Update local storage
+                    saveToLocal();
+                    
+                    showStatus('create-status', '✅ QR code updated successfully!', 'success');
+                } else {
+                    throw new Error('Update failed');
+                }
+            } catch (error) {
+                document.getElementById('upload-status').textContent = '⚠️ Update failed';
+                document.getElementById('upload-status').style.color = '#dc3545';
+                showStatus('create-status', 'Update failed: ' + error.message, 'error');
+            } finally {
+                updateBtn.disabled = false;
+                updateBtn.innerHTML = '🔄 Update on Server';
+            }
+        }
+        
+        function clearForm() {
+            document.getElementById('contact-form').reset();
+            document.getElementById('qr-result').style.display = 'none';
+            document.getElementById('update-btn').style.display = 'none';
+            document.getElementById('submit-btn').textContent = 'Generate QR Code';
+            
+            editingGUID = null;
+            currentGUID = null;
+            currentKey = null;
+            currentData = null;
+            currentEncryptedData = null;
+            
+            showStatus('create-status', 'Form cleared', 'info');
+        }
+        
+        // Add export/import all saved QRs
+        function exportAllQRs() {
+            const saved = localStorage.getItem('saved-qr-codes');
+            if (!saved || saved === '{}') {
+                showStatus('create-status', 'No saved QR codes to export', 'error');
+                return;
+            }
+            
+            const blob = new Blob([saved], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `emergency-qr-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            showStatus('create-status', '✅ Exported all saved QR codes', 'success');
+        }
+        
+        function importQRs() {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
@@ -1052,139 +1221,21 @@
                 const text = await file.text();
                 
                 try {
-                    const credentials = JSON.parse(text);
-                    localStorage.setItem('emergency-credentials', JSON.stringify(credentials));
-                    loadSavedCredentials();
-                    showStatus('setup-status', 'Credentials imported successfully', 'success');
+                    const imported = JSON.parse(text);
+                    const existing = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
+                    
+                    // Merge imported with existing
+                    const merged = { ...existing, ...imported };
+                    localStorage.setItem('saved-qr-codes', JSON.stringify(merged));
+                    
+                    loadSavedQRCodes();
+                    showStatus('create-status', '✅ Imported QR codes successfully', 'success');
                 } catch (error) {
-                    showStatus('setup-status', 'Invalid credentials file', 'error');
+                    showStatus('create-status', 'Invalid import file', 'error');
                 }
             };
             
             input.click();
-        }
-        
-        // New upload helper functions
-        function showUploadInstructions() {
-            const credentials = loadCredentials();
-            const uploadSection = document.getElementById('upload-section');
-            
-            if (credentials) {
-                // Display credentials
-                document.getElementById('display-access-key').textContent = credentials.accessKey;
-                document.getElementById('display-secret-key').textContent = credentials.secretKey;
-                document.getElementById('display-item-id').textContent = credentials.itemIdentifier;
-                
-                // Display encrypted data
-                document.getElementById('encrypted-data-display').value = window.currentEncryptedData;
-                
-                // Generate cURL command
-                const curlCommand = `curl -X PUT \\
-  "https://s3.us.archive.org/${credentials.itemIdentifier}/${currentUUID}.json" \\
-  -H "authorization: LOW ${credentials.accessKey}:${credentials.secretKey}" \\
-  -H "x-archive-auto-make-bucket: 1" \\
-  -H "x-archive-meta-collection: opensource" \\
-  -H "x-archive-meta-title: Emergency Contacts" \\
-  -H "x-archive-meta-description: Encrypted emergency contact information" \\
-  -H "content-type: application/json" \\
-  -d '${window.currentEncryptedData}'`;
-                
-                document.getElementById('curl-command').value = curlCommand;
-                
-                // Generate Python script
-                const pythonScript = `import requests
-
-# Archive.org credentials
-ACCESS_KEY = "${credentials.accessKey}"
-SECRET_KEY = "${credentials.secretKey}"
-ITEM_ID = "${credentials.itemIdentifier}"
-UUID = "${currentUUID}"
-
-# Encrypted data
-encrypted_data = """${window.currentEncryptedData}"""
-
-# Upload URL
-url = f"https://s3.us.archive.org/{ITEM_ID}/{UUID}.json"
-
-# Headers
-headers = {
-    "authorization": f"LOW {ACCESS_KEY}:{SECRET_KEY}",
-    "x-archive-auto-make-bucket": "1",
-    "x-archive-meta-collection": "opensource",
-    "x-archive-meta-title": "Emergency Contacts",
-    "x-archive-meta-description": "Encrypted emergency contact information",
-    "content-type": "application/json"
-}
-
-# Upload
-response = requests.put(url, headers=headers, data=encrypted_data)
-
-if response.status_code == 200:
-    print(f"✅ Upload successful!")
-    print(f"URL: https://archive.org/download/{ITEM_ID}/{UUID}.json")
-else:
-    print(f"❌ Upload failed: {response.status_code}")
-    print(response.text)`;
-                
-                document.getElementById('python-script').value = pythonScript;
-                
-                // Display URLs
-                document.getElementById('item-url').textContent = credentials.itemIdentifier;
-                document.getElementById('uuid-url').textContent = currentUUID;
-            } else {
-                // Show message to set up credentials first
-                uploadSection.innerHTML = `
-                    <div style="background: #f8d7da; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb;">
-                        <strong>❌ No Credentials Found</strong><br>
-                        Please go to Setup mode and save your Archive.org credentials first.
-                    </div>
-                `;
-            }
-            
-            uploadSection.style.display = 'block';
-        }
-        
-        function copyEncryptedData() {
-            const textarea = document.getElementById('encrypted-data-display');
-            textarea.select();
-            document.execCommand('copy');
-            showStatus('create-status', 'Encrypted data copied to clipboard!', 'success');
-        }
-        
-        function downloadEncryptedData() {
-            const data = window.currentEncryptedData;
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${currentUUID}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-        
-        function copyCurlCommand() {
-            const textarea = document.getElementById('curl-command');
-            textarea.select();
-            document.execCommand('copy');
-            showStatus('create-status', 'cURL command copied to clipboard!', 'success');
-        }
-        
-        function copyPythonScript() {
-            const textarea = document.getElementById('python-script');
-            textarea.select();
-            document.execCommand('copy');
-            showStatus('create-status', 'Python script copied to clipboard!', 'success');
-        }
-        
-        function downloadPythonScript() {
-            const script = document.getElementById('python-script').value;
-            const blob = new Blob([script], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `upload_${currentUUID}.py`;
-            link.click();
-            URL.revokeObjectURL(url);
         }
     </script>
 </body>
