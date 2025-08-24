@@ -3,469 +3,973 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emergency Contact QR System</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>Emergency QR</title>
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             padding: 20px;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-            font-size: 28px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            background: #f8f9fa;
-            padding: 5px;
-            border-radius: 10px;
+            justify-content: center;
+            align-items: flex-start;
         }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
+        
+        .container {
+            width: 100%;
+            max-width: 500px;
             background: white;
-            color: #666;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 600;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: slideIn 0.3s ease;
         }
-
-        .tab.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+            padding: 20px;
+            text-align: center;
         }
-
-        .tab-content {
-            display: none;
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
         }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease-out;
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        
+        .content {
+            padding: 20px;
         }
-
+        
+        /* Emergency Display Mode */
+        .emergency-card {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .emergency-header {
+            background: #ff4757;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .emergency-header h2 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .info-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .info-content {
+            flex: 1;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .phone-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+            padding: 8px 12px;
+            background: #e8f0fe;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .phone-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .private-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .private-section h3 {
+            color: #856404;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .hint {
+            font-size: 12px;
+            color: #856404;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        
+        /* Creation Form Mode */
         .form-group {
             margin-bottom: 20px;
         }
-
-        label {
+        
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
+            margin-bottom: 5px;
+            color: #2c3e50;
+            font-weight: 500;
             font-size: 14px;
         }
-
-        input, textarea, select {
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
             transition: border-color 0.3s;
         }
-
-        input:focus, textarea:focus, select:focus {
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #667eea;
         }
-
-        textarea {
+        
+        .form-group textarea {
             resize: vertical;
-            min-height: 100px;
+            min-height: 60px;
         }
-
-        button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+        
+        .section-title {
+            font-size: 16px;
+            color: #2c3e50;
+            margin: 25px 0 15px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            font-weight: 600;
+        }
+        
+        .section-title:first-of-type {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            margin-top: 10px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-
-        button:hover {
+        
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
         }
-
-        button:disabled {
-            opacity: 0.6;
+        
+        .btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
-
-        .qr-container {
+        
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+        
+        .btn-outline {
             background: white;
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            color: #667eea;
+            border: 2px solid #667eea;
+            margin-top: 10px;
         }
-
-        #qrcode {
-            display: inline-block;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-        }
-
-        .emergency-display {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .emergency-header {
-            background: linear-gradient(135deg, #f093fb, #f5576c);
+        
+        .btn-outline:hover {
+            background: #667eea;
             color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
         }
-
-        .contact-info {
-            margin-bottom: 15px;
-            padding: 15px;
+        
+        /* QR Display */
+        .qr-display {
+            text-align: center;
+            padding: 20px;
             background: #f8f9fa;
             border-radius: 10px;
+            margin-top: 20px;
         }
-
-        .contact-label {
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 5px;
-            font-size: 12px;
-            text-transform: uppercase;
+        
+        #qrcode {
+            display: inline-block;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px 0;
         }
-
-        .contact-value {
-            color: #333;
-            font-size: 16px;
-            word-break: break-word;
-        }
-
-        .call-button {
-            background: #4CAF50;
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             margin-top: 15px;
         }
-
-        .status-message {
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
+        
+        /* Help Section */
+        .help-link {
             text-align: center;
-            font-weight: 600;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
         }
-
+        
+        .help-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .help-content {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+        
+        .help-content.active {
+            display: block;
+        }
+        
+        /* Loading State */
+        .loading-screen {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Dev Tools */
+        .dev-trigger {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .dev-trigger:hover {
+            opacity: 1;
+        }
+        
+        .dev-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        
+        .dev-panel.active {
+            transform: translateY(0);
+        }
+        
+        .dev-panel h3 {
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .dev-panel input,
+        .dev-panel textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .dev-panel button {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .dev-output {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Status Messages */
+        .status-message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
         .status-success {
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-
+        
         .status-error {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-
+        
         .status-info {
             background: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(102, 126, 234, 0.3);
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-left: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .qr-info {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            text-align: left;
-        }
-
-        .qr-info-item {
-            margin: 10px 0;
-            font-size: 14px;
-        }
-
-        .qr-info-label {
-            font-weight: 600;
-            color: #666;
-        }
-
-        .qr-info-value {
-            color: #333;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            h1 {
-                font-size: 24px;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚨 Emergency Contact QR System</h1>
-        
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('create', this)">Create QR Code</button>
-            <button class="tab" onclick="switchTab('read', this)">Read QR Code</button>
-        </div>
-
-        <!-- Create Tab -->
-        <div id="create-tab" class="tab-content active">
-            <!-- Saved QR Codes Section -->
-            <div id="saved-section" style="display: none; margin-bottom: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="color: #666; margin: 0;">📂 Saved QR Codes</h3>
-                    <div>
-                        <button onclick="exportAllQRs()" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📥 Export All</button>
-                        <button onclick="importQRs()" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📤 Import</button>
-                    </div>
-                </div>
-                <div id="saved-list" style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                    <!-- Saved items will appear here -->
-                </div>
-            </div>
-            
-            <form id="contact-form">
-                <div class="form-group">
-                    <label for="person-name">Person's Name *</label>
-                    <input type="text" id="person-name" required placeholder="John Doe">
-                </div>
-
-                <h3 style="margin: 30px 0 20px; color: #666;">Emergency Contacts</h3>
-
-                <div class="form-group">
-                    <label for="contact1-name">Contact 1 - Name *</label>
-                    <input type="text" id="contact1-name" required placeholder="Jane Doe">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact1-phone">Contact 1 - Phone *</label>
-                    <input type="tel" id="contact1-phone" required placeholder="+1-555-123-4567">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact1-relation">Contact 1 - Relation</label>
-                    <input type="text" id="contact1-relation" placeholder="Spouse, Parent, etc.">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact2-name">Contact 2 - Name</label>
-                    <input type="text" id="contact2-name" placeholder="Bob Smith">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact2-phone">Contact 2 - Phone</label>
-                    <input type="tel" id="contact2-phone" placeholder="+1-555-987-6543">
-                </div>
-
-                <div class="form-group">
-                    <label for="contact2-relation">Contact 2 - Relation</label>
-                    <input type="text" id="contact2-relation" placeholder="Brother, Friend, etc.">
-                </div>
-
-                <h3 style="margin: 30px 0 20px; color: #666;">Medical Information (Optional)</h3>
-
-                <div class="form-group">
-                    <label for="blood-type">Blood Type</label>
-                    <select id="blood-type">
-                        <option value="">Unknown</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="allergies">Allergies</label>
-                    <textarea id="allergies" placeholder="List any allergies..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="medications">Current Medications</label>
-                    <textarea id="medications" placeholder="List current medications..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="medical-conditions">Medical Conditions</label>
-                    <textarea id="medical-conditions" placeholder="List any medical conditions..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">Additional Notes</label>
-                    <textarea id="notes" placeholder="Any additional important information..."></textarea>
-                </div>
-
-                <button type="submit" id="submit-btn">Generate QR Code</button>
-                <button type="button" onclick="clearForm()" style="background: #6c757d; margin-top: 10px;">Clear Form</button>
-            </form>
-
-            <div id="qr-result" class="qr-container" style="display: none;">
-                <h3>✅ QR Code Generated!</h3>
-                <div id="qrcode"></div>
-                
-                <div class="qr-info">
-                    <div class="qr-info-item">
-                        <span class="qr-info-label">Status:</span>
-                        <span id="upload-status" class="qr-info-value">Not saved to server yet</span>
-                    </div>
-                    <div class="qr-info-item">
-                        <span class="qr-info-label">GUID:</span>
-                        <span id="guid-display" class="qr-info-value"></span>
-                    </div>
-                    <div class="qr-info-item">
-                        <span class="qr-info-label">QR URL:</span>
-                        <span id="url-display" class="qr-info-value"></span>
-                    </div>
-                </div>
-                
-                <button onclick="printQRCode()">🖨️ Print QR Code</button>
-                <button onclick="downloadQRCode()">💾 Download QR Code</button>
-                <button onclick="testQRCode()">🔍 Test QR Code</button>
-                <button onclick="saveToLocal()" style="background: #28a745;">☁️ Save to Server</button>
-                <button onclick="downloadEncryptedJSON()" style="background: #17a2b8;">📄 Download JSON</button>
-                <button onclick="updateExisting()" id="update-btn" style="background: #ffc107; display: none;">🔄 Update on Server</button>
-            </div>
-
-            <div id="create-status"></div>
-        </div>
-
-        <!-- Read Tab -->
-        <div id="read-tab" class="tab-content">
-            <div class="form-group">
-                <label for="qr-url">Enter QR Code URL or GUID</label>
-                <input type="text" id="qr-url" placeholder="Paste full URL or just the GUID">
-                <button onclick="readEmergencyContact()">Load Emergency Contact</button>
-            </div>
-
-            <div id="emergency-display" style="display: none;">
-                <!-- Emergency contact info will be displayed here -->
-            </div>
-
-            <div id="read-status"></div>
+        <div id="main-content">
+            <!-- Content will be dynamically inserted here -->
         </div>
     </div>
-
+    
+    <!-- Dev Tools Panel -->
+    <div class="dev-trigger" onclick="toggleDevTools()">🛠️</div>
+    <div id="dev-panel" class="dev-panel">
+        <h3>🛠️ Dev Tools</h3>
+        
+        <div style="margin-bottom: 15px;">
+            <input type="text" id="dev-guid" placeholder="Enter GUID">
+            <input type="text" id="dev-key" placeholder="Enter Key">
+            <button onclick="devLoadQR()">Load QR</button>
+            <button onclick="devTestArchive()">Test Archive Fetch</button>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <input type="file" id="dev-qr-upload" accept="image/*" style="margin-bottom: 10px;">
+            <button onclick="devScanQR()">Scan QR Image</button>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <button onclick="devShowRawData()">Show Raw Data</button>
+            <button onclick="devClearStorage()">Clear All Data</button>
+            <button onclick="toggleDevTools()">Close</button>
+        </div>
+        
+        <div class="dev-output" id="dev-output"></div>
+    </div>
+    
+    <!-- QR Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <script>
         // Configuration
+        const VIEWER_URL = window.location.origin + window.location.pathname;
+        const BEACON_TEXT = 'SQR:1';
         const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook-test/d5e99c29-2cf1-44c1-b5b4-95a1ca048441';
-        const ARCHIVE_ITEM_ID = 'emergency-contacts-data'; // Default item ID for Archive.org
+        const ARCHIVE_BASE = 'https://archive.org/download/securecontacts/';
         
-        // Global variables
-        let currentTab = 'create';
-        let qrcode = null;
+        // State
         let currentGUID = null;
         let currentKey = null;
         let currentData = null;
-        let currentEncryptedData = null; // Store encrypted data for later save
-        let editingGUID = null; // Track if we're editing an existing entry
-
-        // Initialize on load
-        window.onload = function() {
-            checkURLParams();
-            loadSavedQRCodes();
-        };
-
-        // Check if URL has parameters (for reading QR)
-        function checkURLParams() {
+        let currentMode = null;
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const guid = urlParams.get('guid');
-            const hash = window.location.hash.substring(1);
+            const key = window.location.hash.substring(1);
             
-            if (guid && hash) {
-                switchTab('read', document.querySelector('.tab:nth-child(2)'));
-                document.getElementById('qr-url').value = window.location.href;
-                readEmergencyContact();
+            if (guid && key) {
+                // SCANNING MODE - Auto display emergency info
+                currentMode = 'view';
+                showLoadingScreen();
+                await loadAndDisplayEmergencyInfo(guid, key);
+            } else {
+                // CREATION MODE
+                currentMode = 'create';
+                showCreationForm();
+            }
+        });
+        
+        // Show loading screen
+        function showLoadingScreen() {
+            const container = document.getElementById('main-content');
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <div class="spinner"></div>
+                    <p>Loading emergency information...</p>
+                </div>
+            `;
+        }
+        
+        // Load and display emergency info
+        async function loadAndDisplayEmergencyInfo(guid, key) {
+            currentGUID = guid;
+            currentKey = key;
+            
+            try {
+                // Try to fetch from Archive.org
+                let data;
+                try {
+                    const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
+                    const response = await fetch(archiveUrl, { mode: 'cors' });
+                    
+                    if (response.ok) {
+                        data = await response.json();
+                        console.log('Loaded from Archive.org');
+                    } else {
+                        throw new Error('Not found on Archive.org');
+                    }
+                } catch (error) {
+                    console.log('Using demo data:', error.message);
+                    // Create demo data for testing
+                    data = await createDemoData(guid, key);
+                }
+                
+                // Validate beacon
+                const beacon = await decrypt(data.beacon, key);
+                if (beacon !== BEACON_TEXT) {
+                    throw new Error('Invalid QR code');
+                }
+                
+                currentData = data;
+                
+                // Decrypt and display public data
+                const publicData = await decrypt(data.publicData, key);
+                const publicInfo = JSON.parse(publicData);
+                
+                displayEmergencyInfo(publicInfo, data.passwordHint);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError('Unable to load emergency information. Please check the QR code.');
             }
         }
-
-        // Tab switching
-        function switchTab(tab, btn) {
-            currentTab = tab;
+        
+        // Display emergency information
+        function displayEmergencyInfo(publicInfo, passwordHint) {
+            const container = document.getElementById('main-content');
             
-            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            let html = `
+                <div class="emergency-card">
+                    <div class="emergency-header">
+                        <h2>🚨 EMERGENCY INFORMATION</h2>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="info-section">
+                            <div class="info-item">
+                                <span class="info-icon">👤</span>
+                                <div class="info-content">
+                                    <div class="info-label">Name</div>
+                                    <div class="info-value">${publicInfo.name || 'Unknown'}</div>
+                                </div>
+                            </div>
+            `;
             
-            btn.classList.add('active');
-            document.getElementById(`${tab}-tab`).classList.add('active');
+            if (publicInfo.bloodType) {
+                html += `
+                            <div class="info-item">
+                                <span class="info-icon">🩸</span>
+                                <div class="info-content">
+                                    <div class="info-label">Blood Type</div>
+                                    <div class="info-value">${publicInfo.bloodType}</div>
+                                </div>
+                            </div>
+                `;
+            }
+            
+            if (publicInfo.allergies) {
+                html += `
+                            <div class="info-item">
+                                <span class="info-icon">⚠️</span>
+                                <div class="info-content">
+                                    <div class="info-label">Allergies</div>
+                                    <div class="info-value">${publicInfo.allergies}</div>
+                                </div>
+                            </div>
+                `;
+            }
+            
+            html += `</div>`;
+            
+            if (publicInfo.contact) {
+                html += `
+                        <div class="info-section">
+                            <div class="info-item">
+                                <span class="info-icon">📞</span>
+                                <div class="info-content">
+                                    <div class="info-label">Emergency Contact</div>
+                                    <div class="info-value">
+                                        ${publicInfo.contact.name}
+                                        <a href="tel:${publicInfo.contact.phone}" class="phone-link">
+                                            📱 ${publicInfo.contact.phone}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                `;
+            }
+            
+            if (currentData.privateData) {
+                html += `
+                        <div class="private-section">
+                            <h3>🔒 Private Information</h3>
+                            ${passwordHint ? `<div class="hint">Hint: ${passwordHint}</div>` : ''}
+                            <input type="password" class="password-input" id="vault-password" placeholder="Enter password">
+                            <button class="btn" onclick="unlockPrivateInfo()">Unlock</button>
+                            <div id="private-content"></div>
+                        </div>
+                `;
+            }
+            
+            html += `
+                        <div class="help-link">
+                            <button class="btn-outline" onclick="showCreationForm()">Create Your Own</button>
+                            <a href="#" onclick="toggleHelp(); return false;">How It Works</a>
+                            <div id="help-content" class="help-content"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
         }
-
-        // Generate GUID
+        
+        // Unlock private information
+        async function unlockPrivateInfo() {
+            const password = document.getElementById('vault-password').value;
+            if (!password) return;
+            
+            try {
+                const privateData = await decrypt(currentData.privateData, currentKey + password);
+                const privateInfo = JSON.parse(privateData);
+                
+                let html = '<div style="margin-top: 15px;">';
+                
+                if (privateInfo.ssn) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-icon">🆔</span>
+                            <div class="info-content">
+                                <div class="info-label">SSN</div>
+                                <div class="info-value">${privateInfo.ssn}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (privateInfo.notes) {
+                    html += `
+                        <div class="info-item">
+                            <span class="info-icon">📝</span>
+                            <div class="info-content">
+                                <div class="info-label">Medical Notes</div>
+                                <div class="info-value">${privateInfo.notes}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                
+                document.getElementById('private-content').innerHTML = html;
+                document.getElementById('vault-password').style.display = 'none';
+                document.querySelector('.private-section button').style.display = 'none';
+                
+            } catch (error) {
+                alert('Incorrect password');
+            }
+        }
+        
+        // Show creation form
+        function showCreationForm() {
+            currentMode = 'create';
+            const container = document.getElementById('main-content');
+            
+            container.innerHTML = `
+                <div class="header">
+                    <h1>Create Your Emergency QR</h1>
+                    <p>If you're unconscious, this QR helps others help you</p>
+                </div>
+                
+                <div class="content">
+                    <form id="create-form">
+                        <div class="section-title">Always Visible</div>
+                        
+                        <div class="form-group">
+                            <label for="name">Name *</label>
+                            <input type="text" id="name" required placeholder="John Doe">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="blood-type">Blood Type</label>
+                            <select id="blood-type">
+                                <option value="">Unknown</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="allergies">Allergies</label>
+                            <textarea id="allergies" placeholder="Penicillin, peanuts, etc."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contact-name">Emergency Contact Name *</label>
+                            <input type="text" id="contact-name" required placeholder="Jane Doe">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contact-phone">Emergency Contact Phone *</label>
+                            <input type="tel" id="contact-phone" required placeholder="(555) 123-4567">
+                        </div>
+                        
+                        <div class="section-title">Password Protected (Optional)</div>
+                        
+                        <div class="form-group">
+                            <label for="ssn">Social Security Number</label>
+                            <input type="text" id="ssn" placeholder="XXX-XX-XXXX">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="medical-notes">Medical Notes</label>
+                            <textarea id="medical-notes" placeholder="Medications, conditions, etc."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" placeholder="Choose a password">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password-confirm">Confirm Password</label>
+                            <input type="password" id="password-confirm" placeholder="Re-enter password">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password-hint">Password Hint</label>
+                            <input type="text" id="password-hint" placeholder="Birth year + pet name">
+                        </div>
+                        
+                        <button type="submit" class="btn">
+                            <span>Create QR</span>
+                        </button>
+                    </form>
+                    
+                    <div id="qr-result" style="display: none;">
+                        <div class="qr-display">
+                            <h3>✅ Your Emergency QR Code</h3>
+                            <div id="qrcode"></div>
+                            <div class="action-buttons">
+                                <button class="btn" onclick="downloadQR()">💾 Download</button>
+                                <button class="btn" onclick="testQR()">🔍 Test</button>
+                            </div>
+                            <button class="btn-secondary" onclick="uploadToArchive()">☁️ Save Online</button>
+                        </div>
+                    </div>
+                    
+                    <div id="status-message"></div>
+                    
+                    <div class="help-link">
+                        <a href="#" onclick="toggleHelp(); return false;">How It Works</a>
+                        <div id="help-content" class="help-content"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Add form submit handler
+            document.getElementById('create-form').addEventListener('submit', handleCreateForm);
+        }
+        
+        // Handle form submission
+        async function handleCreateForm(e) {
+            e.preventDefault();
+            
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = '<span>Creating...</span>';
+            
+            try {
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('password-confirm').value;
+                
+                if (password && password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
+                }
+                
+                if (password && password.length < 6) {
+                    throw new Error('Password must be at least 6 characters');
+                }
+                
+                // Generate unique identifiers
+                currentGUID = generateGUID();
+                currentKey = generateKey();
+                
+                // Collect form data
+                const publicInfo = {
+                    name: document.getElementById('name').value,
+                    bloodType: document.getElementById('blood-type').value,
+                    allergies: document.getElementById('allergies').value,
+                    contact: {
+                        name: document.getElementById('contact-name').value,
+                        phone: document.getElementById('contact-phone').value
+                    }
+                };
+                
+                const privateInfo = {
+                    ssn: document.getElementById('ssn').value,
+                    notes: document.getElementById('medical-notes').value
+                };
+                
+                // Encrypt data
+                currentData = {
+                    guid: currentGUID,
+                    created: new Date().toISOString(),
+                    beacon: await encrypt(BEACON_TEXT, currentKey),
+                    publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
+                    passwordHint: document.getElementById('password-hint').value
+                };
+                
+                // Only add private data if password is set
+                if (password) {
+                    currentData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
+                }
+                
+                // Generate QR code
+                const qrUrl = `${VIEWER_URL}?guid=${currentGUID}#${currentKey}`;
+                
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                
+                new QRCode(qrContainer, {
+                    text: qrUrl,
+                    width: 256,
+                    height: 256,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                
+                window.currentQRUrl = qrUrl;
+                
+                // Show QR display
+                document.getElementById('create-form').style.display = 'none';
+                document.getElementById('qr-result').style.display = 'block';
+                
+                showStatus('✅ QR code created successfully!', 'success');
+                
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<span>Create QR</span>';
+            }
+        }
+        
+        // Upload to Archive.org
+        async function uploadToArchive() {
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '⏳ Uploading...';
+            
+            try {
+                const payload = {
+                    guid: currentGUID,
+                    filename: `${currentGUID}.json`,
+                    data: currentData,
+                    metadata: {
+                        created: currentData.created,
+                        type: 'emergency_qr',
+                        version: '2.0'
+                    }
+                };
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+                
+                button.innerHTML = '✅ Saved Online!';
+                showStatus('Successfully backed up to Archive.org', 'success');
+                
+            } catch (error) {
+                button.innerHTML = '❌ Failed - Retry';
+                showStatus('Upload failed: ' + error.message, 'error');
+            } finally {
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.innerHTML = '☁️ Save Online';
+                }, 3000);
+            }
+        }
+        
+        // Utility functions
         function generateGUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 const r = Math.random() * 16 | 0;
@@ -473,8 +977,7 @@
                 return v.toString(16);
             });
         }
-
-        // Generate random key
+        
         function generateKey(length = 32) {
             const array = new Uint8Array(length);
             crypto.getRandomValues(array);
@@ -483,8 +986,7 @@
                 .replace(/\//g, '_')
                 .replace(/=/g, '');
         }
-
-        // Encryption functions
+        
         async function encrypt(text, password) {
             const enc = new TextEncoder();
             const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -506,13 +1008,20 @@
                     hash: "SHA-256"
                 },
                 passwordKey,
-                { name: "AES-GCM", length: 256 },
+                { 
+                    name: "AES-GCM",
+                    length: 256
+                },
                 false,
                 ["encrypt"]
             );
             
             const encrypted = await crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: iv },
+                { 
+                    name: "AES-GCM",
+                    iv: iv,
+                    tagLength: 128
+                },
                 aesKey,
                 enc.encode(text)
             );
@@ -525,7 +1034,7 @@
             
             return btoa(String.fromCharCode(...buf));
         }
-
+        
         async function decrypt(encryptedData, password) {
             const enc = new TextEncoder();
             const dec = new TextDecoder();
@@ -551,256 +1060,69 @@
                     hash: "SHA-256"
                 },
                 passwordKey,
-                { name: "AES-GCM", length: 256 },
+                { 
+                    name: "AES-GCM",
+                    length: 256
+                },
                 false,
                 ["decrypt"]
             );
             
             const decrypted = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: iv },
+                { 
+                    name: "AES-GCM",
+                    iv: iv,
+                    tagLength: 128
+                },
                 aesKey,
                 encrypted
             );
             
             return dec.decode(decrypted);
         }
-
-        // Form submission
-        document.getElementById('contact-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // If we're editing and user clicks "Generate New", reset editing mode
-            if (editingGUID) {
-                editingGUID = null;
-                currentEncryptedData = null;
-                document.getElementById('update-btn').style.display = 'none';
-            }
-            
-            const submitBtn = document.getElementById('submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Generating... <span class="loading"></span>';
-            
-            showStatus('create-status', 'Creating encrypted emergency contact...', 'info');
-            
-            try {
-                // Collect form data
-                const contactData = {
-                    personName: document.getElementById('person-name').value,
-                    contacts: [
-                        {
-                            name: document.getElementById('contact1-name').value,
-                            phone: document.getElementById('contact1-phone').value,
-                            relation: document.getElementById('contact1-relation').value
-                        }
-                    ],
-                    medical: {
-                        bloodType: document.getElementById('blood-type').value,
-                        allergies: document.getElementById('allergies').value,
-                        medications: document.getElementById('medications').value,
-                        conditions: document.getElementById('medical-conditions').value
-                    },
-                    notes: document.getElementById('notes').value,
-                    created: new Date().toISOString(),
-                    version: 1
-                };
-                
-                // Add second contact if provided
-                if (document.getElementById('contact2-name').value) {
-                    contactData.contacts.push({
-                        name: document.getElementById('contact2-name').value,
-                        phone: document.getElementById('contact2-phone').value,
-                        relation: document.getElementById('contact2-relation').value
-                    });
-                }
-                
-                currentData = contactData;
-                
-                // Generate GUID and key
-                currentGUID = generateGUID();
-                currentKey = generateKey();
-                
-                // Encrypt data and store for later save
-                currentEncryptedData = await encrypt(JSON.stringify(contactData), currentKey);
-                
-                // Generate QR code immediately (before upload)
-                const baseUrl = window.location.origin + window.location.pathname;
-                const qrUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
-                
-                generateQRCode(qrUrl);
-                
-                // Display results
-                document.getElementById('guid-display').textContent = currentGUID;
-                document.getElementById('url-display').textContent = qrUrl;
-                document.getElementById('qr-result').style.display = 'block';
-                
-                // Set status - not uploaded yet
-                document.getElementById('upload-status').textContent = '⚠️ Not saved to server yet';
-                document.getElementById('upload-status').style.color = '#ffc107';
-                
-                showStatus('create-status', '✅ QR code generated! Click "Save to Server" to upload.', 'success');
-                
-            } catch (error) {
-                showStatus('create-status', 'Error: ' + error.message, 'error');
-                console.error(error);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Generate QR Code';
-                submitBtn.textContent = 'Generate QR Code';
-            }
-        });
-
-        // Generate QR code
-        function generateQRCode(text) {
-            const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = '';
-            
-            qrcode = new QRCode(qrContainer, {
-                text: text,
-                width: 300,
-                height: 300,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
+        
+        async function createDemoData(guid, key) {
+            return {
+                guid: guid,
+                created: new Date().toISOString(),
+                beacon: await encrypt(BEACON_TEXT, key),
+                publicData: await encrypt(JSON.stringify({
+                    name: "Demo User",
+                    bloodType: "O+",
+                    allergies: "Penicillin, Peanuts",
+                    contact: {
+                        name: "Emergency Contact",
+                        phone: "(555) 123-4567"
+                    }
+                }), key),
+                privateData: await encrypt(JSON.stringify({
+                    ssn: "XXX-XX-XXXX",
+                    notes: "This is demo data. Password is: demo"
+                }), key + "demo"),
+                passwordHint: "Password is: demo"
+            };
         }
-
-        // Read emergency contact
-        async function readEmergencyContact() {
-            const input = document.getElementById('qr-url').value.trim();
-            if (!input) {
-                showStatus('read-status', 'Please enter a QR code URL or GUID', 'error');
-                return;
-            }
-            
-            showStatus('read-status', 'Loading emergency contact...', 'info');
-            
-            try {
-                let guid, key;
-                
-                // Check if input is full URL or just GUID
-                if (input.includes('?')) {
-                    // Full URL
-                    const urlObj = new URL(input);
-                    guid = urlObj.searchParams.get('guid');
-                    key = urlObj.hash.substring(1);
-                } else if (input.includes('#')) {
-                    // GUID with key
-                    [guid, key] = input.split('#');
-                } else {
-                    // Just GUID - need key
-                    showStatus('read-status', 'Please provide the full QR URL including the encryption key', 'error');
-                    return;
-                }
-                
-                if (!guid || !key) {
-                    throw new Error('Invalid QR code URL - missing GUID or key');
-                }
-                
-                // Fetch from Archive.org (no auth needed for reading)
-                const archiveUrl = `https://archive.org/download/${ARCHIVE_ITEM_ID}/${guid}.json`;
-                const response = await fetch(archiveUrl);
-                
-                if (!response.ok) {
-                    throw new Error('Could not fetch emergency contact data. It may not be uploaded yet.');
-                }
-                
-                const encryptedData = await response.text();
-                
-                // Decrypt
-                const decryptedData = await decrypt(encryptedData, key);
-                const contactData = JSON.parse(decryptedData);
-                
-                // Display emergency contact
-                displayEmergencyContact(contactData);
-                showStatus('read-status', 'Emergency contact loaded successfully!', 'success');
-                
-            } catch (error) {
-                showStatus('read-status', 'Error: ' + error.message, 'error');
-                console.error(error);
+        
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'emergency-qr.png';
+                link.href = canvas.toDataURL();
+                link.click();
             }
         }
-
-        // Display emergency contact
-        function displayEmergencyContact(data) {
-            const display = document.getElementById('emergency-display');
-            
-            let html = `
-                <div class="emergency-header">
-                    <h2>🚨 Emergency Contact Information</h2>
-                    <p>For: ${data.personName}</p>
-                </div>
-            `;
-            
-            if (data.contacts && data.contacts.length > 0) {
-                data.contacts.forEach((contact, index) => {
-                    html += `
-                        <div class="contact-info">
-                            <div class="contact-label">Emergency Contact ${index + 1}</div>
-                            <div class="contact-value">${contact.name}</div>
-                            <div class="contact-value">${contact.phone}</div>
-                            ${contact.relation ? `<div class="contact-value">${contact.relation}</div>` : ''}
-                            <button class="call-button" onclick="window.location.href='tel:${contact.phone}'">
-                                📞 Call ${contact.name}
-                            </button>
-                        </div>
-                    `;
-                });
+        
+        function testQR() {
+            if (window.currentQRUrl) {
+                window.open(window.currentQRUrl, '_blank');
             }
-            
-            if (data.medical) {
-                if (data.medical.bloodType) {
-                    html += `
-                        <div class="contact-info">
-                            <div class="contact-label">Blood Type</div>
-                            <div class="contact-value">${data.medical.bloodType}</div>
-                        </div>
-                    `;
-                }
-                
-                if (data.medical.allergies) {
-                    html += `
-                        <div class="contact-info">
-                            <div class="contact-label">Allergies</div>
-                            <div class="contact-value">${data.medical.allergies}</div>
-                        </div>
-                    `;
-                }
-                
-                if (data.medical.medications) {
-                    html += `
-                        <div class="contact-info">
-                            <div class="contact-label">Current Medications</div>
-                            <div class="contact-value">${data.medical.medications}</div>
-                        </div>
-                    `;
-                }
-                
-                if (data.medical.conditions) {
-                    html += `
-                        <div class="contact-info">
-                            <div class="contact-label">Medical Conditions</div>
-                            <div class="contact-value">${data.medical.conditions}</div>
-                        </div>
-                    `;
-                }
-            }
-            
-            if (data.notes) {
-                html += `
-                    <div class="contact-info">
-                        <div class="contact-label">Additional Notes</div>
-                        <div class="contact-value">${data.notes}</div>
-                    </div>
-                `;
-            }
-            
-            display.innerHTML = html;
-            display.style.display = 'block';
         }
-
-        // UI Helper functions
-        function showStatus(elementId, message, type) {
-            const element = document.getElementById(elementId);
+        
+        function showStatus(message, type) {
+            const element = document.getElementById('status-message');
+            if (!element) return;
+            
             element.className = 'status-message status-' + type;
             element.textContent = message;
             element.style.display = 'block';
@@ -811,432 +1133,163 @@
                 }, 5000);
             }
         }
-
-        function printQRCode() {
-            const printWindow = window.open('', '_blank');
-            const qrCanvas = document.querySelector('#qrcode canvas');
-            const qrImage = document.querySelector('#qrcode img');
-            const dataUrl = qrCanvas ? qrCanvas.toDataURL() : (qrImage ? qrImage.src : '');
-            
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Emergency Contact QR Code</title>
-                    <style>
-                        body { text-align: center; padding: 20px; font-family: Arial; }
-                        img { max-width: 400px; margin: 20px auto; }
-                        .info { margin: 20px; padding: 20px; border: 1px solid #ccc; }
-                    </style>
-                </head>
-                <body>
-                    <h1>Emergency Contact QR Code</h1>
-                    <img src="${dataUrl}" />
-                    <div class="info">
-                        <p><strong>Person:</strong> ${currentData.personName}</p>
-                        <p><strong>GUID:</strong> ${currentGUID}</p>
-                        <p><strong>Created:</strong> ${new Date().toLocaleDateString()}</p>
-                        <p style="color: red;"><strong>⚠️ Keep this QR code safe!</strong></p>
+        
+        function showError(message) {
+            const container = document.getElementById('main-content');
+            container.innerHTML = `
+                <div class="header">
+                    <h1>❌ Error</h1>
+                </div>
+                <div class="content">
+                    <div class="status-message status-error">
+                        ${message}
                     </div>
-                    <script>window.print();<\/script>
-                </body>
-                </html>
-            `);
-        }
-
-        function downloadQRCode() {
-            const qrCanvas = document.querySelector('#qrcode canvas');
-            const qrImage = document.querySelector('#qrcode img');
-            const link = document.createElement('a');
-            link.download = `emergency-qr-${currentData.personName.replace(/\s+/g, '-')}.png`;
-            
-            if (qrCanvas) {
-                link.href = qrCanvas.toDataURL();
-            } else if (qrImage) {
-                link.href = qrImage.src;
-            }
-            
-            link.click();
+                    <button class="btn" onclick="showCreationForm()">Create New QR</button>
+                </div>
+            `;
         }
         
-        async function downloadEncryptedJSON() {
-            if (!currentGUID || !currentKey || !currentData) {
-                showStatus('create-status', 'No data to download', 'error');
-                return;
-            }
+        function toggleHelp() {
+            const helpContent = document.getElementById('help-content');
+            if (!helpContent) return;
             
-            // Use existing encrypted data or encrypt current data
-            const encryptedData = currentEncryptedData || await encrypt(JSON.stringify(currentData), currentKey);
-            
-            // Create JSON object with all necessary info
-            const exportData = {
-                guid: currentGUID,
-                encryptedData: encryptedData,
-                itemId: ARCHIVE_ITEM_ID,
-                created: currentData.created,
-                personName: currentData.personName,
-                // Include the QR URL for reference (key is in fragment)
-                qrUrl: `${window.location.origin}${window.location.pathname}?guid=${currentGUID}#${currentKey}`
-            };
-            
-            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${currentGUID}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-            
-            showStatus('create-status', '✅ Downloaded encrypted JSON file', 'success');
-        }
-
-        function testQRCode() {
-            const baseUrl = window.location.origin + window.location.pathname;
-            const testUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
-            window.open(testUrl, '_blank');
-        }
-
-        // Save/Load Functions
-        async function saveToLocal() {
-            if (!currentGUID || !currentKey || !currentData) {
-                showStatus('create-status', 'No QR code to save', 'error');
-                return;
-            }
-            
-            const saveBtn = document.querySelector('button[onclick="saveToLocal()"]');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = 'Saving... <span class="loading"></span>';
-            showStatus('create-status', 'Saving to server...', 'info');
-            
-            try {
-                // Use existing encrypted data or encrypt current data
-                const encryptedData = currentEncryptedData || await encrypt(JSON.stringify(currentData), currentKey);
-                
-                // Send to webhook
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        guid: currentGUID,
-                        data: encryptedData,
-                        itemId: ARCHIVE_ITEM_ID,
-                        timestamp: new Date().toISOString(),
-                        action: 'save'
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to save to server');
-                }
-                
-                // If webhook succeeded, save to localStorage
-                const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-                
-                // Save current QR
-                saved[currentGUID] = {
-                    guid: currentGUID,
-                    key: currentKey,
-                    name: currentData.personName,
-                    created: currentData.created,
-                    updated: new Date().toISOString(),
-                    data: currentData
-                };
-                
-                localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
-                
-                // Update UI
-                loadSavedQRCodes();
-                document.getElementById('upload-status').textContent = '✅ Saved to server!';
-                document.getElementById('upload-status').style.color = '#28a745';
-                showStatus('create-status', '✅ QR code saved to server and locally!', 'success');
-                
-            } catch (error) {
-                // Even if webhook fails, save locally
-                const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-                saved[currentGUID] = {
-                    guid: currentGUID,
-                    key: currentKey,
-                    name: currentData.personName,
-                    created: currentData.created,
-                    updated: new Date().toISOString(),
-                    data: currentData
-                };
-                localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
-                loadSavedQRCodes();
-                
-                document.getElementById('upload-status').textContent = '⚠️ Saved locally only (server error)';
-                document.getElementById('upload-status').style.color = '#ffc107';
-                showStatus('create-status', '⚠️ Saved locally (server unavailable)', 'error');
-                console.error('Save to webhook failed:', error);
-            } finally {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = '☁️ Save to Server';
-            }
-        }
-        
-        function loadSavedQRCodes() {
-            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-            const savedSection = document.getElementById('saved-section');
-            const savedList = document.getElementById('saved-list');
-            
-            if (Object.keys(saved).length === 0) {
-                savedSection.style.display = 'none';
-                return;
-            }
-            
-            savedSection.style.display = 'block';
-            
-            let html = '';
-            for (const [guid, item] of Object.entries(saved)) {
-                const date = new Date(item.updated || item.created).toLocaleDateString();
-                html += `
-                    <div style="background: white; padding: 10px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong>${item.name}</strong>
-                                <div style="font-size: 12px; color: #666;">
-                                    GUID: ${guid.substring(0, 8)}... | Updated: ${date}
-                                </div>
-                            </div>
-                            <div>
-                                <button onclick="loadSavedQR('${guid}')" style="padding: 5px 10px; font-size: 12px; margin: 2px;">📋 Load</button>
-                                <button onclick="deleteSavedQR('${guid}')" style="padding: 5px 10px; font-size: 12px; margin: 2px; background: #dc3545;">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
+            if (helpContent.classList.contains('active')) {
+                helpContent.classList.remove('active');
+            } else {
+                helpContent.innerHTML = `
+                    <h4>How It Works</h4>
+                    <p><strong>For You:</strong></p>
+                    <ul>
+                        <li>Fill out the form with your emergency information</li>
+                        <li>Print the QR code and keep it in your wallet</li>
+                        <li>If you need to update info, create a new QR</li>
+                    </ul>
+                    <p><strong>For Helpers:</strong></p>
+                    <ul>
+                        <li>Scan the QR with any phone camera</li>
+                        <li>Instantly see emergency information</li>
+                        <li>Private info requires the password you set</li>
+                    </ul>
+                    <p><strong>Privacy & Security:</strong></p>
+                    <ul>
+                        <li>All data is encrypted end-to-end</li>
+                        <li>No accounts or registration needed</li>
+                        <li>You control who sees what with passwords</li>
+                    </ul>
                 `;
+                helpContent.classList.add('active');
             }
-            
-            savedList.innerHTML = html;
         }
         
-        async function loadSavedQR(guid) {
-            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-            const item = saved[guid];
+        // Dev Tools Functions
+        function toggleDevTools() {
+            const panel = document.getElementById('dev-panel');
+            panel.classList.toggle('active');
+        }
+        
+        async function devLoadQR() {
+            const guid = document.getElementById('dev-guid').value;
+            const key = document.getElementById('dev-key').value;
             
-            if (!item) {
-                showStatus('create-status', 'Saved QR not found', 'error');
+            if (!guid || !key) {
+                document.getElementById('dev-output').textContent = 'Please enter both GUID and Key';
                 return;
             }
             
-            // Set editing mode
-            editingGUID = guid;
-            currentGUID = item.guid;
-            currentKey = item.key;
-            currentData = item.data;
-            
-            // Prepare encrypted data
-            currentEncryptedData = await encrypt(JSON.stringify(item.data), item.key);
-            
-            // Fill form with saved data
-            document.getElementById('person-name').value = item.data.personName || '';
-            
-            if (item.data.contacts && item.data.contacts[0]) {
-                document.getElementById('contact1-name').value = item.data.contacts[0].name || '';
-                document.getElementById('contact1-phone').value = item.data.contacts[0].phone || '';
-                document.getElementById('contact1-relation').value = item.data.contacts[0].relation || '';
-            }
-            
-            if (item.data.contacts && item.data.contacts[1]) {
-                document.getElementById('contact2-name').value = item.data.contacts[1].name || '';
-                document.getElementById('contact2-phone').value = item.data.contacts[1].phone || '';
-                document.getElementById('contact2-relation').value = item.data.contacts[1].relation || '';
-            }
-            
-            if (item.data.medical) {
-                document.getElementById('blood-type').value = item.data.medical.bloodType || '';
-                document.getElementById('allergies').value = item.data.medical.allergies || '';
-                document.getElementById('medications').value = item.data.medical.medications || '';
-                document.getElementById('medical-conditions').value = item.data.medical.conditions || '';
-            }
-            
-            document.getElementById('notes').value = item.data.notes || '';
-            
-            // Generate QR code
-            const baseUrl = window.location.origin + window.location.pathname;
-            const qrUrl = `${baseUrl}?guid=${currentGUID}#${currentKey}`;
-            generateQRCode(qrUrl);
-            
-            // Display results
-            document.getElementById('guid-display').textContent = currentGUID;
-            document.getElementById('url-display').textContent = qrUrl;
-            document.getElementById('upload-status').textContent = '✅ Loaded from local storage';
-            document.getElementById('upload-status').style.color = '#28a745';
-            document.getElementById('qr-result').style.display = 'block';
-            
-            // Show update button
-            document.getElementById('update-btn').style.display = 'inline-block';
-            
-            // Change submit button text
-            document.getElementById('submit-btn').textContent = 'Generate New QR Code';
-            
-            showStatus('create-status', '✅ Loaded saved QR code. You can update it or generate a new one.', 'success');
-        }
-        
-        function deleteSavedQR(guid) {
-            if (!confirm('Delete this saved QR code?')) return;
-            
-            const saved = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-            delete saved[guid];
-            localStorage.setItem('saved-qr-codes', JSON.stringify(saved));
-            
-            loadSavedQRCodes();
-            showStatus('create-status', 'QR code deleted', 'info');
-            
-            // If we were editing this one, clear the form
-            if (editingGUID === guid) {
-                clearForm();
-            }
-        }
-        
-        async function updateExisting() {
-            if (!currentGUID || !currentKey) {
-                showStatus('create-status', 'No QR code to update', 'error');
-                return;
-            }
-            
-            const updateBtn = document.getElementById('update-btn');
-            updateBtn.disabled = true;
-            updateBtn.innerHTML = 'Updating... <span class="loading"></span>';
+            document.getElementById('dev-output').textContent = 'Loading...';
             
             try {
-                // Collect updated form data
-                const contactData = {
-                    personName: document.getElementById('person-name').value,
-                    contacts: [
-                        {
-                            name: document.getElementById('contact1-name').value,
-                            phone: document.getElementById('contact1-phone').value,
-                            relation: document.getElementById('contact1-relation').value
-                        }
-                    ],
-                    medical: {
-                        bloodType: document.getElementById('blood-type').value,
-                        allergies: document.getElementById('allergies').value,
-                        medications: document.getElementById('medications').value,
-                        conditions: document.getElementById('medical-conditions').value
-                    },
-                    notes: document.getElementById('notes').value,
-                    created: currentData.created || new Date().toISOString(),
-                    updated: new Date().toISOString(),
-                    version: (currentData.version || 1) + 1
-                };
-                
-                // Add second contact if provided
-                if (document.getElementById('contact2-name').value) {
-                    contactData.contacts.push({
-                        name: document.getElementById('contact2-name').value,
-                        phone: document.getElementById('contact2-phone').value,
-                        relation: document.getElementById('contact2-relation').value
-                    });
-                }
-                
-                currentData = contactData;
-                
-                // Encrypt with same key and store
-                const encryptedData = await encrypt(JSON.stringify(contactData), currentKey);
-                currentEncryptedData = encryptedData;
-                
-                // Upload update to webhook
-                document.getElementById('upload-status').textContent = 'Updating on server...';
-                document.getElementById('upload-status').style.color = '#ffc107';
-                
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        guid: currentGUID,
-                        data: encryptedData,
-                        itemId: ARCHIVE_ITEM_ID,
-                        timestamp: new Date().toISOString(),
-                        action: 'update'
-                    })
-                });
-                
-                if (response.ok) {
-                    document.getElementById('upload-status').textContent = '✅ Updated successfully!';
-                    document.getElementById('upload-status').style.color = '#28a745';
-                    
-                    // Update local storage
-                    saveToLocal();
-                    
-                    showStatus('create-status', '✅ QR code updated successfully!', 'success');
-                } else {
-                    throw new Error('Update failed');
-                }
+                await loadAndDisplayEmergencyInfo(guid, key);
+                document.getElementById('dev-output').textContent = 'Successfully loaded QR data';
             } catch (error) {
-                document.getElementById('upload-status').textContent = '⚠️ Update failed';
-                document.getElementById('upload-status').style.color = '#dc3545';
-                showStatus('create-status', 'Update failed: ' + error.message, 'error');
-            } finally {
-                updateBtn.disabled = false;
-                updateBtn.innerHTML = '🔄 Update on Server';
+                document.getElementById('dev-output').textContent = 'Error: ' + error.message;
             }
         }
         
-        function clearForm() {
-            document.getElementById('contact-form').reset();
-            document.getElementById('qr-result').style.display = 'none';
-            document.getElementById('update-btn').style.display = 'none';
-            document.getElementById('submit-btn').textContent = 'Generate QR Code';
+        async function devTestArchive() {
+            const guid = document.getElementById('dev-guid').value;
+            if (!guid) {
+                document.getElementById('dev-output').textContent = 'Please enter a GUID';
+                return;
+            }
             
-            editingGUID = null;
+            const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
+            document.getElementById('dev-output').textContent = `Testing: ${archiveUrl}\n\nFetching...`;
+            
+            try {
+                const response = await fetch(archiveUrl, { mode: 'cors' });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('dev-output').textContent = 
+                        `Success! Found on Archive.org\n\n` +
+                        `GUID: ${data.guid}\n` +
+                        `Created: ${data.created}\n` +
+                        `Has Private Data: ${!!data.privateData}\n\n` +
+                        `Raw JSON:\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    document.getElementById('dev-output').textContent = 
+                        `Not found on Archive.org (${response.status})\n\n` +
+                        `This GUID may not have been uploaded yet.`;
+                }
+            } catch (error) {
+                document.getElementById('dev-output').textContent = 
+                    `Fetch error: ${error.message}\n\n` +
+                    `This could be a CORS issue or network problem.`;
+            }
+        }
+        
+        function devScanQR() {
+            const file = document.getElementById('dev-qr-upload').files[0];
+            if (!file) {
+                document.getElementById('dev-output').textContent = 'Please select a QR image file';
+                return;
+            }
+            
+            document.getElementById('dev-output').textContent = 
+                'QR scanning not yet implemented.\n' +
+                'For now, use manual GUID and Key entry.';
+        }
+        
+        function devShowRawData() {
+            if (!currentData) {
+                document.getElementById('dev-output').textContent = 'No data loaded';
+                return;
+            }
+            
+            document.getElementById('dev-output').textContent = 
+                `Current Data:\n\n` +
+                `GUID: ${currentGUID}\n` +
+                `Key: ${currentKey}\n` +
+                `Mode: ${currentMode}\n\n` +
+                `Raw Data:\n${JSON.stringify(currentData, null, 2)}`;
+        }
+        
+        function devClearStorage() {
             currentGUID = null;
             currentKey = null;
             currentData = null;
-            currentEncryptedData = null;
-            
-            showStatus('create-status', 'Form cleared', 'info');
+            document.getElementById('dev-output').textContent = 'All data cleared';
         }
         
-        // Add export/import all saved QRs
-        function exportAllQRs() {
-            const saved = localStorage.getItem('saved-qr-codes');
-            if (!saved || saved === '{}') {
-                showStatus('create-status', 'No saved QR codes to export', 'error');
-                return;
+        // Triple-click to show dev tools
+        let clickCount = 0;
+        let clickTimer = null;
+        
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.dev-trigger') || e.target.closest('.dev-panel')) return;
+            
+            clickCount++;
+            
+            if (clickCount === 3) {
+                document.querySelector('.dev-trigger').style.opacity = '1';
+                clickCount = 0;
             }
             
-            const blob = new Blob([saved], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `emergency-qr-backup-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            URL.revokeObjectURL(url);
-            
-            showStatus('create-status', '✅ Exported all saved QR codes', 'success');
-        }
-        
-        function importQRs() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                const text = await file.text();
-                
-                try {
-                    const imported = JSON.parse(text);
-                    const existing = JSON.parse(localStorage.getItem('saved-qr-codes') || '{}');
-                    
-                    // Merge imported with existing
-                    const merged = { ...existing, ...imported };
-                    localStorage.setItem('saved-qr-codes', JSON.stringify(merged));
-                    
-                    loadSavedQRCodes();
-                    showStatus('create-status', '✅ Imported QR codes successfully', 'success');
-                } catch (error) {
-                    showStatus('create-status', 'Invalid import file', 'error');
-                }
-            };
-            
-            input.click();
-        }
+            clearTimeout(clickTimer);
+            clickTimer = setTimeout(() => {
+                clickCount = 0;
+            }, 500);
+        });
     </script>
 </body>
 </html>
