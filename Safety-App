@@ -506,9 +506,10 @@
         <div class="dev-output" id="dev-output"></div>
     </div>
     
-    <!-- QR Library -->
+    <!-- QR Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
     <script>
         // Configuration
         const VIEWER_URL = window.location.origin + window.location.pathname;
@@ -1238,16 +1239,68 @@
             }
         }
         
-        function devScanQR() {
+        async function devScanQR() {
             const file = document.getElementById('dev-qr-upload').files[0];
+            const output = document.getElementById('dev-output');
             if (!file) {
-                document.getElementById('dev-output').textContent = 'Please select a QR image file';
+                output.textContent = 'Please select a QR image file';
                 return;
             }
-            
-            document.getElementById('dev-output').textContent = 
-                'QR scanning not yet implemented.\n' +
-                'For now, use manual GUID and Key entry.';
+
+            output.textContent = 'Scanning QR image...';
+            try {
+                const data = await scanFileForQR(file);
+                if (!data) {
+                    output.textContent = 'Unable to read QR code from image';
+                    return;
+                }
+
+                output.textContent = `QR detected: ${data}`;
+                const { guid, key } = parseQRData(data);
+                await loadAndDisplayEmergencyInfo(guid, key);
+                output.textContent += '\nLoaded QR data';
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        function parseQRData(text) {
+            let guid, key;
+            if (text.includes('http')) {
+                const parts = text.split('#');
+                const url = new URL(parts[0]);
+                guid = url.searchParams.get('guid');
+                key = parts[1];
+            } else if (text.includes('#')) {
+                [guid, key] = text.split('#');
+            }
+            if (!guid || !key) {
+                throw new Error('Invalid QR data');
+            }
+            return { guid, key };
+        }
+
+        function scanFileForQR(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, canvas.width, canvas.height);
+                        resolve(code ? code.data : null);
+                    };
+                    img.onerror = () => reject(new Error('Invalid image')); 
+                    img.src = reader.result;
+                };
+                reader.onerror = () => reject(new Error('File reading failed'));
+                reader.readAsDataURL(file);
+            });
         }
         
         function devShowRawData() {
@@ -1270,7 +1323,23 @@
             currentData = null;
             document.getElementById('dev-output').textContent = 'All data cleared';
         }
-        
+
+        // Allow closing dev tools
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('dev-panel').classList.remove('active');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('dev-panel');
+            if (panel.classList.contains('active') &&
+                !e.target.closest('.dev-panel') &&
+                !e.target.closest('.dev-trigger')) {
+                panel.classList.remove('active');
+            }
+        });
+
         // Triple-click to show dev tools
         let clickCount = 0;
         let clickTimer = null;
