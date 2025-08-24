@@ -588,7 +588,7 @@
                 const publicData = await decrypt(data.publicData, key);
                 const publicInfo = JSON.parse(publicData);
                 
-                displayEmergencyInfo(publicInfo, data.passwordHint);
+                await displayEmergencyInfo(publicInfo, data.passwordHint);
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -597,15 +597,25 @@
         }
         
         // Display emergency information
-        function displayEmergencyInfo(publicInfo, passwordHint) {
+        async function displayEmergencyInfo(publicInfo, encryptedPasswordHint) {
             const container = document.getElementById('main-content');
-            
+
+            // Decrypt password hint if it exists
+            let passwordHint = null;
+            if (encryptedPasswordHint) {
+                try {
+                    passwordHint = await decrypt(encryptedPasswordHint, currentKey);
+                } catch (e) {
+                    console.log('Could not decrypt password hint');
+                }
+            }
+
             let html = `
                 <div class="emergency-card">
                     <div class="emergency-header">
                         <h2>🚨 EMERGENCY INFORMATION</h2>
                     </div>
-                    
+
                     <div class="content">
                         <div class="info-section">
                             <div class="info-item">
@@ -676,6 +686,7 @@
             
             html += `
                         <div class="help-link">
+                            <button class="btn-outline" onclick="showUpdateForm()">🔄 Update Info</button>
                             <button class="btn-outline" onclick="showCreationForm()">Create Your Own</button>
                             <a href="#" onclick="toggleHelp(); return false;">How It Works</a>
                             <div id="help-content" class="help-content"></div>
@@ -730,6 +741,135 @@
                 
             } catch (error) {
                 alert('Incorrect password');
+            }
+        }
+
+        async function showUpdateForm() {
+            const password = prompt("Enter your password to update this emergency QR:");
+            if (!password) return;
+
+            try {
+                // Generate update token
+                const updateToken = await generateUpdateToken(password, currentGUID);
+
+                // Test if we can decrypt private data (validates password)
+                if (currentData.privateData) {
+                    try {
+                        await decrypt(currentData.privateData, currentKey + password);
+                    } catch (e) {
+                        alert("Incorrect password!");
+                        return;
+                    }
+                }
+
+                // Show update form (reuse creation form with pre-filled data)
+                showCreationForm();
+
+                // Pre-fill form with decrypted current data
+                const publicData = await decrypt(currentData.publicData, currentKey);
+                const publicInfo = JSON.parse(publicData);
+
+                document.getElementById('name').value = publicInfo.name || '';
+                document.getElementById('blood-type').value = publicInfo.bloodType || '';
+                document.getElementById('allergies').value = publicInfo.allergies || '';
+                document.getElementById('contact-name').value = publicInfo.contact?.name || '';
+                document.getElementById('contact-phone').value = publicInfo.contact?.phone || '';
+
+                if (currentData.privateData) {
+                    const privateData = await decrypt(currentData.privateData, currentKey + password);
+                    const privateInfo = JSON.parse(privateData);
+                    document.getElementById('ssn').value = privateInfo.ssn || '';
+                    document.getElementById('medical-notes').value = privateInfo.notes || '';
+                }
+
+                // Change form handler to update instead of create
+                document.getElementById('create-form').removeEventListener('submit', handleCreateForm);
+                document.getElementById('create-form').addEventListener('submit', (e) => handleUpdateForm(e, password, updateToken));
+
+                // Change button text
+                document.querySelector('#create-form button[type="submit"]').innerHTML = '<span>Update QR</span>';
+
+            } catch (error) {
+                console.error('Update error:', error);
+                alert('Failed to prepare update: ' + error.message);
+            }
+        }
+
+        async function handleUpdateForm(e, password, updateToken) {
+            e.preventDefault();
+
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = '<span>Updating...</span>';
+
+            try {
+                // Collect updated form data
+                const publicInfo = {
+                    name: document.getElementById('name').value,
+                    bloodType: document.getElementById('blood-type').value,
+                    allergies: document.getElementById('allergies').value,
+                    contact: {
+                        name: document.getElementById('contact-name').value,
+                        phone: document.getElementById('contact-phone').value
+                    }
+                };
+
+                const privateInfo = {
+                    ssn: document.getElementById('ssn').value,
+                    notes: document.getElementById('medical-notes').value
+                };
+
+                // Prepare updated data
+                const updatedData = {
+                    guid: currentGUID,
+                    created: currentData.created,
+                    updated: new Date().toISOString(),
+                    beacon: await encrypt(BEACON_TEXT, currentKey),
+                    publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
+                    updateTokenHash: currentData.updateTokenHash
+                };
+
+                // Handle password hint
+                const newHint = document.getElementById('password-hint').value;
+                if (newHint) {
+                    updatedData.passwordHint = await encrypt(newHint, currentKey);
+                }
+
+                // Add private data if password exists
+                if (password) {
+                    updatedData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
+                }
+
+                // Send PUT request to webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        guid: currentGUID,
+                        updateToken: updateToken,
+                        data: updatedData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    currentData = updatedData;
+                    showStatus('✅ Successfully updated!', 'success');
+
+                    // Show the updated QR view
+                    await loadAndDisplayEmergencyInfo(currentGUID, currentKey);
+                } else {
+                    throw new Error(result.error || 'Update failed');
+                }
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<span>Update QR</span>';
             }
         }
         
@@ -886,12 +1026,24 @@
                     created: new Date().toISOString(),
                     beacon: await encrypt(BEACON_TEXT, currentKey),
                     publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
-                    passwordHint: document.getElementById('password-hint').value
+                    passwordHint: null,
+                    updateTokenHash: null
                 };
-                
-                // Only add private data if password is set
+
+                // Handle password-protected data
+                const passwordHint = document.getElementById('password-hint').value;
                 if (password) {
+                    // Encrypt the password hint (FIXED!)
+                    if (passwordHint) {
+                        currentData.passwordHint = await encrypt(passwordHint, currentKey);
+                    }
+
+                    // Add private data
                     currentData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
+
+                    // Generate update token hash for future updates
+                    const updateToken = await generateUpdateToken(password, currentGUID);
+                    currentData.updateTokenHash = await sha256Hash(updateToken);
                 }
                 
                 // Generate QR code
@@ -1081,7 +1233,26 @@
             
             return dec.decode(decrypted);
         }
-        
+
+        async function generateUpdateToken(password, guid) {
+            // Deterministic token from password + guid
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + guid + "UPDATE_SALT_V1");
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        async function sha256Hash(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         async function createDemoData(guid, key) {
             return {
                 guid: guid,
