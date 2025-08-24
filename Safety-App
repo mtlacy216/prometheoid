@@ -585,18 +585,20 @@
                     throw new Error('Invalid QR code');
                 }
 
+                // Decrypt password hint if it exists
+                let passwordHint = null;
+                if (fullData.passwordHint) {
+                    try {
+                        passwordHint = await decrypt(fullData.passwordHint, key);
+                    } catch (e) {
+                        console.log('Could not decrypt password hint');
+                    }
+                }
+
                 currentData = data;
-                currentBlob = fullData;
+                currentBlob = { ...fullData, passwordHint };
 
                 await displayEmergencyInfo(fullData);
-
-
-                
-                // Decrypt and display public data
-                const publicData = await decrypt(data.publicData, key);
-                const publicInfo = JSON.parse(publicData);
-                
-                await displayEmergencyInfo(publicInfo, data.passwordHint);
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -610,19 +612,6 @@
 
             const publicInfo = fullData.publicInfo || {};
             const passwordHint = fullData.passwordHint;
-        async function displayEmergencyInfo(publicInfo, encryptedPasswordHint) {
-            const container = document.getElementById('main-content');
-
-            // Decrypt password hint if it exists
-            let passwordHint = null;
-            if (encryptedPasswordHint) {
-                try {
-                    passwordHint = await decrypt(encryptedPasswordHint, currentKey);
-                } catch (e) {
-                    console.log('Could not decrypt password hint');
-                }
-            }
->>>>>>> main
 
             let html = `
                 <div class="emergency-card">
@@ -773,13 +762,6 @@
                 if (currentBlob.privateInfo) {
                     const hash = await sha256Hash(currentKey + password);
                     if (hash !== currentBlob.privateInfo.encryptedWith) {
-
-                // Test if we can decrypt private data (validates password)
-                if (currentData.privateData) {
-                    try {
-                        await decrypt(currentData.privateData, currentKey + password);
-                    } catch (e) {
-
                         alert("Incorrect password!");
                         return;
                     }
@@ -791,24 +773,15 @@
                 // Pre-fill form with current data
                 const publicInfo = currentBlob.publicInfo || {};
 
-                // Pre-fill form with decrypted current data
-                const publicData = await decrypt(currentData.publicData, currentKey);
-                const publicInfo = JSON.parse(publicData);
-
-
                 document.getElementById('name').value = publicInfo.name || '';
                 document.getElementById('blood-type').value = publicInfo.bloodType || '';
                 document.getElementById('allergies').value = publicInfo.allergies || '';
                 document.getElementById('contact-name').value = publicInfo.contact?.name || '';
                 document.getElementById('contact-phone').value = publicInfo.contact?.phone || '';
-
+                document.getElementById('password-hint').value = currentBlob.passwordHint || '';
 
                 if (currentBlob.privateInfo) {
                     const privateInfo = currentBlob.privateInfo;
-
-                if (currentData.privateData) {
-                    const privateData = await decrypt(currentData.privateData, currentKey + password);
-                    const privateInfo = JSON.parse(privateData);
                     document.getElementById('ssn').value = privateInfo.ssn || '';
                     document.getElementById('medical-notes').value = privateInfo.notes || '';
                 }
@@ -845,6 +818,8 @@
                     }
                 };
 
+                const newHint = document.getElementById('password-hint').value;
+
                 const privateInfo = password ? {
                     ssn: document.getElementById('ssn').value,
                     notes: document.getElementById('medical-notes').value,
@@ -857,7 +832,7 @@
                     updated: new Date().toISOString(),
                     beacon: BEACON_TEXT,
                     publicInfo,
-                    passwordHint: document.getElementById('password-hint').value,
+                    passwordHint: newHint ? await encrypt(newHint, currentKey) : null,
                     privateInfo
                 };
 
@@ -868,32 +843,6 @@
                     data: encryptedBlob,
                     auth
                 };
-
-                const privateInfo = {
-                    ssn: document.getElementById('ssn').value,
-                    notes: document.getElementById('medical-notes').value
-                };
-
-                // Prepare updated data
-                const updatedData = {
-                    guid: currentGUID,
-                    created: currentData.created,
-                    updated: new Date().toISOString(),
-                    beacon: await encrypt(BEACON_TEXT, currentKey),
-                    publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
-                    updateTokenHash: currentData.updateTokenHash
-                };
-
-                // Handle password hint
-                const newHint = document.getElementById('password-hint').value;
-                if (newHint) {
-                    updatedData.passwordHint = await encrypt(newHint, currentKey);
-                }
-
-                // Add private data if password exists
-                if (password) {
-                    updatedData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
-                }
 
                 // Send PUT request to webhook
                 const response = await fetch(WEBHOOK_URL, {
@@ -912,8 +861,7 @@
 
                 if (response.ok && result.success) {
                     currentData = updatedData;
-                    currentBlob = fullData;
-
+                    currentBlob = { ...fullData, passwordHint: newHint };
                     showStatus('✅ Successfully updated!', 'success');
 
                     // Show the updated QR view
@@ -1073,6 +1021,7 @@
                 };
 
                 const passwordHint = document.getElementById('password-hint').value;
+                const encryptedHint = passwordHint ? await encrypt(passwordHint, currentKey) : null;
 
                 const privateInfo = password ? {
                     ssn: document.getElementById('ssn').value,
@@ -1085,7 +1034,7 @@
                     created: new Date().toISOString(),
                     beacon: BEACON_TEXT,
                     publicInfo,
-                    passwordHint,
+                    passwordHint: encryptedHint,
                     privateInfo
                 };
 
@@ -1097,28 +1046,6 @@
                 if (password) {
                     const updateToken = await generateUpdateToken(password, currentGUID);
                     auth = await sha256Hash(updateToken);
-
-                    beacon: await encrypt(BEACON_TEXT, currentKey),
-                    publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
-                    passwordHint: null,
-                    updateTokenHash: null
-                };
-
-                // Handle password-protected data
-                const passwordHint = document.getElementById('password-hint').value;
-                if (password) {
-                    // Encrypt the password hint (FIXED!)
-                    if (passwordHint) {
-                        currentData.passwordHint = await encrypt(passwordHint, currentKey);
-                    }
-
-                    // Add private data
-                    currentData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
-
-                    // Generate update token hash for future updates
-                    const updateToken = await generateUpdateToken(password, currentGUID);
-                    currentData.updateTokenHash = await sha256Hash(updateToken);
-
                 }
 
                 currentData = {
@@ -1127,7 +1054,7 @@
                     auth
                 };
 
-                currentBlob = fullData;
+                currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
                 const qrUrl = `${VIEWER_URL}?guid=${currentGUID}#${currentKey}`;
@@ -1326,8 +1253,6 @@
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')
                 .replace(/=/g, '');
-<<<<<<< codex/fix-security-issues-in-safety-app-8ugxoy
-=======
         }
 
         async function sha256Hash(text) {
@@ -1339,11 +1264,11 @@
         }
 
         async function createDemoData(guid, key) {
-            return {
-                guid: guid,
+            const fullData = {
+                version: "2.0",
                 created: new Date().toISOString(),
-                beacon: await encrypt(BEACON_TEXT, key),
-                publicData: await encrypt(JSON.stringify({
+                beacon: BEACON_TEXT,
+                publicInfo: {
                     name: "Demo User",
                     bloodType: "O+",
                     allergies: "Penicillin, Peanuts",
@@ -1351,54 +1276,23 @@
                         name: "Emergency Contact",
                         phone: "(555) 123-4567"
                     }
-                }), key),
-                privateData: await encrypt(JSON.stringify({
+                },
+                passwordHint: await encrypt("Password is: demo", key),
+                privateInfo: {
                     ssn: "XXX-XX-XXXX",
-                    notes: "This is demo data. Password is: demo"
-                }), key + "demo"),
-                passwordHint: "Password is: demo"
+                    notes: "This is demo data. Password is: demo",
+                    encryptedWith: await sha256Hash(key + "demo")
+                }
             };
->>>>>>> main
-        }
 
-        async function sha256Hash(text) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            const encryptedBlob = await encrypt(JSON.stringify(fullData), key);
+            const updateToken = await generateUpdateToken("demo", guid);
+            return {
+                id: guid,
+                data: encryptedBlob,
+                auth: await sha256Hash(updateToken)
+            };
         }
-
-        async function createDemoData(guid, key) {
-    const fullData = {
-        version: "2.0",
-        created: new Date().toISOString(),
-        beacon: BEACON_TEXT,
-        publicInfo: {
-            name: "Demo User",
-            bloodType: "O+",
-            allergies: "Penicillin, Peanuts",
-            contact: {
-                name: "Emergency Contact",
-                phone: "(555) 123-4567"
-            }
-        },
-        passwordHint: "Password is: demo",
-        privateInfo: {
-            ssn: "XXX-XX-XXXX",
-            notes: "This is demo data. Password is: demo",
-            encryptedWith: await sha256Hash(key + "demo")
-        }
-    };
-
-    const encryptedBlob = await encrypt(JSON.stringify(fullData), key);
-    const updateToken = await generateUpdateToken("demo", guid);
-    return {
-        id: guid,
-        data: encryptedBlob,
-        auth: await sha256Hash(updateToken)
-    };
-}
 
         function downloadQR() {
             const canvas = document.querySelector('#qrcode canvas');
