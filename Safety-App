@@ -520,7 +520,8 @@
         // State
         let currentGUID = null;
         let currentKey = null;
-        let currentData = null;
+        let currentData = null; // minimal {id, data, auth}
+        let currentBlob = null; // decrypted full data
         let currentMode = null;
         
         // Initialize on page load
@@ -556,14 +557,14 @@
         async function loadAndDisplayEmergencyInfo(guid, key) {
             currentGUID = guid;
             currentKey = key;
-            
+
             try {
                 // Try to fetch from Archive.org
                 let data;
                 try {
                     const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
                     const response = await fetch(archiveUrl, { mode: 'cors' });
-                    
+
                     if (response.ok) {
                         data = await response.json();
                         console.log('Loaded from Archive.org');
@@ -575,37 +576,39 @@
                     // Create demo data for testing
                     data = await createDemoData(guid, key);
                 }
-                
+
+                const decrypted = await decrypt(data.data, key);
+                const fullData = JSON.parse(decrypted);
+
                 // Validate beacon
-                const beacon = await decrypt(data.beacon, key);
-                if (beacon !== BEACON_TEXT) {
+                if (fullData.beacon !== BEACON_TEXT) {
                     throw new Error('Invalid QR code');
                 }
-                
+
                 currentData = data;
-                
-                // Decrypt and display public data
-                const publicData = await decrypt(data.publicData, key);
-                const publicInfo = JSON.parse(publicData);
-                
-                displayEmergencyInfo(publicInfo, data.passwordHint);
-                
+                currentBlob = fullData;
+
+                await displayEmergencyInfo(fullData);
+
             } catch (error) {
                 console.error('Error loading data:', error);
                 showError('Unable to load emergency information. Please check the QR code.');
             }
         }
-        
+
         // Display emergency information
-        function displayEmergencyInfo(publicInfo, passwordHint) {
+        async function displayEmergencyInfo(fullData) {
             const container = document.getElementById('main-content');
-            
+
+            const publicInfo = fullData.publicInfo || {};
+            const passwordHint = fullData.passwordHint;
+
             let html = `
                 <div class="emergency-card">
                     <div class="emergency-header">
                         <h2>🚨 EMERGENCY INFORMATION</h2>
                     </div>
-                    
+
                     <div class="content">
                         <div class="info-section">
                             <div class="info-item">
@@ -662,7 +665,7 @@
                 `;
             }
             
-            if (currentData.privateData) {
+            if (currentBlob && currentBlob.privateInfo) {
                 html += `
                         <div class="private-section">
                             <h3>🔒 Private Information</h3>
@@ -676,6 +679,7 @@
             
             html += `
                         <div class="help-link">
+                            <button class="btn-outline" onclick="showUpdateForm()">🔄 Update Info</button>
                             <button class="btn-outline" onclick="showCreationForm()">Create Your Own</button>
                             <a href="#" onclick="toggleHelp(); return false;">How It Works</a>
                             <div id="help-content" class="help-content"></div>
@@ -691,13 +695,16 @@
         async function unlockPrivateInfo() {
             const password = document.getElementById('vault-password').value;
             if (!password) return;
-            
+
             try {
-                const privateData = await decrypt(currentData.privateData, currentKey + password);
-                const privateInfo = JSON.parse(privateData);
-                
+                const hash = await sha256Hash(currentKey + password);
+                if (!currentBlob.privateInfo || hash !== currentBlob.privateInfo.encryptedWith) {
+                    throw new Error('Incorrect password');
+                }
+
+                const privateInfo = currentBlob.privateInfo;
                 let html = '<div style="margin-top: 15px;">';
-                
+
                 if (privateInfo.ssn) {
                     html += `
                         <div class="info-item">
@@ -709,7 +716,7 @@
                         </div>
                     `;
                 }
-                
+
                 if (privateInfo.notes) {
                     html += `
                         <div class="info-item">
@@ -721,15 +728,140 @@
                         </div>
                     `;
                 }
-                
+
                 html += '</div>';
-                
+
                 document.getElementById('private-content').innerHTML = html;
                 document.getElementById('vault-password').style.display = 'none';
                 document.querySelector('.private-section button').style.display = 'none';
-                
+
             } catch (error) {
                 alert('Incorrect password');
+            }
+        }
+
+        async function showUpdateForm() {
+            const password = prompt("Enter your password to update this emergency QR:");
+            if (!password) return;
+
+            try {
+                // Generate update token
+                const updateToken = await generateUpdateToken(password, currentGUID);
+
+                // Validate password against stored hash
+                if (currentBlob.privateInfo) {
+                    const hash = await sha256Hash(currentKey + password);
+                    if (hash !== currentBlob.privateInfo.encryptedWith) {
+                        alert("Incorrect password!");
+                        return;
+                    }
+                }
+
+                // Show update form (reuse creation form with pre-filled data)
+                showCreationForm();
+
+                // Pre-fill form with current data
+                const publicInfo = currentBlob.publicInfo || {};
+
+                document.getElementById('name').value = publicInfo.name || '';
+                document.getElementById('blood-type').value = publicInfo.bloodType || '';
+                document.getElementById('allergies').value = publicInfo.allergies || '';
+                document.getElementById('contact-name').value = publicInfo.contact?.name || '';
+                document.getElementById('contact-phone').value = publicInfo.contact?.phone || '';
+
+                if (currentBlob.privateInfo) {
+                    const privateInfo = currentBlob.privateInfo;
+                    document.getElementById('ssn').value = privateInfo.ssn || '';
+                    document.getElementById('medical-notes').value = privateInfo.notes || '';
+                }
+
+                // Change form handler to update instead of create
+                document.getElementById('create-form').removeEventListener('submit', handleCreateForm);
+                document.getElementById('create-form').addEventListener('submit', (e) => handleUpdateForm(e, password, updateToken));
+
+                // Change button text
+                document.querySelector('#create-form button[type="submit"]').innerHTML = '<span>Update QR</span>';
+
+            } catch (error) {
+                console.error('Update error:', error);
+                alert('Failed to prepare update: ' + error.message);
+            }
+        }
+
+        async function handleUpdateForm(e, password, updateToken) {
+            e.preventDefault();
+
+            const button = e.target.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.innerHTML = '<span>Updating...</span>';
+
+            try {
+                // Collect updated form data
+                const publicInfo = {
+                    name: document.getElementById('name').value,
+                    bloodType: document.getElementById('blood-type').value,
+                    allergies: document.getElementById('allergies').value,
+                    contact: {
+                        name: document.getElementById('contact-name').value,
+                        phone: document.getElementById('contact-phone').value
+                    }
+                };
+
+                const privateInfo = password ? {
+                    ssn: document.getElementById('ssn').value,
+                    notes: document.getElementById('medical-notes').value,
+                    encryptedWith: await sha256Hash(currentKey + password)
+                } : null;
+
+                const fullData = {
+                    version: currentBlob.version,
+                    created: currentBlob.created,
+                    updated: new Date().toISOString(),
+                    beacon: BEACON_TEXT,
+                    publicInfo,
+                    passwordHint: document.getElementById('password-hint').value,
+                    privateInfo
+                };
+
+                const encryptedBlob = await encrypt(JSON.stringify(fullData), currentKey);
+                const auth = await sha256Hash(updateToken);
+                const updatedData = {
+                    id: currentGUID,
+                    data: encryptedBlob,
+                    auth
+                };
+
+                // Send PUT request to webhook
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        guid: currentGUID,
+                        updateToken: updateToken,
+                        data: updatedData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    currentData = updatedData;
+                    currentBlob = fullData;
+                    showStatus('✅ Successfully updated!', 'success');
+
+                    // Show the updated QR view
+                    await loadAndDisplayEmergencyInfo(currentGUID, currentKey);
+                } else {
+                    throw new Error(result.error || 'Update failed');
+                }
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<span>Update QR</span>';
             }
         }
         
@@ -863,7 +995,7 @@
                 // Generate unique identifiers
                 currentGUID = generateGUID();
                 currentKey = generateKey();
-                
+
                 // Collect form data
                 const publicInfo = {
                     name: document.getElementById('name').value,
@@ -874,25 +1006,41 @@
                         phone: document.getElementById('contact-phone').value
                     }
                 };
-                
-                const privateInfo = {
+
+                const passwordHint = document.getElementById('password-hint').value;
+
+                const privateInfo = password ? {
                     ssn: document.getElementById('ssn').value,
-                    notes: document.getElementById('medical-notes').value
-                };
-                
-                // Encrypt data
-                currentData = {
-                    guid: currentGUID,
+                    notes: document.getElementById('medical-notes').value,
+                    encryptedWith: await sha256Hash(currentKey + password)
+                } : null;
+
+                const fullData = {
+                    version: "2.0",
                     created: new Date().toISOString(),
-                    beacon: await encrypt(BEACON_TEXT, currentKey),
-                    publicData: await encrypt(JSON.stringify(publicInfo), currentKey),
-                    passwordHint: document.getElementById('password-hint').value
+                    beacon: BEACON_TEXT,
+                    publicInfo,
+                    passwordHint,
+                    privateInfo
                 };
-                
-                // Only add private data if password is set
+
+                // Encrypt entire blob
+                const encryptedBlob = await encrypt(JSON.stringify(fullData), currentKey);
+
+                // Generate auth hash for updates
+                let auth = null;
                 if (password) {
-                    currentData.privateData = await encrypt(JSON.stringify(privateInfo), currentKey + password);
+                    const updateToken = await generateUpdateToken(password, currentGUID);
+                    auth = await sha256Hash(updateToken);
                 }
+
+                currentData = {
+                    id: currentGUID,
+                    data: encryptedBlob,
+                    auth
+                };
+
+                currentBlob = fullData;
                 
                 // Generate QR code
                 const qrUrl = `${VIEWER_URL}?guid=${currentGUID}#${currentKey}`;
@@ -937,9 +1085,9 @@
                     filename: `${currentGUID}.json`,
                     data: currentData,
                     metadata: {
-                        created: currentData.created,
+                        created: currentBlob.created,
                         type: 'emergency_qr',
-                        version: '2.0'
+                        version: currentBlob.version
                     }
                 };
                 
@@ -1081,29 +1229,57 @@
             
             return dec.decode(decrypted);
         }
-        
-        async function createDemoData(guid, key) {
-            return {
-                guid: guid,
-                created: new Date().toISOString(),
-                beacon: await encrypt(BEACON_TEXT, key),
-                publicData: await encrypt(JSON.stringify({
-                    name: "Demo User",
-                    bloodType: "O+",
-                    allergies: "Penicillin, Peanuts",
-                    contact: {
-                        name: "Emergency Contact",
-                        phone: "(555) 123-4567"
-                    }
-                }), key),
-                privateData: await encrypt(JSON.stringify({
-                    ssn: "XXX-XX-XXXX",
-                    notes: "This is demo data. Password is: demo"
-                }), key + "demo"),
-                passwordHint: "Password is: demo"
-            };
+
+        async function generateUpdateToken(password, guid) {
+            // Deterministic token from password + guid
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password + guid + "UPDATE_SALT_V1");
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
         }
-        
+
+        async function sha256Hash(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function createDemoData(guid, key) {
+    const fullData = {
+        version: "2.0",
+        created: new Date().toISOString(),
+        beacon: BEACON_TEXT,
+        publicInfo: {
+            name: "Demo User",
+            bloodType: "O+",
+            allergies: "Penicillin, Peanuts",
+            contact: {
+                name: "Emergency Contact",
+                phone: "(555) 123-4567"
+            }
+        },
+        passwordHint: "Password is: demo",
+        privateInfo: {
+            ssn: "XXX-XX-XXXX",
+            notes: "This is demo data. Password is: demo",
+            encryptedWith: await sha256Hash(key + "demo")
+        }
+    };
+
+    const encryptedBlob = await encrypt(JSON.stringify(fullData), key);
+    const updateToken = await generateUpdateToken("demo", guid);
+    return {
+        id: guid,
+        data: encryptedBlob,
+        auth: await sha256Hash(updateToken)
+    };
+}
+
         function downloadQR() {
             const canvas = document.querySelector('#qrcode canvas');
             if (canvas) {
@@ -1221,11 +1397,10 @@
                 const response = await fetch(archiveUrl, { mode: 'cors' });
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('dev-output').textContent = 
+                    document.getElementById('dev-output').textContent =
                         `Success! Found on Archive.org\n\n` +
-                        `GUID: ${data.guid}\n` +
-                        `Created: ${data.created}\n` +
-                        `Has Private Data: ${!!data.privateData}\n\n` +
+                        `ID: ${data.id}\n` +
+                        `Has Auth: ${!!data.auth}\n\n` +
                         `Raw JSON:\n${JSON.stringify(data, null, 2)}`;
                 } else {
                     document.getElementById('dev-output').textContent = 
