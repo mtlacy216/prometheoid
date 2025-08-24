@@ -585,10 +585,20 @@
                     throw new Error('Invalid QR code');
                 }
 
-                currentData = data;
-                currentBlob = fullData;
+                const encryptedHint = fullData.passwordHint;
+                let passwordHint = null;
+                if (encryptedHint) {
+                    try {
+                        passwordHint = await decrypt(encryptedHint, key);
+                    } catch (e) {
+                        console.log('Could not decrypt password hint');
+                    }
+                }
 
-                await displayEmergencyInfo(fullData);
+                currentData = data;
+                currentBlob = { ...fullData, passwordHint };
+
+                await displayEmergencyInfo(fullData.publicInfo || {}, encryptedHint);
 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -597,11 +607,17 @@
         }
 
         // Display emergency information
-        async function displayEmergencyInfo(fullData) {
+        async function displayEmergencyInfo(publicInfo, encryptedPasswordHint) {
             const container = document.getElementById('main-content');
 
-            const publicInfo = fullData.publicInfo || {};
-            const passwordHint = fullData.passwordHint;
+            let passwordHint = null;
+            if (encryptedPasswordHint) {
+                try {
+                    passwordHint = await decrypt(encryptedPasswordHint, currentKey);
+                } catch (e) {
+                    console.log('Could not decrypt password hint');
+                }
+            }
 
             let html = `
                 <div class="emergency-card">
@@ -768,6 +784,7 @@
                 document.getElementById('allergies').value = publicInfo.allergies || '';
                 document.getElementById('contact-name').value = publicInfo.contact?.name || '';
                 document.getElementById('contact-phone').value = publicInfo.contact?.phone || '';
+                document.getElementById('password-hint').value = currentBlob.passwordHint || '';
 
                 if (currentBlob.privateInfo) {
                     const privateInfo = currentBlob.privateInfo;
@@ -807,6 +824,8 @@
                     }
                 };
 
+                const newHint = document.getElementById('password-hint').value;
+
                 const privateInfo = password ? {
                     ssn: document.getElementById('ssn').value,
                     notes: document.getElementById('medical-notes').value,
@@ -819,7 +838,7 @@
                     updated: new Date().toISOString(),
                     beacon: BEACON_TEXT,
                     publicInfo,
-                    passwordHint: document.getElementById('password-hint').value,
+                    passwordHint: newHint ? await encrypt(newHint, currentKey) : null,
                     privateInfo
                 };
 
@@ -848,7 +867,7 @@
 
                 if (response.ok && result.success) {
                     currentData = updatedData;
-                    currentBlob = fullData;
+                    currentBlob = { ...fullData, passwordHint: newHint };
                     showStatus('✅ Successfully updated!', 'success');
 
                     // Show the updated QR view
@@ -1008,6 +1027,7 @@
                 };
 
                 const passwordHint = document.getElementById('password-hint').value;
+                const encryptedHint = passwordHint ? await encrypt(passwordHint, currentKey) : null;
 
                 const privateInfo = password ? {
                     ssn: document.getElementById('ssn').value,
@@ -1020,7 +1040,7 @@
                     created: new Date().toISOString(),
                     beacon: BEACON_TEXT,
                     publicInfo,
-                    passwordHint,
+                    passwordHint: encryptedHint,
                     privateInfo
                 };
 
@@ -1040,7 +1060,7 @@
                     auth
                 };
 
-                currentBlob = fullData;
+                currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
                 const qrUrl = `${VIEWER_URL}?guid=${currentGUID}#${currentKey}`;
@@ -1263,7 +1283,7 @@
                 phone: "(555) 123-4567"
             }
         },
-        passwordHint: "Password is: demo",
+        passwordHint: await encrypt("Password is: demo", key),
         privateInfo: {
             ssn: "XXX-XX-XXXX",
             notes: "This is demo data. Password is: demo",
