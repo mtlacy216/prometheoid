@@ -347,7 +347,41 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
+        .upload-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 9999;
+        }
+
+        .archive-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            opacity: 0.3;
+            transition: opacity 0.5s ease;
+            background: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+            /* Creates a light background for the white logo */
+        }
+
+        .security-badge {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
         /* Dev Tools */
         .dev-trigger {
             position: fixed;
@@ -512,11 +546,20 @@
 
     <script>
         // Configuration
-        const VIEWER_URL = window.location.origin + window.location.pathname;
+        const VIEWER_URL = 'https://sites.google.com/view/securecontact/';
         const BEACON_TEXT = 'SQR:1';
         const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook-test/d5e99c29-2cf1-44c1-b5b4-95a1ca048441';
-        const ARCHIVE_BASE = 'https://archive.org/download/securecontacts/';
-        
+        const ARCHIVE_COLLECTION = 'zuboff'; // or 'securecontacts' or another collection
+        const ARCHIVE_BASE = `https://archive.org/download/${ARCHIVE_COLLECTION}/`;
+
+        const SECURITY_STEPS = [
+            "Creating your unique encryption with 115 quattuorvigintillion possible combinations - a number so vast it exceeds the count of atoms in our galaxy.",
+            "Your encryption key exists only in this QR code. We never store it, can't recover it, and couldn't read your data if we tried.",
+            "Basic emergency info stays accessible (that's the whole point!). Your private details require your password - a second lock only you have.",
+            "Archive.org receives only encrypted data. Without your QR code, it's mathematical noise - meaningless to anyone, including us.",
+            "Your QR code is now the only key to this data in the entire universe. Guard it like you would a physical key - there's no locksmith here."
+        ];
+
         // State
         let currentGUID = null;
         let currentKey = null;
@@ -525,14 +568,21 @@
         let currentMode = null;
         let currentCreated = null;
         let currentName = null;
+        let securityInterval = null;
         
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
+            console.log('Full URL:', window.location.href);
+            console.log('Search params:', window.location.search);
+            console.log('Hash:', window.location.hash);
+
             const urlParams = new URLSearchParams(window.location.search);
             const guid = urlParams.get('guid');
             const name = urlParams.get('name');
             const created = urlParams.get('created');
             const key = window.location.hash.substring(1);
+
+            console.log('Parsed - GUID:', guid, 'Key:', key, 'Name:', name, 'Created:', created);
 
             if (guid && key) {
                 // SCANNING MODE - Auto display emergency info
@@ -648,7 +698,7 @@
 
             const publicInfo = fullData.publicInfo || {};
             const passwordHint = fullData.passwordHint;
-            const nameToShow = options.overrideName || publicInfo.name || fullData.name || 'Unknown';
+            const nameToShow = fullData.name || publicInfo.name || options.overrideName || 'Unknown';
 
             let html = `
                 <div class="emergency-card">
@@ -847,6 +897,7 @@
             const button = e.target.querySelector('button[type="submit"]');
             button.disabled = true;
             button.innerHTML = '<span>Updating...</span>';
+            startSecurityAnimation();
 
             try {
                 // Collect updated form data
@@ -906,6 +957,7 @@
                     currentData = updatedData;
                     currentBlob = { ...fullData, passwordHint: newHint };
                     showStatus('✅ Successfully updated!', 'success');
+                    stopSecurityAnimation(true);
 
                     // Show the updated QR view
                     await loadAndDisplayEmergencyInfo(currentGUID, currentKey, currentBlob.name, currentBlob.created);
@@ -915,6 +967,7 @@
 
             } catch (error) {
                 showStatus('Error: ' + error.message, 'error');
+                stopSecurityAnimation(false);
             } finally {
                 button.disabled = false;
                 button.innerHTML = '<span>Update QR</span>';
@@ -925,13 +978,13 @@
         function showCreationForm() {
             currentMode = 'create';
             const container = document.getElementById('main-content');
-            
+
             container.innerHTML = `
                 <div class="header">
                     <h1>Create Your Emergency QR</h1>
-                    <p>If you're unconscious, this QR helps others help you</p>
+                    <p>Your emergency QR: Public enough to save your life, private enough to protect your identity</p>
                 </div>
-                
+
                 <div class="content">
                     <form id="create-form">
                         <div class="section-title">Always Visible</div>
@@ -1152,13 +1205,45 @@
                 button.innerHTML = '<span>Create QR</span>';
             }
         }
-        
+
+        function startSecurityAnimation() {
+            const overlay = document.createElement('div');
+            overlay.id = 'upload-overlay';
+            overlay.className = 'upload-overlay';
+            overlay.innerHTML = `
+                <img src="https://archive.org/images/ia-logo.png" alt="Archive.org" class="archive-logo">
+                <p id="security-message">${SECURITY_STEPS[0]}</p>
+                <div class="security-badge">🛡️ Zero-knowledge design • Your QR code is the only key that exists</div>
+            `;
+            document.body.appendChild(overlay);
+            let step = 1;
+            securityInterval = setInterval(() => {
+                if (step < 4) {
+                    document.getElementById('security-message').textContent = SECURITY_STEPS[step];
+                    step++;
+                }
+            }, 3000);
+        }
+
+        function stopSecurityAnimation(success) {
+            if (securityInterval) clearInterval(securityInterval);
+            const overlay = document.getElementById('upload-overlay');
+            if (!overlay) return;
+            if (success) {
+                document.getElementById('security-message').textContent = SECURITY_STEPS[4];
+                setTimeout(() => overlay.remove(), 3000);
+            } else {
+                overlay.remove();
+            }
+        }
+
         // Upload to Archive.org
         async function uploadToArchive() {
             const button = event.target;
             button.disabled = true;
             button.innerHTML = '⏳ Uploading...';
-            
+            startSecurityAnimation();
+
             try {
                 const payload = {
                     guid: currentGUID,
@@ -1183,13 +1268,15 @@
                 if (!response.ok) {
                     throw new Error('Upload failed');
                 }
-                
+
                 button.innerHTML = '✅ Saved Online!';
                 showStatus('Successfully backed up to Archive.org', 'success');
-                
+                stopSecurityAnimation(true);
+
             } catch (error) {
                 button.innerHTML = '❌ Failed - Retry';
                 showStatus('Upload failed: ' + error.message, 'error');
+                stopSecurityAnimation(false);
             } finally {
                 setTimeout(() => {
                     button.disabled = false;
@@ -1418,25 +1505,26 @@
                 helpContent.classList.remove('active');
             } else {
                 helpContent.innerHTML = `
-                    <h4>How It Works</h4>
-                    <p><strong>For You:</strong></p>
+                    <h4>How Your Privacy Works</h4>
+                    <p>Anyone who scans your QR sees:</p>
                     <ul>
-                        <li>Fill out the form with your emergency information</li>
-                        <li>Print the QR code and keep it in your wallet</li>
-                        <li>If you need to update info, create a new QR</li>
+                        <li>✓ Your name & emergency contact (that's the point - to help you!)</li>
+                        <li>✓ Blood type & allergies (critical for first responders)</li>
                     </ul>
-                    <p><strong>For Helpers:</strong></p>
+                    <p>Only with your password:</p>
                     <ul>
-                        <li>Scan the QR with any phone camera</li>
-                        <li>Instantly see emergency information</li>
-                        <li>Private info requires the password you set</li>
+                        <li>🔒 Social Security Number</li>
+                        <li>🔒 Medical notes & medications</li>
                     </ul>
-                    <p><strong>Privacy & Security:</strong></p>
-                    <ul>
-                        <li>All data is encrypted end-to-end</li>
-                        <li>No accounts or registration needed</li>
-                        <li>You control who sees what with passwords</li>
-                    </ul>
+                    <p><strong>The Beautiful Math:</strong><br>
+                    Your encryption has more possible combinations than there are<br>
+                    grains of sand on all beaches on Earth... multiplied by the<br>
+                    number of stars in the universe... multiplied by a trillion.</p>
+                    <p><strong>Important:</strong> We designed this so even WE can't access your data.<br>
+                    Your QR code contains the only encryption key that exists.<br>
+                    Lose the QR = lose access forever. There's no password reset,<br>
+                    no customer service that can help, no backdoor.</p>
+                    <p>This is true security - not even the creators can break in.</p>
                 `;
                 helpContent.classList.add('active');
             }
