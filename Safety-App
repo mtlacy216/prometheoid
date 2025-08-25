@@ -552,6 +552,7 @@
         const ARCHIVE_COLLECTION = 'zuboff'; // or 'securecontacts' or another collection
         const ARCHIVE_BASE = `https://archive.org/download/${ARCHIVE_COLLECTION}/`;
 
+
         const SECURITY_STEPS = [
             "Creating your unique encryption with 115 quattuorvigintillion possible combinations - a number so vast it exceeds the count of atoms in our galaxy.",
             "Your encryption key exists only in this QR code. We never store it, can't recover it, and couldn't read your data if we tried.",
@@ -559,6 +560,7 @@
             "Archive.org receives only encrypted data. Without your QR code, it's mathematical noise - meaningless to anyone, including us.",
             "Your QR code is now the only key to this data in the entire universe. Guard it like you would a physical key - there's no locksmith here."
         ];
+
 
         // State
         let currentGUID = null;
@@ -1166,7 +1168,8 @@
                 currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
-                const qrUrl = `${VIEWER_URL}?guid=${currentGUID}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${currentKey}`;
+                // Build URL with encoded components to ensure valid QR codes
+                const qrUrl = `${VIEWER_URL}?guid=${encodeURIComponent(currentGUID)}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${encodeURIComponent(currentKey)}`;
                 
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
