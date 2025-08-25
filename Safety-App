@@ -512,10 +512,11 @@
 
     <script>
         // Configuration
-        const VIEWER_URL = window.location.origin + window.location.pathname;
+        const VIEWER_URL = 'https://sites.google.com/view/securecontact/';
         const BEACON_TEXT = 'SQR:1';
         const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook-test/d5e99c29-2cf1-44c1-b5b4-95a1ca048441';
-        const ARCHIVE_BASE = 'https://archive.org/download/securecontacts/';
+        const ARCHIVE_COLLECTION = 'zuboff'; // or 'securecontacts' or another collection
+        const ARCHIVE_BASE = `https://archive.org/download/${ARCHIVE_COLLECTION}/`;
         
         // State
         let currentGUID = null;
@@ -528,11 +529,17 @@
         
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
+            console.log('Full URL:', window.location.href);
+            console.log('Search params:', window.location.search);
+            console.log('Hash:', window.location.hash);
+
             const urlParams = new URLSearchParams(window.location.search);
             const guid = urlParams.get('guid');
             const name = urlParams.get('name');
             const created = urlParams.get('created');
             const key = window.location.hash.substring(1);
+
+            console.log('Parsed - GUID:', guid, 'Key:', key, 'Name:', name, 'Created:', created);
 
             if (guid && key) {
                 // SCANNING MODE - Auto display emergency info
@@ -648,7 +655,7 @@
 
             const publicInfo = fullData.publicInfo || {};
             const passwordHint = fullData.passwordHint;
-            const nameToShow = options.overrideName || publicInfo.name || fullData.name || 'Unknown';
+            const nameToShow = fullData.name || publicInfo.name || options.overrideName || 'Unknown';
 
             let html = `
                 <div class="emergency-card">
