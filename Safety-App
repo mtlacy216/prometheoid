@@ -523,18 +523,24 @@
         let currentData = null; // minimal {id, data, auth}
         let currentBlob = null; // decrypted full data
         let currentMode = null;
+        let currentCreated = null;
+        let currentName = null;
         
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const guid = urlParams.get('guid');
+            const name = urlParams.get('name');
+            const created = urlParams.get('created');
             const key = window.location.hash.substring(1);
-            
+
             if (guid && key) {
                 // SCANNING MODE - Auto display emergency info
                 currentMode = 'view';
-                showLoadingScreen();
-                await loadAndDisplayEmergencyInfo(guid, key);
+                currentCreated = created;
+                currentName = name;
+                showLoadingScreen(name);
+                await loadAndDisplayEmergencyInfo(guid, key, name, created);
             } else {
                 // CREATION MODE
                 currentMode = 'create';
@@ -543,42 +549,73 @@
         });
         
         // Show loading screen
-        function showLoadingScreen() {
+        function showLoadingScreen(name) {
             const container = document.getElementById('main-content');
             container.innerHTML = `
                 <div class="loading-screen">
                     <div class="spinner"></div>
-                    <p>Loading emergency information...</p>
+                    <p>Loading emergency information${name ? ` for ${name}` : ''}...</p>
                 </div>
             `;
         }
         
         // Load and display emergency info
-        async function loadAndDisplayEmergencyInfo(guid, key) {
+        async function loadAndDisplayEmergencyInfo(guid, key, urlName, created) {
             currentGUID = guid;
             currentKey = key;
 
+            const createdTime = created ? new Date(created) : null;
+            let banner = null;
+            let data;
+            let fetchSuccess = false;
+
             try {
                 // Try to fetch from Archive.org
-                let data;
-                try {
-                    const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
-                    const response = await fetch(archiveUrl, { mode: 'cors' });
+                const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
+                const response = await fetch(archiveUrl, { mode: 'cors' });
 
-                    if (response.ok) {
-                        data = await response.json();
-                        console.log('Loaded from Archive.org');
-                    } else {
-                        throw new Error('Not found on Archive.org');
-                    }
-                } catch (error) {
-                    console.log('Using demo data:', error.message);
-                    // Create demo data for testing
-                    data = await createDemoData(guid, key);
+                if (response.ok) {
+                    data = await response.json();
+                    fetchSuccess = true;
+                    console.log('Loaded from Archive.org');
+                } else {
+                    throw new Error('Not found on Archive.org');
                 }
+            } catch (error) {
+                console.log('Archive fetch failed:', error.message);
+                const localData = localStorage.getItem('pending_' + guid);
+                if (localData) {
+                    const parsed = JSON.parse(localData);
+                    const ageMinutes = createdTime ? (Date.now() - createdTime.getTime()) / 60000 : Infinity;
+                    if (ageMinutes < 30) {
+                        data = { local: true, full: parsed };
+                    }
+                }
+            }
 
-                const decrypted = await decrypt(data.data, key);
-                const fullData = JSON.parse(decrypted);
+            if (createdTime) {
+                const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
+                if (ageMinutes < 30) {
+                    banner = '⏳ Data still uploading to backup servers (usually takes 5-30 minutes)';
+                }
+                if (!fetchSuccess) {
+                    banner = ageMinutes < 30 ? 'Please wait for backup to complete' : 'Backup may not have been completed';
+                }
+            }
+
+            if (!data) {
+                await displayEmergencyInfo({ publicInfo: { name: urlName || 'Unknown' } }, { overrideName: urlName, banner });
+                return;
+            }
+
+            try {
+                let fullData;
+                if (data.local) {
+                    fullData = data.full;
+                } else {
+                    const decrypted = await decrypt(data.data, key);
+                    fullData = JSON.parse(decrypted);
+                }
 
                 // Validate beacon
                 if (fullData.beacon !== BEACON_TEXT) {
@@ -598,8 +635,7 @@
                 currentData = data;
                 currentBlob = { ...fullData, passwordHint };
 
-                await displayEmergencyInfo(fullData);
-                
+                await displayEmergencyInfo(fullData, { overrideName: urlName, banner });
             } catch (error) {
                 console.error('Error loading data:', error);
                 showError('Unable to load emergency information. Please check the QR code.');
@@ -607,17 +643,19 @@
         }
 
         // Display emergency information
-        async function displayEmergencyInfo(fullData) {
+        async function displayEmergencyInfo(fullData, options = {}) {
             const container = document.getElementById('main-content');
 
             const publicInfo = fullData.publicInfo || {};
             const passwordHint = fullData.passwordHint;
+            const nameToShow = options.overrideName || publicInfo.name || fullData.name || 'Unknown';
 
             let html = `
                 <div class="emergency-card">
                     <div class="emergency-header">
                         <h2>🚨 EMERGENCY INFORMATION</h2>
                     </div>
+                    ${options.banner ? `<div class="status-message status-info">${options.banner}</div>` : ''}
 
                     <div class="content">
                         <div class="info-section">
@@ -625,7 +663,7 @@
                                 <span class="info-icon">👤</span>
                                 <div class="info-content">
                                     <div class="info-label">Name</div>
-                                    <div class="info-value">${publicInfo.name || 'Unknown'}</div>
+                                    <div class="info-value">${nameToShow}</div>
                                 </div>
                             </div>
             `;
@@ -689,8 +727,7 @@
             
             html += `
                         <div class="help-link">
-                            <button class="btn-outline" onclick="showUpdateForm()">🔄 Update Info</button>
-                            <button class="btn-outline" onclick="showCreationForm()">Create Your Own</button>
+                            <button class="btn-outline" style="font-size:12px;padding:4px 8px;" onclick="ownerLogin()">Owner Login</button>
                             <a href="#" onclick="toggleHelp(); return false;">How It Works</a>
                             <div id="help-content" class="help-content"></div>
                         </div>
@@ -750,6 +787,10 @@
             }
         }
 
+        function ownerLogin() {
+            showUpdateForm();
+        }
+
         async function showUpdateForm() {
             const password = prompt("Enter your password to update this emergency QR:");
             if (!password) return;
@@ -773,7 +814,8 @@
                 // Pre-fill form with current data
                 const publicInfo = currentBlob.publicInfo || {};
 
-                document.getElementById('name').value = publicInfo.name || '';
+                document.getElementById('name').value = currentBlob.name || publicInfo.name || '';
+                document.getElementById('name').disabled = true;
                 document.getElementById('blood-type').value = publicInfo.bloodType || '';
                 document.getElementById('allergies').value = publicInfo.allergies || '';
                 document.getElementById('contact-name').value = publicInfo.contact?.name || '';
@@ -809,7 +851,7 @@
             try {
                 // Collect updated form data
                 const publicInfo = {
-                    name: document.getElementById('name').value,
+                    name: currentBlob.name,
                     bloodType: document.getElementById('blood-type').value,
                     allergies: document.getElementById('allergies').value,
                     contact: {
@@ -829,6 +871,7 @@
                 const fullData = {
                     version: currentBlob.version,
                     created: currentBlob.created,
+                    name: currentBlob.name,
                     updated: new Date().toISOString(),
                     beacon: BEACON_TEXT,
                     publicInfo,
@@ -865,7 +908,7 @@
                     showStatus('✅ Successfully updated!', 'success');
 
                     // Show the updated QR view
-                    await loadAndDisplayEmergencyInfo(currentGUID, currentKey);
+                    await loadAndDisplayEmergencyInfo(currentGUID, currentKey, currentBlob.name, currentBlob.created);
                 } else {
                     throw new Error(result.error || 'Update failed');
                 }
@@ -928,7 +971,7 @@
                             <input type="tel" id="contact-phone" required placeholder="(555) 123-4567">
                         </div>
                         
-                        <div class="section-title">Password Protected (Optional)</div>
+                        <div class="section-title">Password Protected</div>
                         
                         <div class="form-group">
                             <label for="ssn">Social Security Number</label>
@@ -941,13 +984,18 @@
                         </div>
                         
                         <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" id="password" placeholder="Choose a password">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" required placeholder="Choose a password">
+                            <div id="password-strength" class="hint"></div>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="password-confirm">Confirm Password</label>
-                            <input type="password" id="password-confirm" placeholder="Re-enter password">
+                            <label for="password-confirm">Confirm Password *</label>
+                            <input type="password" id="password-confirm" required placeholder="Re-enter password">
+                        </div>
+
+                        <div class="hint" id="password-req">
+                            Password must be 8+ chars with upper, lower, number and special character.
                         </div>
                         
                         <div class="form-group">
@@ -983,6 +1031,13 @@
             
             // Add form submit handler
             document.getElementById('create-form').addEventListener('submit', handleCreateForm);
+
+            // Password strength meter
+            document.getElementById('password').addEventListener('input', () => {
+                const pwd = document.getElementById('password').value;
+                const strengthEl = document.getElementById('password-strength');
+                strengthEl.textContent = isStrongPassword(pwd) ? '✅ Meets requirements' : '❌ Does not meet requirements';
+            });
         }
         
         // Handle form submission
@@ -996,13 +1051,15 @@
             try {
                 const password = document.getElementById('password').value;
                 const confirmPassword = document.getElementById('password-confirm').value;
-                
-                if (password && password !== confirmPassword) {
-                    throw new Error('Passwords do not match');
+
+                if (!password) {
+                    throw new Error('Password is required');
                 }
-                
-                if (password && password.length < 6) {
-                    throw new Error('Password must be at least 6 characters');
+                if (!isStrongPassword(password)) {
+                    throw new Error('Password does not meet requirements');
+                }
+                if (password !== confirmPassword) {
+                    throw new Error('Passwords do not match');
                 }
                 
                 // Generate unique identifiers
@@ -1023,15 +1080,17 @@
                 const passwordHint = document.getElementById('password-hint').value;
                 const encryptedHint = passwordHint ? await encrypt(passwordHint, currentKey) : null;
 
-                const privateInfo = password ? {
+                const privateInfo = {
                     ssn: document.getElementById('ssn').value,
                     notes: document.getElementById('medical-notes').value,
                     encryptedWith: await sha256Hash(currentKey + password)
-                } : null;
+                };
 
+                const created = new Date().toISOString();
                 const fullData = {
-                    version: "2.0",
-                    created: new Date().toISOString(),
+                    version: "3.0",
+                    created,
+                    name: publicInfo.name,
                     beacon: BEACON_TEXT,
                     publicInfo,
                     passwordHint: encryptedHint,
@@ -1042,11 +1101,8 @@
                 const encryptedBlob = await encrypt(JSON.stringify(fullData), currentKey);
 
                 // Generate auth hash for updates
-                let auth = null;
-                if (password) {
-                    const updateToken = await generateUpdateToken(password, currentGUID);
-                    auth = await sha256Hash(updateToken);
-                }
+                const updateToken = await generateUpdateToken(password, currentGUID);
+                const auth = await sha256Hash(updateToken);
 
                 currentData = {
                     id: currentGUID,
@@ -1057,7 +1113,7 @@
                 currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
-                const qrUrl = `${VIEWER_URL}?guid=${currentGUID}#${currentKey}`;
+                const qrUrl = `${VIEWER_URL}?guid=${currentGUID}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${currentKey}`;
                 
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
@@ -1072,6 +1128,16 @@
                 });
                 
                 window.currentQRUrl = qrUrl;
+
+                // Store fallback data locally for short-term access
+                const fallbackData = {
+                    version: "3.0",
+                    created,
+                    name: publicInfo.name,
+                    beacon: BEACON_TEXT,
+                    publicInfo
+                };
+                localStorage.setItem('pending_' + currentGUID, JSON.stringify(fallbackData));
                 
                 // Show QR display
                 document.getElementById('create-form').style.display = 'none';
@@ -1148,6 +1214,10 @@
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')
                 .replace(/=/g, '');
+        }
+
+        function isStrongPassword(pwd) {
+            return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(pwd);
         }
         
         async function encrypt(text, password) {
@@ -1390,7 +1460,7 @@
             document.getElementById('dev-output').textContent = 'Loading...';
             
             try {
-                await loadAndDisplayEmergencyInfo(guid, key);
+                await loadAndDisplayEmergencyInfo(guid, key, null, null);
                 document.getElementById('dev-output').textContent = 'Successfully loaded QR data';
             } catch (error) {
                 document.getElementById('dev-output').textContent = 'Error: ' + error.message;
@@ -1446,7 +1516,7 @@
 
                 output.textContent = `QR detected: ${data}`;
                 const { guid, key } = parseQRData(data);
-                await loadAndDisplayEmergencyInfo(guid, key);
+                await loadAndDisplayEmergencyInfo(guid, key, null, null);
                 output.textContent += '\nLoaded QR data';
             } catch (error) {
                 output.textContent = 'Error: ' + error.message;
