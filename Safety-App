@@ -1120,7 +1120,8 @@
                 currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
-                const qrUrl = `${VIEWER_URL}?guid=${currentGUID}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${currentKey}`;
+                // Build URL with encoded components to ensure valid QR codes
+                const qrUrl = `${VIEWER_URL}?guid=${encodeURIComponent(currentGUID)}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${encodeURIComponent(currentKey)}`;
                 
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
