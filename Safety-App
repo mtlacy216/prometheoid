@@ -549,8 +549,7 @@
         const VIEWER_URL = 'https://sites.google.com/view/securecontact/';
         const BEACON_TEXT = 'SQR:1';
         const WEBHOOK_URL = 'https://n8n.intelechia.com/webhook-test/d5e99c29-2cf1-44c1-b5b4-95a1ca048441';
-        const ARCHIVE_COLLECTION = 'zuboff'; // or 'securecontacts' or another collection
-        const ARCHIVE_BASE = `https://archive.org/download/${ARCHIVE_COLLECTION}/`;
+        const ARCHIVE_BASE = 'https://archive.org/download/zuboff/';
 
 
         const SECURITY_STEPS = [
@@ -571,23 +570,50 @@
         let currentCreated = null;
         let currentName = null;
         let securityInterval = null;
-        
+
+        // Add function to parse Google Sites URLs
+        function parseGoogleSitesUrl() {
+            let guid, key, name, created;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            guid = urlParams.get('guid');
+            name = urlParams.get('name');
+            created = urlParams.get('created');
+
+            if (!guid && window.location.href.includes('guid=')) {
+                const match = window.location.href.match(/guid=([^&#]+)/);
+                if (match) guid = match[1];
+            }
+
+            if (!name && window.location.href.includes('name=')) {
+                const match = window.location.href.match(/name=([^&#]+)/);
+                if (match) name = decodeURIComponent(match[1]);
+            }
+
+            if (!created && window.location.href.includes('created=')) {
+                const match = window.location.href.match(/created=([^&#]+)/);
+                if (match) created = decodeURIComponent(match[1]);
+            }
+
+            key = window.location.hash.substring(1);
+            return { guid, key, name, created };
+        }
+
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
             console.log('Full URL:', window.location.href);
-            console.log('Search params:', window.location.search);
+            console.log('Search string:', window.location.search);
             console.log('Hash:', window.location.hash);
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const guid = urlParams.get('guid');
-            const name = urlParams.get('name');
-            const created = urlParams.get('created');
-            const key = window.location.hash.substring(1);
+            const { guid, key, name, created } = parseGoogleSitesUrl();
+            console.log('Parsed parameters:', { guid, key, name, created });
 
-            console.log('Parsed - GUID:', guid, 'Key:', key, 'Name:', name, 'Created:', created);
+            if (guid || key) {
+                alert(`Debug:\nGUID: ${guid}\nName: ${name}\nCreated: ${created}\nKey: ${key ? 'present' : 'missing'}`);
+            }
 
             if (guid && key) {
-                // SCANNING MODE - Auto display emergency info
+                // SCANNING MODE
                 currentMode = 'view';
                 currentCreated = created;
                 currentName = name;
@@ -616,42 +642,58 @@
             currentGUID = guid;
             currentKey = key;
 
-            const createdTime = created ? new Date(created) : null;
+            console.log('Loading emergency info for:', guid);
+            console.log('Created timestamp:', created);
+
+            const createdTime = created ? new Date(decodeURIComponent(created)) : null;
             let banner = null;
             let data;
             let fetchSuccess = false;
 
+            // Calculate age of QR code
+            if (createdTime) {
+                const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
+                console.log('QR code age in minutes:', ageMinutes);
+
+                if (ageMinutes < 30) {
+                    banner = '⏳ Data still uploading to backup servers (usually takes 5-30 minutes)';
+                }
+            }
+
             try {
                 // Try to fetch from Archive.org
                 const archiveUrl = `${ARCHIVE_BASE}${guid}.json`;
+                console.log('Fetching from Archive.org:', archiveUrl);
+
                 const response = await fetch(archiveUrl, { mode: 'cors' });
+                console.log('Archive.org response status:', response.status);
 
                 if (response.ok) {
                     data = await response.json();
                     fetchSuccess = true;
-                    console.log('Loaded from Archive.org');
+                    console.log('Successfully loaded from Archive.org');
                 } else {
                     throw new Error('Not found on Archive.org');
                 }
             } catch (error) {
                 console.log('Archive fetch failed:', error.message);
-                const localData = localStorage.getItem('pending_' + guid);
-                if (localData) {
-                    const parsed = JSON.parse(localData);
-                    const ageMinutes = createdTime ? (Date.now() - createdTime.getTime()) / 60000 : Infinity;
+
+                // Update banner based on age
+                if (createdTime) {
+                    const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
                     if (ageMinutes < 30) {
-                        data = { local: true, full: parsed };
+                        banner = '⏳ Data still uploading - please wait 5-30 minutes for backup to complete';
+                    } else {
+                        banner = '⚠️ Data not found on Archive.org - backup may have failed';
                     }
                 }
-            }
 
-            if (createdTime) {
-                const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
-                if (ageMinutes < 30) {
-                    banner = '⏳ Data still uploading to backup servers (usually takes 5-30 minutes)';
-                }
-                if (!fetchSuccess) {
-                    banner = ageMinutes < 30 ? 'Please wait for backup to complete' : 'Backup may not have been completed';
+                // Check local storage fallback
+                const localData = localStorage.getItem('pending_' + guid);
+                if (localData) {
+                    console.log('Found local fallback data');
+                    const parsed = JSON.parse(localData);
+                    data = { local: true, full: parsed };
                 }
             }
 
