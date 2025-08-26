@@ -629,6 +629,55 @@
                     currentMode = 'create';
                     showCreationForm();
                 }
+=======
+        // Add function to parse Google Sites URLs
+        function parseGoogleSitesUrl() {
+            let guid, key, name, created;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            guid = urlParams.get('guid');
+            name = urlParams.get('name');
+            created = urlParams.get('created');
+
+            if (!guid && window.location.href.includes('guid=')) {
+                const match = window.location.href.match(/guid=([^&#]+)/);
+                if (match) guid = match[1];
+            }
+
+            if (!name && window.location.href.includes('name=')) {
+                const match = window.location.href.match(/name=([^&#]+)/);
+                if (match) name = decodeURIComponent(match[1]);
+            }
+
+            if (!created && window.location.href.includes('created=')) {
+                const match = window.location.href.match(/created=([^&#]+)/);
+                if (match) created = decodeURIComponent(match[1]);
+            }
+
+            key = window.location.hash.substring(1);
+            return { guid, key, name, created };
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('Full URL:', window.location.href);
+            console.log('Search string:', window.location.search);
+            console.log('Hash:', window.location.hash);
+
+            const { guid, key, name, created } = parseGoogleSitesUrl();
+            console.log('Parsed parameters:', { guid, key, name, created });
+
+            if (guid || key) {
+                alert(`Debug:\nGUID: ${guid}\nName: ${name}\nCreated: ${created}\nKey: ${key ? 'present' : 'missing'}`);
+            }
+
+            if (guid && key) {
+                // SCANNING MODE
+                currentMode = 'view';
+                currentCreated = created;
+                currentName = name;
+                showLoadingScreen(name);
+                await loadAndDisplayEmergencyInfo(guid, key, name, created);
             } else {
                 currentMode = 'create';
                 showCreationForm();
