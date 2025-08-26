@@ -2,34 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Emergency QR</title>
     
     <style>
+        /* Softr embedding fixes */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow-x: hidden !important;
+            width: 100% !important;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            min-height: 100vh !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
-        
+
         .container {
-            width: 100%;
-            max-width: 500px;
+            width: calc(100vw - 40px) !important;
+            max-width: 500px !important;
+            margin: 20px auto !important;
             background: white;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             animation: slideIn 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                width: 100% !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+            }
+
+            body {
+                background: white !important;
+                align-items: flex-start !important;
+            }
         }
         
         @keyframes slideIn {
@@ -571,6 +592,44 @@
         let currentName = null;
         let securityInterval = null;
 
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async function() {
+            const hash = window.location.hash.substring(1);
+
+            if (hash && hash.includes('|')) {
+                // New format: #guid|key|name|created
+                const [guid, key, name, created] = hash.split('|').map(decodeURIComponent);
+                console.log('Parsed from hash:', { guid, key, name, created });
+
+                if (guid && key) {
+                    currentMode = 'view';
+                    currentCreated = created;
+                    currentName = name;
+                    showLoadingScreen(name);
+                    await loadAndDisplayEmergencyInfo(guid, key, name, created);
+                } else {
+                    currentMode = 'create';
+                    showCreationForm();
+                }
+            } else if (hash) {
+                // Old format: ?guid=xxx#key
+                const urlParams = new URLSearchParams(window.location.search);
+                const guid = urlParams.get('guid');
+                const name = urlParams.get('name');
+                const created = urlParams.get('created');
+                const key = hash;
+
+                if (guid && key) {
+                    currentMode = 'view';
+                    currentCreated = created;
+                    currentName = name;
+                    showLoadingScreen(name);
+                    await loadAndDisplayEmergencyInfo(guid, key, name, created);
+                } else {
+                    currentMode = 'create';
+                    showCreationForm();
+                }
+=======
         // Add function to parse Google Sites URLs
         function parseGoogleSitesUrl() {
             let guid, key, name, created;
@@ -620,7 +679,6 @@
                 showLoadingScreen(name);
                 await loadAndDisplayEmergencyInfo(guid, key, name, created);
             } else {
-                // CREATION MODE
                 currentMode = 'create';
                 showCreationForm();
             }
@@ -1210,8 +1268,7 @@
                 currentBlob = { ...fullData, passwordHint };
                 
                 // Generate QR code
-                // Build URL with encoded components to ensure valid QR codes
-                const qrUrl = `${VIEWER_URL}?guid=${encodeURIComponent(currentGUID)}&name=${encodeURIComponent(publicInfo.name)}&created=${encodeURIComponent(created)}#${encodeURIComponent(currentKey)}`;
+                const qrUrl = `${VIEWER_URL}#${currentGUID}|${currentKey}|${encodeURIComponent(publicInfo.name)}|${encodeURIComponent(created)}`;
                 
                 const qrContainer = document.getElementById('qrcode');
                 qrContainer.innerHTML = '';
