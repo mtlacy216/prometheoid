@@ -580,9 +580,17 @@
         }
         
         .status-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffc107;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
         }
 
         .upload-card {
@@ -872,8 +880,10 @@
                 const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
                 console.log('QR code age in minutes:', ageMinutes);
 
-                if (ageMinutes < 30) {
-                    banner = '⏳ Data still uploading to backup servers (usually takes 5-30 minutes)';
+                if (ageMinutes < 5) {
+                    banner = '⏳ Data still uploading to backup servers (usually takes 5-30 minutes). QR code works locally in the meantime.';
+                } else if (ageMinutes < 30) {
+                    banner = '⏳ Data may still be uploading to backup servers. If not loading, please wait a few more minutes.';
                 }
             }
 
@@ -895,22 +905,23 @@
             } catch (error) {
                 console.log('Archive fetch failed:', error.message);
 
-                // Update banner based on age
-                if (createdTime) {
-                    const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
-                    if (ageMinutes < 30) {
-                        banner = '⏳ Data still uploading - please wait 5-30 minutes for backup to complete';
-                    } else {
-                        banner = '⚠️ Data not found on Archive.org - backup may have failed';
-                    }
-                }
-
                 // Check local storage fallback
                 const localData = localStorage.getItem('pending_' + guid);
                 if (localData) {
                     console.log('Found local fallback data');
                     const parsed = JSON.parse(localData);
                     data = { local: true, full: parsed };
+                }
+            }
+
+            if (!fetchSuccess && createdTime) {
+                const ageMinutes = (Date.now() - createdTime.getTime()) / 60000;
+                if (ageMinutes < 5) {
+                    banner = '⏳ Data uploading to Archive.org - this usually takes 5-30 minutes. Your QR works locally for now!';
+                } else if (ageMinutes < 30) {
+                    banner = '⏳ Data may still be uploading - Archive.org backup can take up to 30 minutes to complete';
+                } else {
+                    banner = '⚠️ Data not found on Archive.org - backup may have failed. Try re-uploading.';
                 }
             }
 
@@ -959,7 +970,7 @@
 
             const publicInfo = fullData.publicInfo || {};
             const passwordHint = fullData.passwordHint;
-            const nameToShow = fullData.name || publicInfo.name || options.overrideName || 'Unknown';
+            const nameToShow = options.overrideName || fullData.name || publicInfo.name || 'Unknown';
 
             let html = `
                 <div class="emergency-card">
@@ -1447,7 +1458,7 @@
                 const fallbackData = {
                     version: "3.0",
                     created,
-                    name: publicInfo.name,
+                    name: publicInfo.name, // include name for local fallback
                     beacon: BEACON_TEXT,
                     publicInfo
                 };
