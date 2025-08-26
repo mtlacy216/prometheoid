@@ -592,87 +592,33 @@
         let currentName = null;
         let securityInterval = null;
 
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', async function() {
-            const hash = window.location.hash.substring(1);
-
-            if (hash && hash.includes('|')) {
-                // New format: #guid|key|name|created
-                const [guid, key, name, created] = hash.split('|').map(decodeURIComponent);
-                console.log('Parsed from hash:', { guid, key, name, created });
-
-                if (guid && key) {
-                    currentMode = 'view';
-                    currentCreated = created;
-                    currentName = name;
-                    showLoadingScreen(name);
-                    await loadAndDisplayEmergencyInfo(guid, key, name, created);
-                } else {
-                    currentMode = 'create';
-                    showCreationForm();
-                }
-            } else if (hash) {
-                // Old format: ?guid=xxx#key
-                const urlParams = new URLSearchParams(window.location.search);
-                const guid = urlParams.get('guid');
-                const name = urlParams.get('name');
-                const created = urlParams.get('created');
-                const key = hash;
-
-                if (guid && key) {
-                    currentMode = 'view';
-                    currentCreated = created;
-                    currentName = name;
-                    showLoadingScreen(name);
-                    await loadAndDisplayEmergencyInfo(guid, key, name, created);
-                } else {
-                    currentMode = 'create';
-                    showCreationForm();
-                }
-=======
-        // Add function to parse Google Sites URLs
-        function parseGoogleSitesUrl() {
+        // Parse parameters from various URL formats
+        function parseUrlParameters() {
             let guid, key, name, created;
 
+            // Check hash first (new format: #guid|key|name|created)
+            const hash = window.location.hash.substring(1);
+            if (hash && hash.includes('|')) {
+                [guid, key, name, created] = hash.split('|').map(decodeURIComponent);
+                return { guid, key, name, created };
+            }
+
+            // Check URL params (Google Sites format)
             const urlParams = new URLSearchParams(window.location.search);
             guid = urlParams.get('guid');
             name = urlParams.get('name');
             created = urlParams.get('created');
+            key = hash; // Key might be in hash even with params
 
-            if (!guid && window.location.href.includes('guid=')) {
-                const match = window.location.href.match(/guid=([^&#]+)/);
-                if (match) guid = match[1];
-            }
-
-            if (!name && window.location.href.includes('name=')) {
-                const match = window.location.href.match(/name=([^&#]+)/);
-                if (match) name = decodeURIComponent(match[1]);
-            }
-
-            if (!created && window.location.href.includes('created=')) {
-                const match = window.location.href.match(/created=([^&#]+)/);
-                if (match) created = decodeURIComponent(match[1]);
-            }
-
-            key = window.location.hash.substring(1);
             return { guid, key, name, created };
         }
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async function() {
-            console.log('Full URL:', window.location.href);
-            console.log('Search string:', window.location.search);
-            console.log('Hash:', window.location.hash);
-
-            const { guid, key, name, created } = parseGoogleSitesUrl();
+            const { guid, key, name, created } = parseUrlParameters();
             console.log('Parsed parameters:', { guid, key, name, created });
 
-            if (guid || key) {
-                alert(`Debug:\nGUID: ${guid}\nName: ${name}\nCreated: ${created}\nKey: ${key ? 'present' : 'missing'}`);
-            }
-
             if (guid && key) {
-                // SCANNING MODE
                 currentMode = 'view';
                 currentCreated = created;
                 currentName = name;
