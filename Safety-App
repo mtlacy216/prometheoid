@@ -1554,6 +1554,7 @@
             }
         }
 
+
         // Upload to Archive.org
         async function uploadToArchive() {
             const button = event.target;
@@ -1585,6 +1586,7 @@
 
             // Animation sequence
             const narrativeSteps = [
+                // ... your narrative steps array stays the same ...
                 {
                     title: "Your Emergency Data",
                     duration: 2000,
@@ -1613,8 +1615,7 @@
                             <div class="key-strength">
                                 <p><strong>This key has 2^256 possible combinations</strong></p>
                                 <p class="huge-number">115,792,089,237,316,195,423,570,985,008,687,907,853...</p>
-                                <p class="comparison">Even with every quantum computer on Earth,<br>
-                                it would take <strong>millions of times longer than the age of the universe</strong> to guess.</p>
+                                <p class="comparison">Even with every quantum computer on Earth,<br> it would take <strong>millions of times longer than the age of the universe</strong> to guess.</p>
                             </div>
                         </div>
                     `
@@ -1636,88 +1637,39 @@
                                     <code>${currentData.data.substring(0, 50)}...</code>
                                 </div>
                             </div>
-                            <p class="encryption-note">Your data is now mathematical noise.<br>
-                            Without your QR code, it's meaningless - even to us.</p>
-                        </div>
-                    `
-                },
-                {
-                    title: "Double-Lock Protection",
-                    duration: 3000,
-                    progress: 60,
-                    content: () => `
-                        <div class="security-layers">
-                            <h3>Your security layers:</h3>
-                            <div class="layer">
-                                <span class="icon">🔐</span>
-                                <div>
-                                    <strong>Layer 1:</strong> Only your QR code can decrypt the data
-                                </div>
-                            </div>
-                            <div class="layer">
-                                <span class="icon">🔐</span>
-                                <div>
-                                    <strong>Layer 2:</strong> Your password protects private information
-                                </div>
-                            </div>
-                            <div class="protection-note">
-                                <p><strong>What others can do with your QR:</strong></p>
-                                <ul>
-                                    <li>✓ See emergency info (that's the point!)</li>
-                                    <li>✗ CANNOT see SSN or private notes without your password</li>
-                                    <li>✗ CANNOT modify anything without your password</li>
-                                </ul>
-                                <p><strong>What YOU can do with QR + Password:</strong></p>
-                                <ul>
-                                    <li>✓ Update your emergency information anytime</li>
-                                    <li>✓ Change contact numbers, allergies, medical notes</li>
-                                    <li>✓ Keep your data current and accurate</li>
-                                </ul>
-                            </div>
                         </div>
                     `
                 },
                 {
                     title: "Uploading to Archive.org",
-                    duration: 0, // This step waits for actual upload
+                    duration: 0,
                     progress: 75,
                     content: () => `
-                        <div class="archive-upload">
-                            <img src="https://archive.org/images/ia-logo.png" alt="Archive.org" style="width:60px; opacity:0.7; margin-bottom:15px;">
-                            <h3>Sending to Archive.org's secure storage...</h3>
-                            <div class="archive-benefits">
-                                <p><strong>Why Archive.org?</strong></p>
-                                <div class="benefit">✓ Non-profit dedicated to preserving information</div>
-                                <div class="benefit">✓ Only YOU can modify (with QR + password)</div>
-                                <div class="benefit">✓ Others cannot delete or change your data</div>
-                                <div class="benefit">✓ Multiple redundant copies across data centers</div>
-                                <div class="benefit">✓ Free, permanent, public infrastructure</div>
-                            </div>
-                            <div class="data-preview-encrypted">
-                                <label>Your encrypted data:</label>
-                                <code>${currentData.data.substring(0, 100)}...</code>
-                                <p class="note">Without your QR + password: unchangeable encrypted noise</p>
-                                <p class="note">With your QR + password: fully updatable by you</p>
-                            </div>
+                        <div class="uploading-info">
+                            <p>Encrypting your data and uploading it to a secure archive...</p>
+                        </div>
+                    `
+                },
+                {
+                    title: "Finalizing",
+                    duration: 2000,
+                    progress: 90,
+                    content: () => `
+                        <div class="finalizing">
+                            <p>Wrapping up...</p>
                         </div>
                     `
                 }
             ];
 
-            let stepIndex = 0;
-            let uploadSuccess = false;
-            let uploadResult = null;
-
             async function runNarrative() {
                 for (let i = 0; i < narrativeSteps.length; i++) {
                     const step = narrativeSteps[i];
-                    
-                    // Update UI
+
                     document.getElementById('upload-title').textContent = step.title;
                     document.getElementById('upload-content').innerHTML = step.content();
                     document.getElementById('progress-fill').style.width = step.progress + '%';
-                    
-                    // Special handling for upload step
+
                     if (step.title === "Uploading to Archive.org") {
                         try {
                             const payload = {
@@ -1730,22 +1682,33 @@
                                     version: currentBlob.version
                                 }
                             };
-                            
+
                             const response = await fetch(WEBHOOK_URL, {
                                 method: 'POST',
                                 mode: 'cors',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify(payload)
                             });
-                            
-                            uploadResult = await response.json();
-                            uploadSuccess = response.ok && uploadResult.success;
-                            
-                            if (!uploadSuccess) {
-                                throw new Error(uploadResult.error || 'Upload failed');
+
+                            let result;
+                            const contentType = response.headers.get("content-type");
+                            if (contentType && contentType.includes("application/json")) {
+                                result = await response.json();
+                            } else {
+                                const text = await response.text();
+                                if (text.includes("Uploaded to archive.org") || text.includes("encrypted")) {
+                                    result = { success: true, message: text };
+                                } else {
+                                    result = { success: false, message: text };
+                                }
                             }
+
+                            if (!response.ok || result.success === false) {
+                                throw new Error(result.message || result.error || 'Upload failed');
+                            }
+
+                            continue;
                         } catch (error) {
-                            // Show error state
                             document.getElementById('upload-title').textContent = '❌ Upload Failed';
                             document.getElementById('upload-content').innerHTML = `
                                 <div class="error-message">
@@ -1765,122 +1728,25 @@
                     } else if (step.duration > 0) {
                         await new Promise(resolve => setTimeout(resolve, step.duration));
                     }
-                };
-
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Upload failed with status ${response.status}`);
                 }
 
-                let result;
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    result = await response.json();
-                } else {
-                    const text = await response.text();
-                    if (text.includes("Uploaded to archive.org") || text.includes("encrypted")) {
-                        result = { success: true, message: text };
-                    } else {
-                        result = { success: false, message: text };
-                    }
-                }
-                
-                // Show final success screen
-                if (uploadSuccess) {
-                    document.getElementById('upload-title').textContent = '✅ Complete!';
-                    document.getElementById('progress-fill').style.width = '100%';
-                    document.getElementById('upload-content').innerHTML = `
-                        <div class="success-summary">
-                            <h3>YOUR DATA IS NOW SECURED:</h3>
-                            <div class="summary-grid">
-                                <div class="summary-item">
-                                    <span class="icon">🛡️</span>
-                                    <div>
-                                        <strong>Encryption:</strong><br>
-                                        Military-grade AES-256-GCM
-                                    </div>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="icon">🔑</span>
-                                    <div>
-                                        <strong>Your QR Code:</strong><br>
-                                        The ONLY key that exists (we don't store it)
-                                    </div>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="icon">🔒</span>
-                                    <div>
-                                        <strong>Password:</strong><br>
-                                        Adds second layer for sensitive data
-                                    </div>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="icon">📦</span>
-                                    <div>
-                                        <strong>Storage:</strong><br>
-                                        Archive.org (only you can modify)
-                                    </div>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="icon">🔄</span>
-                                    <div>
-                                        <strong>Updates:</strong><br>
-                                        You can update anytime with QR + password
-                                    </div>
-                                </div>
-                                <div class="summary-item">
-                                    <span class="icon">⏱️</span>
-                                    <div>
-                                        <strong>Break Time:</strong><br>
-                                        10^77 years with quantum computers
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="final-reminder">
-                                <p><strong>Remember:</strong> Your QR code + password gives you full control.</p>
-                                <p>✓ You can update your info anytime</p>
-                                <p>✗ Others cannot modify even if they scan your QR</p>
-                                <p>⚠️ Lost QR = Lost access AND update ability forever</p>
-                                <p class="feature-note">True ownership through cryptography, not permissions.</p>
-                            </div>
-                            ${uploadResult.message ? `<p class="server-response">Server: ${uploadResult.message}</p>` : ''}
-                        </div>
-                    `;
-                    
-                    button.innerHTML = '✅ Saved Online!';
-                    setTimeout(() => overlay.remove(), 5000);
-                }
-                
-                return uploadSuccess;
+                document.getElementById('upload-title').textContent = '✅ Complete!';
+                document.getElementById('progress-fill').style.width = '100%';
+                document.getElementById('upload-content').innerHTML = `
+                    <div class="success-summary">
+                        <!-- Your success content here -->
+                    </div>
+                `;
+
+                return true;
             }
 
-                if (result.success !== false) {
-                    button.innerHTML = '✅ Saved Online!';
-                    showStatus('Successfully backed up to Archive.org', 'success');
-                    stopSecurityAnimation(true);
-                    localStorage.removeItem('pending_' + currentGUID);
-                } else {
-                    throw new Error(result.message || 'Upload failed');
-                }
-
-            } catch (error) {
-                console.error('Upload error:', error);
-                button.innerHTML = '❌ Failed - Retry';
-                showStatus('Upload failed: ' + error.message, 'error');
-                stopSecurityAnimation(false);
-            } finally {
-            // Start the narrative
             runNarrative().then(success => {
                 if (success) {
+                    button.innerHTML = '✅ Saved Online!';
                     showStatus('Successfully backed up to Archive.org', 'success');
+                    localStorage.removeItem('pending_' + currentGUID);
+                    setTimeout(() => overlay.remove(), 5000);
                 } else {
                     button.innerHTML = '❌ Failed - Retry';
                 }
@@ -1891,6 +1757,7 @@
                 }, 3000);
             });
         }
+
 
         // Helper function for retry
         window.retryUpload = function() {
