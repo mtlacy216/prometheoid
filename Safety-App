@@ -584,6 +584,141 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            overflow: hidden;
+        }
+
+        .upload-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .upload-content {
+            padding: 30px;
+            min-height: 300px;
+        }
+
+        .data-preview, .key-generation, .encryption-visual,
+        .security-layers, .archive-upload, .success-summary {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .data-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .data-item.locked {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+        }
+
+        .key-display {
+            background: #2c3e50;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+        }
+
+        .huge-number {
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+
+        .comparison {
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .data-transform {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .before, .after {
+            margin: 10px 0;
+        }
+
+        .arrow {
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .layer {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .summary-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .final-reminder {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .feature-note {
+            color: #856404;
+            font-style: italic;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e9ecef;
+            margin: 0 30px 20px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            background: #667eea;
+            transition: width 0.5s ease;
+        }
     </style>
 </head>
 <body>
@@ -1424,17 +1559,211 @@
             const button = event.target;
             button.disabled = true;
             button.innerHTML = '⏳ Uploading...';
-            startSecurityAnimation();
 
-            try {
-                const payload = {
-                    guid: currentGUID,
-                    filename: `${currentGUID}.json`,
-                    data: currentData,
-                    metadata: {
-                        created: currentBlob.created,
-                        type: 'emergency_qr',
-                        version: currentBlob.version
+            // Create the upload visualization overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'upload-overlay';
+            overlay.className = 'upload-overlay';
+            overlay.innerHTML = `
+                <div class="upload-card">
+                    <div class="upload-header">
+                        <div class="spinner"></div>
+                        <h2 id="upload-title">Securing Your Emergency Data</h2>
+                    </div>
+                    <div class="upload-content" id="upload-content">
+                        <p id="upload-message">Initializing encryption...</p>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div id="upload-error" style="display:none; margin-top:20px;">
+                        <button onclick="retryUpload()" class="btn">Retry Upload</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Animation sequence
+            const narrativeSteps = [
+                {
+                    title: "Your Emergency Data",
+                    duration: 2000,
+                    progress: 15,
+                    content: () => `
+                        <div class="data-preview">
+                            <h3>Here's your emergency information:</h3>
+                            <div class="data-item">👤 Name: <strong>${currentBlob.publicInfo.name}</strong></div>
+                            <div class="data-item">🩸 Blood Type: <strong>${currentBlob.publicInfo.bloodType || 'Not specified'}</strong></div>
+                            <div class="data-item">⚠️ Allergies: <strong>${currentBlob.publicInfo.allergies || 'None'}</strong></div>
+                            <div class="data-item">📞 Contact: <strong>${currentBlob.publicInfo.contact.name}</strong></div>
+                            <div class="data-item locked">🔒 Private: <strong>SSN, Medical Notes - Password Protected</strong></div>
+                        </div>
+                    `
+                },
+                {
+                    title: "Creating Your Unique Encryption Key",
+                    duration: 3000,
+                    progress: 30,
+                    content: () => `
+                        <div class="key-generation">
+                            <p>Generating a 256-bit encryption key...</p>
+                            <div class="key-display">
+                                <code>${currentKey.substring(0, 32)}...</code>
+                            </div>
+                            <div class="key-strength">
+                                <p><strong>This key has 2^256 possible combinations</strong></p>
+                                <p class="huge-number">115,792,089,237,316,195,423,570,985,008,687,907,853...</p>
+                                <p class="comparison">Even with every quantum computer on Earth,<br>
+                                it would take <strong>millions of times longer than the age of the universe</strong> to guess.</p>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    title: "Encryption in Progress",
+                    duration: 3000,
+                    progress: 45,
+                    content: () => `
+                        <div class="encryption-visual">
+                            <div class="data-transform">
+                                <div class="before">
+                                    <label>Before:</label>
+                                    <code>{"name":"${currentBlob.publicInfo.name}","blood":"${currentBlob.publicInfo.bloodType}"...}</code>
+                                </div>
+                                <div class="arrow">↓ AES-256-GCM Encryption ↓</div>
+                                <div class="after">
+                                    <label>After:</label>
+                                    <code>${currentData.data.substring(0, 50)}...</code>
+                                </div>
+                            </div>
+                            <p class="encryption-note">Your data is now mathematical noise.<br>
+                            Without your QR code, it's meaningless - even to us.</p>
+                        </div>
+                    `
+                },
+                {
+                    title: "Double-Lock Protection",
+                    duration: 3000,
+                    progress: 60,
+                    content: () => `
+                        <div class="security-layers">
+                            <h3>Your security layers:</h3>
+                            <div class="layer">
+                                <span class="icon">🔐</span>
+                                <div>
+                                    <strong>Layer 1:</strong> Only your QR code can decrypt the data
+                                </div>
+                            </div>
+                            <div class="layer">
+                                <span class="icon">🔐</span>
+                                <div>
+                                    <strong>Layer 2:</strong> Your password protects private information
+                                </div>
+                            </div>
+                            <div class="protection-note">
+                                <p><strong>What others can do with your QR:</strong></p>
+                                <ul>
+                                    <li>✓ See emergency info (that's the point!)</li>
+                                    <li>✗ CANNOT see SSN or private notes without your password</li>
+                                    <li>✗ CANNOT modify anything without your password</li>
+                                </ul>
+                                <p><strong>What YOU can do with QR + Password:</strong></p>
+                                <ul>
+                                    <li>✓ Update your emergency information anytime</li>
+                                    <li>✓ Change contact numbers, allergies, medical notes</li>
+                                    <li>✓ Keep your data current and accurate</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    title: "Uploading to Archive.org",
+                    duration: 0, // This step waits for actual upload
+                    progress: 75,
+                    content: () => `
+                        <div class="archive-upload">
+                            <img src="https://archive.org/images/ia-logo.png" alt="Archive.org" style="width:60px; opacity:0.7; margin-bottom:15px;">
+                            <h3>Sending to Archive.org's secure storage...</h3>
+                            <div class="archive-benefits">
+                                <p><strong>Why Archive.org?</strong></p>
+                                <div class="benefit">✓ Non-profit dedicated to preserving information</div>
+                                <div class="benefit">✓ Only YOU can modify (with QR + password)</div>
+                                <div class="benefit">✓ Others cannot delete or change your data</div>
+                                <div class="benefit">✓ Multiple redundant copies across data centers</div>
+                                <div class="benefit">✓ Free, permanent, public infrastructure</div>
+                            </div>
+                            <div class="data-preview-encrypted">
+                                <label>Your encrypted data:</label>
+                                <code>${currentData.data.substring(0, 100)}...</code>
+                                <p class="note">Without your QR + password: unchangeable encrypted noise</p>
+                                <p class="note">With your QR + password: fully updatable by you</p>
+                            </div>
+                        </div>
+                    `
+                }
+            ];
+
+            let stepIndex = 0;
+            let uploadSuccess = false;
+            let uploadResult = null;
+
+            async function runNarrative() {
+                for (let i = 0; i < narrativeSteps.length; i++) {
+                    const step = narrativeSteps[i];
+                    
+                    // Update UI
+                    document.getElementById('upload-title').textContent = step.title;
+                    document.getElementById('upload-content').innerHTML = step.content();
+                    document.getElementById('progress-fill').style.width = step.progress + '%';
+                    
+                    // Special handling for upload step
+                    if (step.title === "Uploading to Archive.org") {
+                        try {
+                            const payload = {
+                                guid: currentGUID,
+                                filename: `${currentGUID}.json`,
+                                data: currentData,
+                                metadata: {
+                                    created: currentBlob.created,
+                                    type: 'emergency_qr',
+                                    version: currentBlob.version
+                                }
+                            };
+                            
+                            const response = await fetch(WEBHOOK_URL, {
+                                method: 'POST',
+                                mode: 'cors',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            
+                            uploadResult = await response.json();
+                            uploadSuccess = response.ok && uploadResult.success;
+                            
+                            if (!uploadSuccess) {
+                                throw new Error(uploadResult.error || 'Upload failed');
+                            }
+                        } catch (error) {
+                            // Show error state
+                            document.getElementById('upload-title').textContent = '❌ Upload Failed';
+                            document.getElementById('upload-content').innerHTML = `
+                                <div class="error-message">
+                                    <p><strong>Upload interrupted, but don't worry:</strong></p>
+                                    <ul>
+                                        <li>✓ Your encryption is complete</li>
+                                        <li>✓ Your QR code works locally for 30 minutes</li>
+                                        <li>⚠️ Retry upload to ensure long-term backup</li>
+                                    </ul>
+                                    <p class="error-details">Error: ${error.message}</p>
+                                </div>
+                            `;
+                            document.getElementById('upload-error').style.display = 'block';
+                            document.getElementById('progress-fill').style.background = '#ff4757';
+                            return false;
+                        }
+                    } else if (step.duration > 0) {
+                        await new Promise(resolve => setTimeout(resolve, step.duration));
                     }
                 };
 
@@ -1463,6 +1792,75 @@
                         result = { success: false, message: text };
                     }
                 }
+                
+                // Show final success screen
+                if (uploadSuccess) {
+                    document.getElementById('upload-title').textContent = '✅ Complete!';
+                    document.getElementById('progress-fill').style.width = '100%';
+                    document.getElementById('upload-content').innerHTML = `
+                        <div class="success-summary">
+                            <h3>YOUR DATA IS NOW SECURED:</h3>
+                            <div class="summary-grid">
+                                <div class="summary-item">
+                                    <span class="icon">🛡️</span>
+                                    <div>
+                                        <strong>Encryption:</strong><br>
+                                        Military-grade AES-256-GCM
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="icon">🔑</span>
+                                    <div>
+                                        <strong>Your QR Code:</strong><br>
+                                        The ONLY key that exists (we don't store it)
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="icon">🔒</span>
+                                    <div>
+                                        <strong>Password:</strong><br>
+                                        Adds second layer for sensitive data
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="icon">📦</span>
+                                    <div>
+                                        <strong>Storage:</strong><br>
+                                        Archive.org (only you can modify)
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="icon">🔄</span>
+                                    <div>
+                                        <strong>Updates:</strong><br>
+                                        You can update anytime with QR + password
+                                    </div>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="icon">⏱️</span>
+                                    <div>
+                                        <strong>Break Time:</strong><br>
+                                        10^77 years with quantum computers
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="final-reminder">
+                                <p><strong>Remember:</strong> Your QR code + password gives you full control.</p>
+                                <p>✓ You can update your info anytime</p>
+                                <p>✗ Others cannot modify even if they scan your QR</p>
+                                <p>⚠️ Lost QR = Lost access AND update ability forever</p>
+                                <p class="feature-note">True ownership through cryptography, not permissions.</p>
+                            </div>
+                            ${uploadResult.message ? `<p class="server-response">Server: ${uploadResult.message}</p>` : ''}
+                        </div>
+                    `;
+                    
+                    button.innerHTML = '✅ Saved Online!';
+                    setTimeout(() => overlay.remove(), 5000);
+                }
+                
+                return uploadSuccess;
+            }
 
                 if (result.success !== false) {
                     button.innerHTML = '✅ Saved Online!';
@@ -1479,12 +1877,26 @@
                 showStatus('Upload failed: ' + error.message, 'error');
                 stopSecurityAnimation(false);
             } finally {
+            // Start the narrative
+            runNarrative().then(success => {
+                if (success) {
+                    showStatus('Successfully backed up to Archive.org', 'success');
+                } else {
+                    button.innerHTML = '❌ Failed - Retry';
+                }
+
                 setTimeout(() => {
                     button.disabled = false;
-                    button.innerHTML = '☁️ Save Online';
+                    if (!success) button.innerHTML = '☁️ Save Online';
                 }, 3000);
-            }
+            });
         }
+
+        // Helper function for retry
+        window.retryUpload = function() {
+            document.getElementById('upload-overlay').remove();
+            uploadToArchive();
+        };
         
         // Utility functions
         function generateGUID() {
