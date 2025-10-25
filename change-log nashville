@@ -1100,6 +1100,8 @@
         
         try {
           this.posts = await this.fetchAirtableRecords();
+          // Sort posts by Display Date descending
+          this.posts.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           console.log(`Loaded ${this.posts.length} posts from Airtable`);
           this.displayedPosts = 0;
           this.renderInitialPosts();
@@ -1137,9 +1139,11 @@
           const transformed = {
             id: record.id || Math.random().toString(36).substr(2, 9),
             title: record.Title || record.Notes || 'Untitled',
-            content: record.Excerpt || '',
+            // Use full Body content when available for modal display
+            content: record.Body || record.Excerpt || '',
             description: record.Excerpt || '',
-            pubDate: record['ISO Date'] || record['Display Date'] || new Date().toISOString(),
+            // Prefer Display Date for sorting and display
+            pubDate: record['Display Date'] || record['ISO Date'] || new Date().toISOString(),
             author: record.Authors || 'Staff',
             link: record.URL || '#',
             categories: [],
